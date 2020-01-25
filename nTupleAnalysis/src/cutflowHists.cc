@@ -9,6 +9,7 @@ cutflowHists::cutflowHists(std::string name, fwlite::TFileService& fs, bool isMC
   unitWeight = dir.make<TH1F>("unitWeight", (name+"/unitWeight; ;Entries").c_str(),  1,1,2);
   unitWeight->SetCanExtend(1);
 
+  muonPt = dir.make<TH1F>("muonPt", "Muon Pt; pt [GeV];Entries", 100,0,1000);
   
   weighted = dir.make<TH1F>("weighted", (name+"/weighted; ;Entries").c_str(),  1,1,2);
   weighted->SetCanExtend(1);
@@ -70,6 +71,9 @@ void cutflowHists::Fill(const std::string& cut, eventData* event){
     
     //Cut+SR
     if(event->views[0]->SR){
+      for (auto &muon: event -> allMuons){
+	muonPt -> Fill (muon -> pt);
+      }
       if(event->doTrigEmulation){
 	BasicFill(cut+"_SR", event, event->weightNoTrigger);
 	BasicFill(cut+"_SR_HLT_HT330_4j_75_60_45_40_3b", event, event->weight);

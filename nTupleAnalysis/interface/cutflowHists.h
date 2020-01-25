@@ -17,6 +17,8 @@ namespace nTupleAnalysis {
     TH1F* unitWeight;
     TH1F* weighted;
 
+    TH1F* muonPt;
+
     TH2F* truthM4b = NULL;
 
     cutflowHists(std::string, fwlite::TFileService&, bool);
