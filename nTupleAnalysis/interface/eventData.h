@@ -108,6 +108,15 @@ namespace nTupleAnalysis {
     //bool L1_QuadJet60er3p0 = false;
     bool L1_HTT280er_QuadJet_70_55_40_35_er2p5 = false;
 
+    bool HLT_Mu12_IP6_part0 = false;
+    bool HLT_Mu9_IP6_part0 = false;
+    bool HLT_Mu9_IP5_part0 = false;
+    bool HLT_Mu9_IP4_part0 = false;
+    bool HLT_Mu8_IP6_part0 = false;
+    bool HLT_Mu8_IP5_part0 = false;
+    bool HLT_Mu8_IP3_part0 = false;
+    bool HLT_Mu7_IP4_part0 = false;
+
     //
     //  trigger Emulation
     //
@@ -118,6 +127,7 @@ namespace nTupleAnalysis {
     bool doTrigEmulation = false;
     void SetTrigEmulation(bool doWeights = true);
     bool PassTrigEmulationDecision();
+    bool dontReadSF = false;
 
     //
     //  Ht Turnon study
@@ -188,7 +198,7 @@ namespace nTupleAnalysis {
     nTupleAnalysis::trigData* treeTrig = NULL;
 
     // Constructors and member functions
-    eventData(TChain*, bool, std::string, bool, bool _fastSkim = false, bool _doTrigEmulation = false); 
+    eventData(TChain*, bool, std::string, bool, bool _fastSkim = false, bool _doTrigEmulation = false, bool _dontReadSF = false); 
     void setTagger(std::string, float);
     void update(long int);
     void buildEvent();

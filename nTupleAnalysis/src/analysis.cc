@@ -11,7 +11,7 @@ using std::cout;  using std::endl;
 
 using namespace nTupleAnalysis;
 
-analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, int _histogramming, bool _debug, bool _fastSkim, bool _doTrigEmulation, bool _doTrigStudy){
+analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, int _histogramming, bool _debug, bool _fastSkim, bool _doTrigEmulation, bool _doTrigStudy, bool _dontReadSF){
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
   isMC       = _isMC;
@@ -24,6 +24,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   fastSkim = _fastSkim;
   doTrigEmulation = _doTrigEmulation;
   doTrigStudy     = _doTrigStudy;
+  dontReadSF = _dontReadSF;
   
 
   //Calculate MC weight denominator
@@ -43,7 +44,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   }
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation);
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, dontReadSF);
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC);
   cutflow->AddCut("lumiMask");

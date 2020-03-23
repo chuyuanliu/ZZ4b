@@ -62,6 +62,11 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   close  = new dijetHists(name+"/close",  fs,               "Minimum #DeltaR(j,j) Dijet");
   other  = new dijetHists(name+"/other",  fs, "Complement of Minimum #DeltaR(j,j) Dijet");
   close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
+
+  mu1_NoPt = dir.make<TH1F>("mu1_NoPt", (name+"At Least One Muon, no Pt Cut; At least one muon?; Entries").c_str()     , 2,0,2);
+  mu2_NoPt = dir.make<TH1F>("mu2_NoPt", (name+"At Least Two Muons, no Pt Cut; At least two muons?; Entries").c_str()   , 2,0,2);
+  mu1_5GeV = dir.make<TH1F>("mu1_5GeV", (name+"At Least One Muon, Pt >= 5 GeV; At least one muon?; Entries").c_str()   , 2,0,2);
+  mu2_5GeV = dir.make<TH1F>("mu2_5GeV", (name+"At Least Two Muons, Pt >= 5 GeV; At least two muons?; Entries").c_str() , 2,0,2);
     
   //
   // Event  Level
@@ -224,6 +229,25 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   close ->Fill(event->close,  event->weight);
   other ->Fill(event->other,  event->weight);
   close_m_vs_other_m->Fill(event->close->m, event->other->m, event->weight);
+
+  //Fill total column in all muon counting hists in SR
+  if(event->views[0]->SR){
+    mu1_NoPt -> Fill(0);
+    mu1_5GeV -> Fill(0);
+    mu2_NoPt -> Fill(0);
+    mu2_5GeV -> Fill(0);
+
+    if(event -> allMuons.size() == 1){
+      mu1_NoPt -> Fill(1.1);
+      if(event -> allMuons.at(0)->pt > 5) mu1_5GeV -> Fill(1.1);
+    }
+    if(event -> allMuons.size() > 1){
+      mu1_NoPt -> Fill(1.1);
+      mu2_NoPt -> Fill(1.1);
+      if(event -> allMuons.at(0)->pt > 5) mu1_5GeV -> Fill(1.1);
+      if(event -> allMuons.at(1)->pt > 5) mu2_5GeV -> Fill(1.1);
+    }
+  }
 
   //
   // Event Level

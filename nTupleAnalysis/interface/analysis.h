@@ -76,6 +76,7 @@ namespace nTupleAnalysis {
     bool fastSkim = false;
     bool doTrigEmulation = false;
     bool doTrigStudy = false;
+    bool dontReadSF = false;
     TFile* picoAODFile;
     TTree* picoAODEvents;
     TTree* picoAODRuns;
@@ -177,7 +178,7 @@ namespace nTupleAnalysis {
     Float_t   m_h2_match_dist         = 0;
 
 
-    analysis(TChain*, TChain*, TChain*, fwlite::TFileService&, bool, bool, std::string, int, bool, bool _fastSkim = false, bool _doTrigEmulation = false, bool _doTrigStudy = false);
+    analysis(TChain*, TChain*, TChain*, fwlite::TFileService&, bool, bool, std::string, int, bool, bool _fastSkim = false, bool _doTrigEmulation = false, bool _doTrigStudy = false, bool _dontReadSF = false);
 
     void createPicoAOD(std::string fileName, bool copyInputPicoAOD = true);
 

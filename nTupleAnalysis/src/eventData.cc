@@ -13,7 +13,7 @@ bool sortDeepB(    std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &
 bool sortCSVv2(    std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->CSVv2     > rhs->CSVv2);     } // put largest  CSVv2 first in list
 bool sortDeepFlavB(std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->deepFlavB > rhs->deepFlavB); } // put largest  deepB first in list
 
-eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation){
+eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _dontReadSF){
   std::cout << "eventData::eventData()" << std::endl;
   tree  = t;
   isMC  = mc;
@@ -21,6 +21,10 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   debug = d;
   fastSkim = _fastSkim;
   doTrigEmulation = _doTrigEmulation;
+  bool dontReadSF = true;
+  //  test = true;
+  //  std::cout << "DRSF" <<std::endl;
+  //std::cout<< dontReadSF<<std::endl;
   random = new TRandom3();
 
   //std::cout << "eventData::eventData() tree->Lookup(true)" << std::endl;
@@ -148,13 +152,28 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
       inputBranch(tree, "HLT_DiPFJetAve300_HFJEC",                                       HLT_2j300ave);
       //L1 seeds
       inputBranch(tree, "L1_SingleJet180", L1_SingleJet180);
+
+      inputBranch(tree, "HLT_Mu12_IP6_part0", HLT_Mu12_IP6_part0);
+      inputBranch(tree, "HLT_Mu9_IP6_part0", HLT_Mu9_IP6_part0);
+      inputBranch(tree, "HLT_Mu9_IP5_part0", HLT_Mu9_IP5_part0);
+      inputBranch(tree, "HLT_Mu9_IP4_part0", HLT_Mu9_IP4_part0);
+      inputBranch(tree, "HLT_Mu8_IP6_part0", HLT_Mu8_IP6_part0);
+      inputBranch(tree, "HLT_Mu8_IP5_part0", HLT_Mu8_IP5_part0);
+      inputBranch(tree, "HLT_Mu8_IP3_part0", HLT_Mu8_IP3_part0);
+      inputBranch(tree, "HLT_Mu7_IP4_part0", HLT_Mu7_IP4_part0);
+
     }
   }
 
   std::string bjetSF = "";
   if(isMC && !fastSkim && year=="2016") bjetSF = "deepjet2016";
   if(isMC && !fastSkim && year=="2017") bjetSF = "deepjet2017";
-  if(isMC && !fastSkim && year=="2018") bjetSF = "deepjet2018";
+  if(isMC && !fastSkim && year=="2018"){
+    if(dontReadSF){ bjetSF = "";
+    }
+    else{ bjetSF = "deepjet2018";
+    }
+  }
 
   std::cout << "eventData::eventData() Initialize jets" << std::endl;
   treeJets  = new  jetData(    "Jet", tree, true, isMC, "", "", bjetSF);
@@ -310,7 +329,12 @@ void eventData::buildEvent(){
 
   //btag SF
   if(isMC){
-    for(auto &jet: selJets) bTagSF *= treeJets->getSF(jet->eta, jet->pt, jet->deepFlavB, jet->hadronFlavour);
+    if(not(dontReadSF)){
+      for(auto &jet: selJets) bTagSF *= treeJets->getSF(jet->eta, jet->pt, jet->deepFlavB, jet->hadronFlavour);
+    }
+    else{
+      for(auto &jet: selJets) bTagSF *= 1;
+    }
     weight *= bTagSF;
     weightNoTrigger *= bTagSF;
     for(auto &jet: allJets) nTrueBJets += jet->hadronFlavour == 5 ? 1 : 0;

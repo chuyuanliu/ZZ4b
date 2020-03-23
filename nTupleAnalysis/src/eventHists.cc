@@ -27,6 +27,12 @@ eventHists::eventHists(std::string name, fwlite::TFileService& fs, bool _doViews
     isoMuons = new muonHists(name+"/isoMuons", fs, "Prompt Muons");
 
     v4j = new fourVectorHists(name+"/v4j", fs, "4j");
+
+    mu1_NoPt = dir.make<TH1F>("mu1_NoPt", (name+"At Least One Muon, no Pt Cut; At least one muon?; Entries").c_str()     , 2,0,2);
+    mu2_NoPt = dir.make<TH1F>("mu2_NoPt", (name+"At Least Two Muons, no Pt Cut; At least two muons?; Entries").c_str()   , 2,0,2);
+    mu1_5GeV = dir.make<TH1F>("mu1_5GeV", (name+"At Least One Muon, Pt >= 5 GeV; At least one muon?; Entries").c_str()   , 2,0,2);
+    mu2_5GeV = dir.make<TH1F>("mu2_5GeV", (name+"At Least Two Muons, Pt >= 5 GeV; At least two muons?; Entries").c_str() , 2,0,2);
+
   }
 
   //
@@ -58,6 +64,23 @@ void eventHists::Fill(eventData* event){
     for(auto &muon: event->isoMuons) isoMuons->Fill(muon, event->weight);
 
     v4j->Fill(event->p4j, event->weight);
+
+    //Fill total column in all muon counting hists
+    mu1_NoPt -> Fill(0);
+    mu1_5GeV -> Fill(0);
+    mu2_NoPt -> Fill(0);
+    mu2_5GeV -> Fill(0);
+
+    if(event -> allMuons.size() == 1){
+      mu1_NoPt -> Fill(1.1);
+      if(event -> allMuons.at(0)->pt > 5) mu1_5GeV -> Fill(1.1);
+    }
+    if(event -> allMuons.size() > 1){
+      mu1_NoPt -> Fill(1.1);
+      mu2_NoPt -> Fill(1.1);
+      if(event -> allMuons.at(0)->pt > 5) mu1_5GeV -> Fill(1.1);
+      if(event -> allMuons.at(1)->pt > 5) mu2_5GeV -> Fill(1.1);
+    }
   }
 
   return;

@@ -37,6 +37,11 @@ namespace nTupleAnalysis {
     muonHists* allMuons;
     muonHists* isoMuons;
 
+    TH1F* mu1_NoPt;
+    TH1F* mu1_5GeV;
+    TH1F* mu2_NoPt;
+    TH1F* mu2_5GeV;
+
     // Event Level
     fourVectorHists* v4j;
     massRegionHists* allViews;

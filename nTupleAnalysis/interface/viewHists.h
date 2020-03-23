@@ -80,6 +80,10 @@ namespace nTupleAnalysis {
     dijetHists* other;
     TH2F* close_m_vs_other_m;
 
+    TH1F* mu1_NoPt;
+    TH1F* mu1_5GeV;
+    TH1F* mu2_NoPt;            
+    TH1F* mu2_5GeV;                                                                                                                                                          
     // Event Level
     TH1F* nPVs;
     TH1F* nPVsGood;    
