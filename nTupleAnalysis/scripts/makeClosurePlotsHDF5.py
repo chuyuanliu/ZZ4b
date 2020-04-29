@@ -142,7 +142,7 @@ class dataFrameOrganizer:
             self.dfzh = self.dfSelected.loc[ self.dfSelected.zh==True ]
             self.dfsg = self.dfSelected.loc[ (self.dfSelected.zz==True) | (self.dfSelected.zh==True) ]
 
-    def plotVar(self, var, bins=None, xmin=None, xmax=None, reweight=False):
+    def plotVar(self, var, bins=None, xmin=None, xmax=None, reweight=False, regName=""):
 
         if reweight:
             ttbarWeights = -self.dft3.mcPseudoTagWeight * self.dft3.FvT
@@ -213,7 +213,7 @@ class dataFrameOrganizer:
                 'ylabel': 'Events / Bin',
                 }
         fig = pltHelper.histPlotter(**args)
-        figName = outputDir + "/"+var+('_reweight' if reweight else '')+'.pdf'
+        figName = outputDir + "/"+regName+"_"+var+('_reweight' if reweight else '')+'.pdf'
         fig.savefig(figName)
         print(figName)
 
@@ -239,12 +239,31 @@ class dataFrameOrganizer:
         print(figName)
 
 
-print("Blind 4 tag SR")
-df = df.loc[ (df.SR==False) | (df.d4==False) ]
+#print("Blind 4 tag SR")
+#df = df.loc[ (df.SR==False) | (df.d4==False) ]
 
 dfo = dataFrameOrganizer(df)
 dfo.applySelection( (dfo.df.passHLT==True) & (dfo.df.SB==True) & (dfo.df.xWt > 2) )
 
-dfo.plotVar('dRjjOther')
-dfo.plotVar('dRjjOther', reweight=True)
+#dfo.plotVar('dRjjOther')
+#dfo.plotVar('dRjjOther', reweight=True)
+varsToPlot = ['FvT','FvT_p3', 'SvB_ps', 'SvB_pzz', 'SvB_pzh']
+for v in varsToPlot:
+    dfo.plotVar(v, regName="SB", xmin=0.0, xmax=1.0)
+    dfo.plotVar(v, regName="SB", xmin=0.0, xmax=1.0,reweight=True)
+
+
+
+dfo.applySelection( (dfo.df.passHLT==True) & (dfo.df.CR==True) & (dfo.df.xWt > 2) )
+
+for v in varsToPlot:
+    dfo.plotVar(v, regName="CR", xmin=0., xmax=1.)
+    dfo.plotVar(v, regName="CR",xmin=0., xmax=1., reweight=True)
+
+
+dfo.applySelection( (dfo.df.passHLT==True) & (dfo.df.SR==True) & (dfo.df.xWt > 2) )
+
+for v in varsToPlot:
+    dfo.plotVar(v, regName="SR", xmin=0.0, xmax=1.0)
+    dfo.plotVar(v, regName="SR", xmin=0.0, xmax=1.0,reweight=True)
 
