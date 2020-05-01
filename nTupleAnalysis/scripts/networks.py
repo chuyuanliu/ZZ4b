@@ -4,11 +4,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+
+featureDim=8
+
 class Lin_View(nn.Module):
     def __init__(self):
         super(Lin_View, self).__init__()
     def forward(self, x):
         return x.view(x.size()[0], -1)
+
+
 
 def ReLU(x):
     return F.relu(x)
@@ -608,7 +613,7 @@ class multijetAttention(nn.Module):
         self.jetEmbed = conv1d(5, 5, 1, name='other jet embed')
         #self.jetConv1 = conv1d(5, 5, 1, name='other jet convolution 1')
         #self.jetConv2 = conv1d(5, 5, 1, name='other jet convolution 2')
-        self.attention = MultiHeadAttention(   dim_query=9,    dim_key=5,    dim_value=5, dim_attention=8, heads=2, dim_valueAttention=6, dim_out=9,
+        self.attention = MultiHeadAttention(   dim_query=featureDim,    dim_key=5,    dim_value=5, dim_attention=8, heads=2, dim_valueAttention=6, dim_out=featureDim,
                                             groups_query=1, groups_key=1, groups_value=1, 
                                             selfAttention=False, outBias=False, layers=layers, inputLayers=inputLayers,
                                             bothAttention=False,

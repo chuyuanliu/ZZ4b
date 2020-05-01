@@ -43,9 +43,12 @@ parser.add_argument('-u', '--update', dest="update", action="store_true", defaul
 args = parser.parse_args()
 
 n_queue = 20
-eval_batch_size = 2**14#15
-train_batch_size = 2**9#11
-lrInit = 0.8e-2#4e-3
+#eval_batch_size = 2**14#15
+eval_batch_size = 2**13#15
+#train_batch_size = 2**9#11
+train_batch_size = 2**8#11
+#lrInit = 0.8e-2#4e-3
+lrInit = 0.4e-2#4e-3
 max_patience = 1
 print_step = 2
 rate_StoS, rate_BtoB = None, None
@@ -54,6 +57,7 @@ barMin=0.5
 nClasses=1
 #trigger="HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5"
 trigger="passHLT"
+featureDim=8
 
 class classInfo:
     def __init__(self, abbreviation='', name='', index=None, color=''):
@@ -190,7 +194,7 @@ if classifier in ['SvB']:
         wDB = np.sum( dfDB[weight] )
         print("nDB",nDB)
         print("wDB",wDB)
-
+        
         results = fileReaders.map_async(getFrameSvB, sorted(glob(args.ttbar)))
         frames = results.get()
         dfT = pd.concat(frames, sort=False)
@@ -815,9 +819,9 @@ class modelParameters:
             self.scalers = torch.load(fileName)['scalers']
 
         else:
-            self.dijetFeatures  = 9
-            self.quadjetFeatures = 9
-            self.combinatoricFeatures = 9
+            self.dijetFeatures  = featureDim
+            self.quadjetFeatures = featureDim
+            self.combinatoricFeatures = featureDim
             self.nodes         = args.nodes
             self.layers        = args.layers
             self.pDropout      = args.pDropout
@@ -909,7 +913,7 @@ class modelParameters:
 
         w=torch.FloatTensor( np.float32(df[weight]).reshape(-1) )
 
-        #print('P.shape, A.shape, y.shape, w.shape:', P.shape, A.shape, y.shape, w.shape)
+        print('P.shape, A.shape, y.shape, w.shape:', P.shape, A.shape, y.shape, w.shape)
         return X, P, O, D, Q, A, y, w
 
     def update(self, fileName):
