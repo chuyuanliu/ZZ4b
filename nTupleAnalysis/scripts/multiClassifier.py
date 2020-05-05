@@ -42,6 +42,8 @@ parser.add_argument('-u', '--update', dest="update", action="store_true", defaul
 #parser.add_argument('-d', '--debug', dest="debug", action="store_true", default=False, help="debug")
 args = parser.parse_args()
 
+os.environ["CUDA_VISIBLE_DEVICES"]=str(args.cuda)
+
 n_queue = 20
 #eval_batch_size = 2**14#15
 eval_batch_size = 2**13#15
@@ -311,6 +313,8 @@ if classifier in ['FvT','DvT3', 'DvT4', 'M1vM2']:
         dfD['t3'] = pd.Series(np.zeros(dfD.shape[0], dtype=np.uint8), index=dfD.index)
 
         results = fileReaders.map_async(getFrame, sorted(glob(args.ttbar)))
+        print("ttbar is",args.ttbar)
+        print("glob is",glob(args.ttbar))
         frames = results.get()
         dfT = pd.concat(frames, sort=False)
 
