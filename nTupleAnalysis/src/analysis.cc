@@ -99,7 +99,6 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("bTags");
   cutflow->AddCut("DijetMass");
   cutflow->AddCut("MDRs");
-  cutflow->AddCut("SvB");
   cutflow->AddCut("MjjOth");
 
   // Need a better way to config the histogrmas via strings
