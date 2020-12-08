@@ -99,14 +99,16 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("bTags");
   cutflow->AddCut("DijetMass");
   cutflow->AddCut("MDRs");
-  
+  cutflow->AddCut("SvB");
+  cutflow->AddCut("MjjOth");
+
   // Need a better way to config the histogrmas via strings
   if(histogramming >= 4) allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
   if(histogramming >= 3) passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug);
   if(histogramming >= 2) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
   if(histogramming >= 1) passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   //if(histogramming >= 1) passSvB       = new   tagHists("passSvB",       fs, true,  isMC, blind, histDetailLevel, debug);
-  //if(histogramming >= 1) passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
+  if(histogramming >= 1) passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
 
   //if(histogramming >= 1) passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
   //if(histogramming > 1        ) passMDCs     = new   tagHists("passMDCs",   fs,  true, isMC, blind, debug);
@@ -845,7 +847,6 @@ int analysis::processEvent(){
   if(passMDRs != NULL && event->passHLT) passMDRs->Fill(event, event->views);
 
   if(passSvB != NULL &&  (event->SvB_ps > 0.85) && event->passHLT) passSvB->Fill(event, event->views);
-
   //
   //  For VHH Study
   //
@@ -854,7 +855,7 @@ int analysis::processEvent(){
       float mjjOther = (event->othJets.at(0)->p + event->othJets.at(1)->p).M();
     
       if( (mjjOther > 60)  && (mjjOther < 110)){
-
+  cutflow->Fill(event, "MjjOth");
 	if(event->passHLT) passMjjOth->Fill(event, event->views);
 	
       }
