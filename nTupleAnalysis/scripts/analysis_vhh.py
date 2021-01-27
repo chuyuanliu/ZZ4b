@@ -320,6 +320,8 @@ def doAccxEff():
     cmds = []
 
     plotYears = copy(years)
+    # if "2016" in years and "2017" in years and "2018" in years:
+    #     plotYears += ["RunII"]
 
     for year in plotYears:
         for signal in accxEffFiles(year):
@@ -424,24 +426,24 @@ def doDataTT():
     else:
         babySit(cmds, o.execute, maxJobs=nWorkers)
 
-    cmds = []
-    if "2016" in years and "2017" in years and "2018" in years:
-        for sample in ['data', 'TT']:
-            cmd  = "hadd -f "+basePath+sample+"RunII/"+histFile+" "
-            cmd += basePath+sample+"2016/"+histFile+" "
-            cmd += basePath+sample+"2017/"+histFile+" "
-            cmd += basePath+sample+"2018/"+histFile+" "
-            if o.condor:
-                thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-                thisJDL.make()
-                DAG.addJob( thisJDL )
-            else:
-                cmds.append(cmd)
+    # cmds = []
+    # if "2016" in years and "2017" in years and "2018" in years:
+    #     for sample in ['data', 'TT']:
+    #         cmd  = "hadd -f "+basePath+sample+"RunII/"+histFile+" "
+    #         cmd += basePath+sample+"2016/"+histFile+" "
+    #         cmd += basePath+sample+"2017/"+histFile+" "
+    #         cmd += basePath+sample+"2018/"+histFile+" "
+    #         if o.condor:
+    #             thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+    #             thisJDL.make()
+    #             DAG.addJob( thisJDL )
+    #         else:
+    #             cmds.append(cmd)
 
-    if o.condor:
-        DAG.addGeneration()
-    else:
-        babySit(cmds, o.execute, maxJobs=nWorkers)
+    # if o.condor:
+    #     DAG.addGeneration()
+    # else:
+    #     babySit(cmds, o.execute, maxJobs=nWorkers)
 
 
 def root2h5():
@@ -581,24 +583,24 @@ def subtractTT():
     else:
         babySit(cmds, o.execute, maxJobs=nWorkers)
 
-    cmds = []
-    if "2016" in years and "2017" in years and "2018" in years:
-        mkdir(basePath+"qcdRunII", o.execute)
-        cmd  = "hadd -f "+basePath+"qcdRunII/"+histFile+" "
-        cmd += basePath+"qcd2016/"+histFile+" "
-        cmd += basePath+"qcd2017/"+histFile+" "
-        cmd += basePath+"qcd2018/"+histFile+" "
-        if o.condor:
-            thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-            thisJDL.make()
-            DAG.addJob( thisJDL )
-        else:
-            cmds.append( cmd )
+    # cmds = []
+    # if "2016" in years and "2017" in years and "2018" in years:
+    #     mkdir(basePath+"qcdRunII", o.execute)
+    #     cmd  = "hadd -f "+basePath+"qcdRunII/"+histFile+" "
+    #     cmd += basePath+"qcd2016/"+histFile+" "
+    #     cmd += basePath+"qcd2017/"+histFile+" "
+    #     cmd += basePath+"qcd2018/"+histFile+" "
+    #     if o.condor:
+    #         thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+    #         thisJDL.make()
+    #         DAG.addJob( thisJDL )
+    #     else:
+    #         cmds.append( cmd )
 
-    if o.condor:
-        DAG.addGeneration()
-    else:
-        babySit(cmds, o.execute, maxJobs=nWorkers)
+    # if o.condor:
+    #     DAG.addGeneration()
+    # else:
+    #     babySit(cmds, o.execute, maxJobs=nWorkers)
 
 
 def doWeights():
@@ -624,6 +626,8 @@ def doWeights():
 
 def doPlots(extraPlotArgs=""):
     plotYears = copy(years)
+    # if "2016" in years and "2017" in years and "2018" in years and "RunII" not in years:
+    #     plotYears += ["RunII"]
 
     samples = ['data', 'TT', 'WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_', 'ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_','WHHandZHH']
     if not o.reweight: samples += ['qcd']

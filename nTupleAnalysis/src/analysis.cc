@@ -99,6 +99,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("bTags");
   cutflow->AddCut("DijetMass");
   cutflow->AddCut("MDRs");
+  cutflow->AddCut("NjOth");
   cutflow->AddCut("MjjOth");
 
   // Need a better way to config the histogrmas via strings
@@ -107,6 +108,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(histogramming >= 2) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
   if(histogramming >= 1) passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   //if(histogramming >= 1) passSvB       = new   tagHists("passSvB",       fs, true,  isMC, blind, histDetailLevel, debug);
+  if(histogramming >= 1) passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(histogramming >= 1) passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
 
   //if(histogramming >= 1) passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
@@ -851,6 +853,8 @@ int analysis::processEvent(){
   //
   if(passMjjOth != NULL){
     if(event->othJets.size() > 1){
+      cutflow->Fill(event,"NjOth");
+      if(event->passHLT) passNjOth->Fill(event,event->views);
       float mjjOther = (event->othJets.at(0)->p + event->othJets.at(1)->p).M();
     
       if( (mjjOther > 60)  && (mjjOther < 110)){

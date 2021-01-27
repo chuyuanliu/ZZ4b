@@ -160,7 +160,9 @@ regions = [#nameTitle("inclusive", ""),
            #nameTitle("ZZSB", "ZZ Sideband"), nameTitle("ZZCR", "ZZ Control Region"), nameTitle("ZZSR", "ZZ Signal Region"),
            #nameTitle("ZHSR", "ZH Signal Region"), nameTitle("ZZSR", "ZZ Signal Region"),
            #nameTitle("SCSR", "SB+CR+SR"),
-           #nameTitle("SB", "Sideband"), nameTitle("CR", "Control Region"), nameTitle("SR", "Signal Region"),
+           #nameTitle("SB", "Sideband"), 
+           #nameTitle("SR", "Signal Region"),
+           nameTitle("CR", "Control Region"),
            nameTitle("HHSR", "HH Signal Region"),
            ]
 
@@ -221,21 +223,21 @@ class standardPlot:
 
         if "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year in files:
             self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (#times1)",
+                "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (#times1000)",
                 "legend"   : 4,
-                "weight" : 1,
+                "weight" : 1000,
                 "color"    : "ROOT.kRed"}
         if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year in files:
             self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (#times1)",
+                "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (#times1000)",
                 "legend"   : 5,
-                "weight" : 1,
+                "weight" : 1000,
                 "color"    : "ROOT.kGreen+3"}
         if "WHHandZHH"+year in files:
             self.samples[files["WHHandZHH"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "WHH and ZHH#rightarrowjjb#bar{b}b#bar{b} (#times1)",
+                "label"    : "WHH and ZHH#rightarrowjjb#bar{b}b#bar{b} (#times1000)",
                 "legend"   : 6,
-                "weight" : 1,
+                "weight" : 1000,
                 "color"    : "ROOT.kOrange-3"}
 
         self.parameters = {"titleLeft"   : "#bf{CMS} Internal",
@@ -279,31 +281,31 @@ class mcPlot:
             "color" : "ROOT.kAzure-9"}
 
         self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (3-tag #times1)",
+            "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (3-tag #times1000)",
             "legend"   : 5,
             "ratio" : "denom C",
-            "weight" : 1,
+            "weight" : 1000,
             "color"    : "ROOT.kRed"}
         self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (4-tag #times1)",
+            "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (4-tag #times1000)",
             "drawOptions" : "PE ex0",
             "legend"   : 6,
             "ratio" : "numer C",
-            "weight" : 1,
+            "weight" : 1000,
             "color"    : "ROOT.kRed"}
         
         self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (3-tag #times1)",
+            "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (3-tag #times1000)",
             "legend"   : 7,
             "ratio" : "denom D",
-            "weight" : 1,
+            "weight" : 1000,
             "color"    : "ROOT.kGreen+3"}
         self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (4-tag #times1)",
+            "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (4-tag #times1000)",
             "drawOptions" : "PE ex0",
             "legend"   : 8,
             "ratio" : "numer D",
-            "weight" : 1,
+            "weight" : 1000,
             "color"    : "ROOT.kGreen+3"}
 
         self.parameters = {"titleLeft"   : "#bf{CMS} Simulation Internal",
@@ -812,33 +814,39 @@ class accxEffPlot:
             "color"      : "ROOT.kBlue",
             "drawOptions" : "HIST PC",
             "marker"      : "20"}
-        self.samplesAbs[files[fileName.name].replace("hists.root","accxEff.root")]["DijetMass_over_"+denominator.name+tag] = {
-            "label"      : "m(j,j)",
-            "legend"     : 3,
-            "color"      : "ROOT.kGreen+3",
-            "drawOptions" : "HIST PC",
-            "marker"      : "20"}
+        # self.samplesAbs[files[fileName.name].replace("hists.root","accxEff.root")]["DijetMass_over_"+denominator.name+tag] = {
+        #     "label"      : "m(j,j)",
+        #     "legend"     : 3,
+        #     "color"      : "ROOT.kGreen+3",
+        #     "drawOptions" : "HIST PC",
+        #     "marker"      : "20"}
         self.samplesAbs[files[fileName.name].replace("hists.root","accxEff.root")]["MDRs_over_"+denominator.name+tag] = {
             "label"      : "#DeltaR(j,j)",
             "legend"     : 4,
-            "color"      : "ROOT.kOrange-3",
+            "color"      : "ROOT.kGreen+3",
+            "drawOptions" : "HIST PC",
+            "marker"      : "20"}
+        self.samplesAbs[files[fileName.name].replace("hists.root","accxEff.root")]["NjOth_over_"+denominator.name+tag] = {
+            "label"      : "#geq2 other jets",
+            "legend"     : 5,
+            "color"      : "ROOT.kCyan",
             "drawOptions" : "HIST PC",
             "marker"      : "20"}
         self.samplesAbs[files[fileName.name].replace("hists.root","accxEff.root")]["MjjOth_over_"+denominator.name+tag] = {
             "label"      : "m_{V(jj)}",
-            "legend"     : 5,
+            "legend"     : 6,
             "color"      : "ROOT.kOrange",
             "drawOptions" : "HIST PC",
             "marker"      : "20"}
         self.samplesAbs[files[fileName.name].replace("hists.root","accxEff.root")]["MjjOth_HHSR_over_"+denominator.name+tag] = {
             "label"      : "HHSR",
-            "legend"     : 6,
+            "legend"     : 7,
             "color"      : "ROOT.kRed",
             "drawOptions" : "HIST PC",
             "marker"      : "20"}
         self.samplesAbs[files[fileName.name].replace("hists.root","accxEff.root")]["MjjOth_HHSR_HLT_over_"+denominator.name+tag] = {
             "label"      : "Trigger",
-            "legend"     : 7,
+            "legend"     : 8,
             "color"      : "ROOT.kBlack",
             "drawOptions" : "HIST PC",
             "marker"      : "20"}
@@ -869,44 +877,50 @@ class accxEffPlot:
 
         self.samplesRel=collections.OrderedDict()
         self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")] = collections.OrderedDict()
-        self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["jetMultiplicity_over_all"+tag] = {
-            "label"      : "#geq4 jets",
-            "legend"     : 1,
-            "color"      : "ROOT.kViolet",
-            "drawOptions" : "HIST PC",
-            "marker"      : "20"}
+        # self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["jetMultiplicity_over_all"+tag] = {
+        #     "label"      : "#geq4 jets",
+        #     "legend"     : 1,
+        #     "color"      : "ROOT.kViolet",
+        #     "drawOptions" : "HIST PC",
+        #     "marker"      : "20"}
         self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["bTags_over_jetMultiplicity"+tag] = {
             "label"      : "#geq4 b-tags / #geq4 jets" if tag=='_fourTag' else "3 loose b-tags / #geq4 jets",
-            "legend"     : 2,
+            "legend"     : 1,
             "color"      : "ROOT.kBlue",
             "drawOptions" : "HIST PC",
             "marker"      : "20"}
-        self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["DijetMass_over_bTags"+tag] = {
-            "label"      : "m(j,j) / #geq4 b-tags" if tag=='_fourTag' else "m(j,j) / 3 loose b-tags",
-            "legend"     : 3,
-            "color"      : "ROOT.kGreen+3",
-            "drawOptions" : "HIST PC",
-            "marker"      : "20"}
-        self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["MDRs_over_DijetMass"+tag] = {
-            "label"      : "#DeltaR(j,j) / m(j,j)",
-            "legend"     : 4,
-            "color"      : "ROOT.kOrange",
-            "drawOptions" : "HIST PC",
-            "marker"      : "20"}
-        # self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["MDRs_over_bTags"+tag] = {
-        #     "label"      : "#DeltaR(j,j) / #geq4 b-Tags",
+        # self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["DijetMass_over_bTags"+tag] = {
+        #     "label"      : "m(j,j) / #geq4 b-tags" if tag=='_fourTag' else "m(j,j) / 3 loose b-tags",
         #     "legend"     : 3,
         #     "color"      : "ROOT.kGreen+3",
         #     "drawOptions" : "HIST PC",
         #     "marker"      : "20"}
+        self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["MDRs_over_bTags"+tag] = {
+            "label"      : "#DeltaR(j,j) / #geq4 b-tags",
+            "legend"     : 2,
+            "color"      : "ROOT.kOrange",
+            "drawOptions" : "HIST PC",
+            "marker"      : "20"}
+        self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["NjOth_over_MDRs"+tag] = {
+            "label"      : "#geq2 other jets / #DeltaR(j,j)",
+            "legend"     : 3,
+            "color"      : "ROOT.kCyan",
+            "drawOptions" : "HIST PC",
+            "marker"      : "20"}
+        self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["MjjOth_over_NjOth"+tag] = {
+            "label"      : "m_{V(jj)} / #geq2 other jets",
+            "legend"     : 4,
+            "color"      : "ROOT.kGreen+3",
+            "drawOptions" : "HIST PC",
+            "marker"      : "20"}
         self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["MjjOth_HHSR_over_MjjOth"+tag] = {
-            "label"      : "SR / #DeltaR(j,j)",
+            "label"      : "HHSR / m_{V(jj)}",
             "legend"     : 5,
             "color"      : "ROOT.kRed",
             "drawOptions" : "HIST PC",
             "marker"      : "20"}
         self.samplesRel[files[fileName.name].replace("hists.root","accxEff.root")]["MjjOth_HHSR_HLT_over_MjjOth_HHSR"+tag] = {
-            "label"      : "Trigger / SR",
+            "label"      : "Trigger / HHSR",
             "legend"     : 6,
             "color"      : "ROOT.kBlack",
             "drawOptions" : "HIST PC",

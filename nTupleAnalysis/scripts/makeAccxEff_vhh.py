@@ -18,6 +18,7 @@ cuts=["all",
       "bTags",
       "DijetMass",
       "MDRs",
+      "NjOth",
       "MjjOth",
       "MjjOth_HHSR"
       ]
