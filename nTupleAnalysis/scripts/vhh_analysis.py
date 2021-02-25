@@ -1,7 +1,7 @@
 import time
 from copy import copy
 import textwrap
-import os, re
+import os, re, shutil
 import sys
 import subprocess
 import shlex
@@ -11,6 +11,8 @@ sys.path.insert(0, 'nTupleAnalysis/python/') #https://github.com/patrickbryant/n
 from commandLineHelpers import *
 sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTools 
 from PlotTools import read_parameter_file
+import vhh_fileHelper as fh
+
 class nameTitle:
     def __init__(self, name, title):
         self.name  = name
@@ -32,7 +34,7 @@ parser.add_option('-q',            action="store_true", dest="doQCD",          d
 parser.add_option('-y',                                 dest="year",           default="2016,2017,2018", help="Year or comma separated list of years")
 parser.add_option('-o',                                 dest="outputBase",     default="/uscms/home/"+USER+"/nobackup/VHH/", help="path to output")
 parser.add_option('-w',            action="store_true", dest="doWeights",      default=False, help="Fit jetCombinatoricModel and nJetClassifier TSpline")
-parser.add_option('--makeJECSyst', action="store_true", dest="makeJECSyst",    default=False, help="Make jet energy correction systematics friend TTrees")
+#parser.add_option('--makeJECSyst', action="store_true", dest="makeJECSyst",    default=False, help="Make jet energy correction systematics friend TTrees")
 parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      default=False, help="Run event loop for jet energy correction systematics")
 parser.add_option('-j',            action="store_true", dest="useJetCombinatoricModel",       default=False, help="Use the jet combinatoric model")
 parser.add_option('-r',            action="store_true", dest="reweight",       default=False, help="Do reweighting with nJetClassifier TSpline")
@@ -56,6 +58,8 @@ parser.add_option(   '--inputHLib3Tag', default='$PWD/data18/hemiSphereLib_3TagE
 parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagEvents_*root',           help="Base path for storing output histograms and picoAOD")
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
+# for VHH study
+parser.add_option(   '--coupling ', dest = 'coupling', default = 'CV:0_5,C2V:0_0,,C3:2_0,C2V:2_0,CV:1_5', help = 'change signal coupling')
 o, a = parser.parse_args()
 
 
@@ -118,30 +122,32 @@ o, a = parser.parse_args()
 nWorkers   = 3
 script     = "ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py"
 years      = o.year.split(",")
-lumiDict   = {"2016":  "35.9e3",#35.8791
+lumiDict   = {#"2016":  "35.9e3",35.8791
               "2017":  "36.7e3",#36.7338
               "2018":  "60.0e3",#59.9656
               "17+18": "96.7e3",
-              "RunII":"132.6e3",
+              #"RunII":"132.6e3",
               }
-bTagDict   = {"2016": "0.6",#"0.3093", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
+bTagDict   = {#"2016": "0.6",#"0.3093", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
               "2017": "0.6",#"0.3033", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
               "2018": "0.6",#"0.2770"} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
               }
 outputBase = o.outputBase
-#outputBase = os.getcwd()+"/"
 gitRepoBase= 'ZZ4b/nTupleAnalysis/weights/'
 
 # File lists
-periods = {"2016": "BCDEFGH",
+periods = {#"2016": "BCDEFGH",
            "2017": "CDEF",
            "2018": "ABCD"}
 
 JECSystList = ["_jerUp", "_jerDown",
                "_jesTotalUp", "_jesTotalDown"]
 
+# VHH Files
+couplings = fh.getCouplingList(o.coupling)
+
 def dataFiles(year):
-    return ["ZZ4b/fileLists/data"+year+period+".txt" for period in periods[year]]
+    return ["ZZ4b/fileLists/data" + year + period + ".txt" for period in periods[year]]
 
 # Jet Combinatoric Model
 JCMRegion = "SB"
@@ -154,42 +160,28 @@ def jetCombinatoricModel(year):
 
 SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/SvB_ResNet_9_9_9_np1713_lr0.008_epochs40_stdscale_epoch40_loss0.2138.onnx"
 
-def signalFiles(year):
-    files = ["ZZ4b/fileLists/WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+".txt",
-             "ZZ4b/fileLists/ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+".txt",
-             ]
-    return files
+def signalFiles(signals, year):
+    return ["ZZ4b/fileLists/" + signal + year + ".txt" for signal in signals]
 
 def ttbarFiles(year):
-    files = ["ZZ4b/fileLists/TTToHadronic"+year+".txt",
-             "ZZ4b/fileLists/TTToSemiLeptonic"+year+".txt",
-             "ZZ4b/fileLists/TTTo2L2Nu"+year+".txt",
-             #"ZZ4b/fileLists/TTJets"+year+".txt",
-             ]
-    return files
+    return ["ZZ4b/fileLists/TTTo" + final + year + ".txt" for final in ["Hadronic", "SemiLeptonic", "2L2Nu"]]
 
-def accxEffFiles(year):
-    files = [outputBase+"WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+"/hists.root",#FromNanoAOD.root",
-             outputBase+"ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+"/hists.root",#FromNanoAOD.root",
-             outputBase+"WHHandZHH"+year+"/hists.root"#FromNanoAOD.root",
-             ]
-    return files
-
+def accxEffFiles(signals, year):
+    return [outputBase + signal + year + "/hists.root" for signal in signals]
 
 DAG = dag(fileName="analysis.dag")
 
-
-def makeJECSyst():
-    cmds=[]
-    for year in years:
-        for process in ['ZZ4b', 'ZH4b', 'ggZH4b']:
-            cmd  = 'python PhysicsTools/NanoAODTools/scripts/nano_postproc.py '
-            cmd += outputBase+process+year+'/ '
-            cmd += outputBase+process+year+'/picoAOD.root '
-            cmd += '--friend '
-            cmd += '-I nTupleAnalysis.baseClasses.jetmetCorrectors jetmetCorrector'+year # modules are defined in https://github.com/patrickbryant/nTupleAnalysis/blob/master/baseClasses/python/jetmetCorrectors.py
-            cmds.append(cmd)
-    babySit(cmds, o.execute, maxJobs=nWorkers)
+# def makeJECSyst():
+#     cmds=[]
+#     for year in years:
+#         for process in ['ZZ4b', 'ZH4b', 'ggZH4b']:
+#             cmd  = 'python PhysicsTools/NanoAODTools/scripts/nano_postproc.py '
+#             cmd += outputBase+process+year+'/ '
+#             cmd += outputBase+process+year+'/picoAOD.root '
+#             cmd += '--friend '
+#             cmd += '-I nTupleAnalysis.baseClasses.jetmetCorrectors jetmetCorrector'+year # modules are defined in https://github.com/patrickbryant/nTupleAnalysis/blob/master/baseClasses/python/jetmetCorrectors.py
+#             cmds.append(cmd)
+#     babySit(cmds, o.execute, maxJobs=nWorkers)
 
 def makeTARBALL():
     base="/uscms/home/"+USER+"/nobackup/"
@@ -217,47 +209,48 @@ def doSignal():
 
     cmds=[]
     JECSysts = [""]
-    if o.doJECSyst: 
-        JECSysts = JECSystList
+    # if o.doJECSyst: 
+    #     JECSysts = JECSystList
 
     for JECSyst in JECSysts:
         histFile = "hists"+JECSyst+".root" #+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
         if o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none": histFile = "histsFromNanoAOD"+JECSyst+".root"
+        
+        for signals in couplings:
+            for year in years:
+                lumi = lumiDict[year]
+                for fileList in signalFiles(signals[0:2],year):
+                    cmd  = "nTupleAnalysis "+script
+                    cmd += " -i "+fileList
+                    cmd += " -o "+basePath
+                    cmd += " -y "+year
+                    cmd += " -l "+lumi
+                    cmd += " --histogramming "+o.histogramming
+                    cmd += " --histDetailLevel "+o.detailLevel
+                    cmd += " --histFile "+histFile
+                    cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
+                    cmd += " -r " if o.reweight else ""
+                    cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
+                    cmd += " -f " if o.fastSkim else ""
+                    cmd += " --isMC"
+                    cmd += " --bTag "+bTagDict[year]
+                    cmd += " --bTagSF"
+                    cmd += " --bTagSyst" if o.bTagSyst else ""
+                    cmd += " --nevents "+o.nevents
+                    cmd += " --looseSkim" if o.looseSkim else ""
+                    cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
+                    cmd += " --JECSyst "+JECSyst if JECSyst else ""
+                    if o.createPicoAOD and o.createPicoAOD != "none":
+                        if o.createPicoAOD != "picoAOD.root":
+                            sample = fileList.split("/")[-1].replace(".txt","")
+                            cmd = '; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
 
-        for year in years:
-            lumi = lumiDict[year]
-            for fileList in signalFiles(year):
-                cmd  = "nTupleAnalysis "+script
-                cmd += " -i "+fileList
-                cmd += " -o "+basePath
-                cmd += " -y "+year
-                cmd += " -l "+lumi
-                cmd += " --histogramming "+o.histogramming
-                cmd += " --histDetailLevel "+o.detailLevel
-                cmd += " --histFile "+histFile
-                cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
-                cmd += " -r " if o.reweight else ""
-                cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
-                cmd += " -f " if o.fastSkim else ""
-                cmd += " --isMC"
-                cmd += " --bTag "+bTagDict[year]
-                cmd += " --bTagSF"
-                cmd += " --bTagSyst" if o.bTagSyst else ""
-                cmd += " --nevents "+o.nevents
-                cmd += " --looseSkim" if o.looseSkim else ""
-                cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
-                cmd += " --JECSyst "+JECSyst if JECSyst else ""
-                if o.createPicoAOD and o.createPicoAOD != "none":
-                    if o.createPicoAOD != "picoAOD.root":
-                        sample = fileList.split("/")[-1].replace(".txt","")
-                        cmd = '; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
-
-                if o.condor:
-                    thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-                    thisJDL.make()
-                    DAG.addJob(thisJDL)
-                else:
-                    cmds.append(cmd)
+                    if o.condor:
+                        thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+                        thisJDL.make()
+                        DAG.addJob(thisJDL)
+                    else:
+                        cmds.append(cmd)
 
     if o.condor:
         DAG.addGeneration()
@@ -269,16 +262,16 @@ def doSignal():
             execute(cmd, o.execute)
 
     cmds = []
-    for year in years:
 
-        for JECSyst in JECSysts:
-            histFile = "hists"+JECSyst+".root" #+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
-            if o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none": histFile = "histsFromNanoAOD"+JECSyst+".root"
-
-            files = signalFiles(year)
-            if "ZZ4b/fileLists/WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+".txt" in files and "ZZ4b/fileLists/ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+".txt" in files:
-                mkdir(basePath+"WHHandZHH"+year, o.execute)
-                cmd = "hadd -f "+basePath+"WHHandZHH"+year+"/"+histFile+" "+basePath+"WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+"/"+histFile+" "+basePath+"ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year+"/"+histFile
+    for JECSyst in JECSysts:
+        histFile = "hists"+JECSyst+".root" #+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
+        if o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none": histFile = "histsFromNanoAOD"+JECSyst+".root"
+        for signals in couplings:
+            for year in years:
+                mkdir(basePath + signals[2] + year + "/", o.execute)
+                cmd = "hadd -f"
+                for i in [2,1,0]:
+                    cmd += " " + basePath + signals[i] + year + "/" + histFile
                 if o.condor:
                     thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
                     thisJDL.make()
@@ -291,42 +284,42 @@ def doSignal():
     else:
         babySit(cmds, o.execute, maxJobs=nWorkers)        
 
-    # cmds = []
-    # if "2016" in years and "2017" in years and "2018" in years:
-    #     for JECSyst in JECSysts:
-    #         histFile = "hists"+JECSyst+".root" #+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
-
-    #         if o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none": histFile = "histsFromNanoAOD"+JECSyst+".root"
-
-    #         for sample in ['ZZ4b', 'ZH4b', 'ggZH4b', 'bothZH4b', 'ZZandZH4b']:
-    #             cmd  = "hadd -f "+basePath+sample+"RunII/"+histFile+" "
-    #             cmd += basePath+sample+"2016/"+histFile+" "
-    #             cmd += basePath+sample+"2017/"+histFile+" "
-    #             cmd += basePath+sample+"2018/"+histFile+" "
-    #             if o.condor:
-    #                 thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-    #                 thisJDL.make()
-    #                 DAG.addJob( thisJDL )
-    #             else:
-    #                 cmds.append(cmd)
+    cmds = []
+    if "2017" in years and "2018" in years:
+        for JECSyst in JECSysts:
+            histFile = "hists"+JECSyst+".root" #+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
+            if o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none": histFile = "histsFromNanoAOD"+JECSyst+".root"
+            for signals in couplings:
+                for sample in signals[0:3]:
+                    mkdir(basePath + sample + "17+18/", o.execute)
+                    cmd = "hadd -f"
+                    for year in ["17+18", "2017", "2018"]:
+                        cmd += " " + basePath + sample + year + "/" + histFile
+                    if o.condor:
+                        thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+                        thisJDL.make()
+                        DAG.addJob( thisJDL )
+                    else:
+                        cmds.append(cmd)
                 
-    # if o.condor:
-    #     DAG.addGeneration()
-    # else:
-    #     babySit(cmds, o.execute, maxJobs=nWorkers)
+    if o.condor:
+        DAG.addGeneration()
+    else:
+        babySit(cmds, o.execute, maxJobs=nWorkers)
 
       
 def doAccxEff():   
     cmds = []
 
     plotYears = copy(years)
-    # if "2016" in years and "2017" in years and "2018" in years:
-    #     plotYears += ["RunII"]
+    if "2017" in years and "2018" in years:
+        plotYears += ["17+18"]
 
-    for year in plotYears:
-        for signal in accxEffFiles(year):
-            cmd = "python ZZ4b/nTupleAnalysis/scripts/makeAccxEff_vhh.py -i "+signal
-            cmds.append(cmd)
+    for signals in couplings:
+        for year in plotYears:
+            for signal in accxEffFiles(signals[0:3], year):
+                cmd = "python ZZ4b/nTupleAnalysis/scripts/vhh_makeAccxEff.py -i "+signal
+                cmds.append(cmd)
     babySit(cmds, o.execute, maxJobs=nWorkers)
 
 def doDataTT():
@@ -426,24 +419,24 @@ def doDataTT():
     else:
         babySit(cmds, o.execute, maxJobs=nWorkers)
 
-    # cmds = []
-    # if "2016" in years and "2017" in years and "2018" in years:
-    #     for sample in ['data', 'TT']:
-    #         cmd  = "hadd -f "+basePath+sample+"RunII/"+histFile+" "
-    #         cmd += basePath+sample+"2016/"+histFile+" "
-    #         cmd += basePath+sample+"2017/"+histFile+" "
-    #         cmd += basePath+sample+"2018/"+histFile+" "
-    #         if o.condor:
-    #             thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-    #             thisJDL.make()
-    #             DAG.addJob( thisJDL )
-    #         else:
-    #             cmds.append(cmd)
+    cmds = []
+    if "2017" in years and "2018" in years:
+        for sample in ['data', 'TT']:
+            mkdir(basePath + sample + "17+18/", o.execute)
+            cmd = "hadd -f"
+            for year in ["17+18", "2017", "2018"]:
+                cmd += " " + basePath + sample + year + "/" + histFile
+            if o.condor:
+                thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+                thisJDL.make()
+                DAG.addJob( thisJDL )
+            else:
+                cmds.append(cmd)
 
-    # if o.condor:
-    #     DAG.addGeneration()
-    # else:
-    #     babySit(cmds, o.execute, maxJobs=nWorkers)
+    if o.condor:
+        DAG.addGeneration()
+    else:
+        babySit(cmds, o.execute, maxJobs=nWorkers)
 
 
 def root2h5():
@@ -583,24 +576,22 @@ def subtractTT():
     else:
         babySit(cmds, o.execute, maxJobs=nWorkers)
 
-    # cmds = []
-    # if "2016" in years and "2017" in years and "2018" in years:
-    #     mkdir(basePath+"qcdRunII", o.execute)
-    #     cmd  = "hadd -f "+basePath+"qcdRunII/"+histFile+" "
-    #     cmd += basePath+"qcd2016/"+histFile+" "
-    #     cmd += basePath+"qcd2017/"+histFile+" "
-    #     cmd += basePath+"qcd2018/"+histFile+" "
-    #     if o.condor:
-    #         thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-    #         thisJDL.make()
-    #         DAG.addJob( thisJDL )
-    #     else:
-    #         cmds.append( cmd )
-
-    # if o.condor:
-    #     DAG.addGeneration()
-    # else:
-    #     babySit(cmds, o.execute, maxJobs=nWorkers)
+    cmds = []
+    if "2017" in years and "2018" in years:
+        mkdir(basePath + "qcd17+18/", o.execute)
+        cmd = "hadd -f"
+        for year in ["17+18", "2017", "2018"]:
+            cmd += " " + basePath + "qcd" + year + "/" + histFile
+        if o.condor:
+            thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+            thisJDL.make()
+            DAG.addJob( thisJDL )
+        else:
+            cmds.append(cmd)
+    if o.condor:
+        DAG.addGeneration()
+    else:
+        babySit(cmds, o.execute, maxJobs=nWorkers)
 
 
 def doWeights():
@@ -626,33 +617,38 @@ def doWeights():
 
 def doPlots(extraPlotArgs=""):
     plotYears = copy(years)
-    # if "2016" in years and "2017" in years and "2018" in years and "RunII" not in years:
-    #     plotYears += ["RunII"]
+    if "2017" in years and "2018" in years:
+        plotYears = ["17+18"]
 
-    samples = ['data', 'TT', 'WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_', 'ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_','WHHandZHH']
-    if not o.reweight: samples += ['qcd']
+    for samples in couplings:
+        samples = samples[0:3] + ['data', 'TT']
+        if not o.reweight: samples += ['qcd']
 
-    if o.condor: # download hists because repeated EOS access makes plotting about 25% slower
-        for year in plotYears:
-            for sample in samples:
-                hists = 'hists.root'
-                if sample in ['data', 'TT', 'qcd']:
-                    hists = "hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
-                cmd = "xrdcp -f "+EOSOUTDIR+sample+year+"/"+hists +" "+ outputBase+sample+year+"/"+hists
-                execute(cmd, o.execute)
+        if o.condor: # download hists because repeated EOS access makes plotting about 25% slower
+            for year in plotYears:
+                for sample in samples:
+                    hists = 'hists.root'
+                    if sample in ['data', 'TT', 'qcd']:
+                        hists = "hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
+                    cmd = "xrdcp -f "+EOSOUTDIR+sample+year+"/"+hists +" "+ outputBase+sample+year+"/"+hists
+                    execute(cmd, o.execute)
 
     basePath = EOSOUTDIR if o.condor else outputBase    
     plots = "plots"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")
+    if os.path.isdir(outputBase + plots):
+        shutil.rmtree(outputBase + plots)
+        os.mkdir(outputBase + plots)
     cmds=[]
     for year in plotYears:
         lumi = lumiDict[year]
-        cmd  = "python ZZ4b/nTupleAnalysis/scripts/makePlots_vhh.py"
+        cmd  = "python ZZ4b/nTupleAnalysis/scripts/vhh_makePlots.py"
         #cmd += " -i "+basePath # you can uncomment this if you want to make plots directly from EOS
         cmd += " -o "+outputBase
         cmd += " -p "+plots+" -l "+lumi+" -y "+year
         cmd += " -j" if o.useJetCombinatoricModel else ""
         cmd += " -r" if o.reweight else ""
         cmd += " --doJECSyst" if o.doJECSyst else ""
+        cmd += " --coupling " + o.coupling
         cmd += " "+extraPlotArgs+" "
         cmds.append(cmd)
 
@@ -742,8 +738,8 @@ if o.condor:
 if o.h52root:
     h52root()
 
-if o.makeJECSyst:
-    makeJECSyst()
+# if o.makeJECSyst:
+#     makeJECSyst()
 
 startEventLoopGeneration = copy( DAG.iG )
 if o.doSignal:

@@ -7,6 +7,7 @@ from ROOT import TFile
 sys.path.insert(0, 'nTupleAnalysis/python/') #https://github.com/patrickbryant/nTupleAnalysis
 from commandLineHelpers import *
 import optparse
+import vhh_fileHelper as fh
 
 CMSSW = getCMSSW()
 USER = getUSER()
@@ -31,12 +32,10 @@ parser.add_option('-r',            action="store_true", dest="reweight",       d
 parser.add_option('-a',            action="store_true", dest="doAccxEff",      default=False, help="Make Acceptance X Efficiency plots")
 parser.add_option('-m',            action="store_true", dest="doMain",      default=False, help="Make main plots")
 parser.add_option('--data',        default=None, help="data file override")
-parser.add_option('--data3b',      default=None, help="data3b file override")
 parser.add_option('--TT',          default=None, help="TT file override")
 parser.add_option('--qcd',         default=None, help="qcd file override")
-parser.add_option('--noSignal',    action="store_true", help="dont plot signal")
 parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      default=False, help="plot JEC variations")
-
+parser.add_option('--coupling ',   dest = 'coupling', default = 'CV:0_5,C2V:0_0,,C3:2_0,C2V:2_0,CV:1_5', help = 'change signal coupling')
 
 o, a = parser.parse_args()
 
@@ -49,13 +48,10 @@ if o.inputBase != "None":
 outputPlot = outputBase+o.plotDir + ("" if o.plotDir[-1] == "/" else "/")
 print "Plot output:",outputPlot
 
-lumiDict   = {"2016":  35.9e3,#35.8791
-              "2017":  36.7e3,#36.7338
-              "2018":  60.0e3,#59.9656
-              }
-
 lumi = float(o.lumi)/1000
 
+# VHH Files
+couplings = fh.getCouplingList(o.coupling)
 
 # Jet Combinatoric Model
 gitRepoBase= 'ZZ4b/nTupleAnalysis/weights/'
@@ -68,11 +64,11 @@ jcm = PlotTools.read_parameter_file(jetCombinatoricModel('RunII'))
 mu_qcd = jcm['mu_qcd_passMDRs']
 
 files = {"data"+o.year  : inputBase+"data"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
-         "WHHandZHH"+o.year : inputBase+"WHHandZHH"+o.year+"/hists.root",
-         "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year : inputBase+"WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year+"/hists.root",
-         "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year : inputBase+"ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year+"/hists.root",
          "TT"+o.year : inputBase+"TT"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
          }
+for coupling in couplings:
+    filename = coupling[2]+o.year
+    files[filename] = inputBase + filename + "/hists.root"
 # if not o.reweight:
 #     files["qcd"+o.year] = inputBase+"qcd"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+".root"
 
@@ -83,10 +79,6 @@ if o.data is not None:
     print "Using data file",o.data
     files["data"+o.year] = o.data
 
-if o.data3b is not None:
-    print "Using data3b file",o.data3b
-    files["data3b"+o.year] = o.data3b
-
 # if o.qcd is not None:
 #     print "Using qcd file",o.qcd
 #     files["qcd"+o.year] = o.qcd
@@ -94,9 +86,6 @@ if o.data3b is not None:
 if o.TT is not None:
     print "Using TT file",o.TT
     files["TT"+o.year] = o.TT
-
-if o.noSignal:
-    del files["WHHandZHH"+o.year]
 
 for sample in files:
     files[sample] = TFile.Open(files[sample])
@@ -183,23 +172,13 @@ class variable:
 class standardPlot:
     def __init__(self, year, cut, view, region, var):
         self.samples=collections.OrderedDict()
-        self.samples[files[    "data"+year]] = collections.OrderedDict()
         if o.reweight:
             multijet = "data"+year
-            if "data3b"+year in files:
-                multijet = "data3b"+year
-                self.samples[files[     "data3b"+year]] = collections.OrderedDict()
-        if not o.reweight:
+        else:
             multijet = "qcd"+year
-            self.samples[files[     "qcd"+year]] = collections.OrderedDict()
-        self.samples[files[      "TT"+year]] = collections.OrderedDict()
 
-        if "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year in files:
-            self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]] = collections.OrderedDict()
-        if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year in files:
-            self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]] = collections.OrderedDict()
-        if "WHHandZHH"+year in files:
-            self.samples[files["WHHandZHH"+year]] = collections.OrderedDict()
+        for key in files.keys():
+            self.samples[files[key]] = collections.OrderedDict()
 
         self.samples[files[  "data"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
             "label" : ("Data %.1f/fb, "+year)%(lumi),
@@ -221,24 +200,21 @@ class standardPlot:
             "ratio" : "denom A",
             "color" : "ROOT.kAzure-9"}
 
-        if "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year in files:
-            self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (#times1000)",
-                "legend"   : 4,
-                "weight" : 1000,
-                "color"    : "ROOT.kRed"}
-        if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year in files:
-            self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (#times1000)",
-                "legend"   : 5,
-                "weight" : 1000,
-                "color"    : "ROOT.kGreen+3"}
-        if "WHHandZHH"+year in files:
-            self.samples[files["WHHandZHH"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "WHH and ZHH#rightarrowjjb#bar{b}b#bar{b} (#times1000)",
-                "legend"   : 6,
-                "weight" : 1000,
-                "color"    : "ROOT.kOrange-3"}
+        signalScale = 5000
+        signalCount = 3
+        for key in files.keys():
+            if 'HHTo4B' in key:
+                signalCount += 1
+                couplingStr = ""
+                for coupling in couplings:
+                    if(coupling[3] in key):
+                        couplingStr = coupling[3]
+                        break
+                self.samples[files[key]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
+                "label"    : "VHH#rightarrowjjb#bar{b}b#bar{b} "+couplingStr+"(#times"+str(signalScale)+")",
+                "legend"   : signalCount,
+                "weight"   : signalScale,
+                "color"    : str(signalCount-1)}
 
         self.parameters = {"titleLeft"   : "#bf{CMS} Internal",
                            "titleCenter" : region.title,
@@ -265,8 +241,9 @@ class mcPlot:
     def __init__(self, year, cut, view, region, var):
         self.samples=collections.OrderedDict()
         self.samples[files["TT"+year]] = collections.OrderedDict()
-        self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]] = collections.OrderedDict()
-        self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]] = collections.OrderedDict()
+        for key in files.keys():
+            if 'HHTo4B' in key:
+                self.samples[files[key]] = collections.OrderedDict()
 
         self.samples[files["TT"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
             "label" : "t#bar{t} (3-tag)",
@@ -280,33 +257,20 @@ class mcPlot:
             "ratio" : "numer A",
             "color" : "ROOT.kAzure-9"}
 
-        self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (3-tag #times1000)",
+        self.samples[files["VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
+            "label"    : "VHH#rightarrowjjb#bar{b}b#bar{b} (3-tag #times1000)",
             "legend"   : 5,
             "ratio" : "denom C",
             "weight" : 1000,
             "color"    : "ROOT.kRed"}
-        self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "WHH#rightarrowjjb#bar{b}b#bar{b} (4-tag #times1000)",
+        self.samples[files["VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
+            "label"    : "VHH#rightarrowjjb#bar{b}b#bar{b} (4-tag #times1000)",
             "drawOptions" : "PE ex0",
             "legend"   : 6,
             "ratio" : "numer C",
             "weight" : 1000,
             "color"    : "ROOT.kRed"}
-        
-        self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (3-tag #times1000)",
-            "legend"   : 7,
-            "ratio" : "denom D",
-            "weight" : 1000,
-            "color"    : "ROOT.kGreen+3"}
-        self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "ZHH#rightarrowjjb#bar{b}b#bar{b} (4-tag #times1000)",
-            "drawOptions" : "PE ex0",
-            "legend"   : 8,
-            "ratio" : "numer D",
-            "weight" : 1000,
-            "color"    : "ROOT.kGreen+3"}
+    
 
         self.parameters = {"titleLeft"   : "#bf{CMS} Simulation Internal",
                            "titleCenter" : region.title,
@@ -330,49 +294,29 @@ class mcPlot:
 class JECPlot:
     def __init__(self, year, cut, view, region, var):
         self.samples=collections.OrderedDict()
-        self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]] = collections.OrderedDict()
-        self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]] = collections.OrderedDict()
+        self.samples[files["VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]] = collections.OrderedDict()
 
-        self.samples[files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
+        self.samples[files["VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
             "label"    : "WHH Nominal",
             #"drawOptions" : "HIST",
             "legend"   : 1,
             "ratio" : "denom A",
             "weight" : 1,
             "color"    : "ROOT.kRed"}
-        
-        self.samples[files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "ZHH Nominal",
-            #"drawOptions" : "HIST",
-            "legend"   : 2,
-            "ratio" : "denom B",
-            "weight" : 1,
-            "color"    : "ROOT.kGreen+3"}
 
         markers = ['2','3','4','5']
         for i, JECSyst in enumerate(JECSysts):
-            WHH = files["WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year].replace('.root', JECSyst.name+'.root')
-            ZHH = files["ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year].replace('.root', JECSyst.name+'.root')
-            self.samples[WHH] = collections.OrderedDict()
-            self.samples[ZHH] = collections.OrderedDict()
+            VHH = files["VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+year].replace('.root', JECSyst.name+'.root')
+            self.samples[VHH] = collections.OrderedDict()
 
-            self.samples[WHH][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "WHH"+JECSyst.title,
+            self.samples[VHH][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
+                "label"    : "VHH"+JECSyst.title,
                 "drawOptions" : "PE ex0",
-                "legend"   : 2*i + 3,
+                "legend"   : 2*i + 2,
                 "ratio" : "numer A",
                 "weight" : 1,
                 "marker" : markers[i],
                 "color"    : "ROOT.kRed"}
-
-            self.samples[ZHH][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-                "label"    : "ZHH"+JECSyst.title,
-                "drawOptions" : "PE ex0",
-                "legend"   : 2*i + 4,
-                "ratio" : "numer B",
-                "weight" : 1,
-                "marker" : markers[i],
-                "color"    : "ROOT.kGreen+3"}
 
 
         self.parameters = {"titleLeft"   : "#bf{CMS} Simulation Internal",
@@ -402,8 +346,6 @@ class TH2Plot:
         if tag=="Background":
             if o.reweight:
                 multijet = "data"+year
-                if "data3b"+year in files:
-                    multijet = "data3b"+year
             else:
                 multijet = "qcd"+year
             self.samples[files[ multijet]] = collections.OrderedDict()
@@ -676,12 +618,11 @@ if o.doMain:
         for view in views:
             for region in regions:
                 for var in variables:
-                    if True: 
-                        plots.append(standardPlot(o.year, cut, view, region, var))
-                    if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files and "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
-                        plots.append(      mcPlot(o.year, cut, view, region, var))
-                    if o.doJECSyst and "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files and "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
-                        plots.append(     JECPlot(o.year, cut, view, region, var))
+                    plots.append(standardPlot(o.year, cut, view, region, var))
+                    # if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files and "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
+                    #     plots.append(      mcPlot(o.year, cut, view, region, var))
+                    # if o.doJECSyst and "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files and "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
+                    #     plots.append(     JECPlot(o.year, cut, view, region, var))
 
 
 variables2d = [variable("leadSt_m_vs_sublSt_m", "Leading S_{T} Dijet Mass [GeV]", "Subleading S_{T} Dijet Mass [GeV]"),
@@ -730,73 +671,35 @@ if o.doMain:
             for region in regions:
                 #if True:
                 for var in variables2d:
-                    if "WHHandZHH"+o.year in files:
-                        sample = nameTitle("WHHandZHH"+o.year, "ZHH and WHH#rightarrowjjb#bar{b}b#bar{b}")
-                        plots.append(TH2Plot("WHHandZHH", sample, o.year, cut, "fourTag", view, region, var))
-
-                    if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
-                        sample = nameTitle("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year, "ZHH#rightarrowjjb#bar{b}b#bar{b}")
-                        plots.append(TH2Plot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", sample, o.year, cut, "fourTag", view, region, var))
-
-                    if "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
-                        sample = nameTitle("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year, "WHH#rightarrowjjb#bar{b}b#bar{b}")
-                        plots.append(TH2Plot("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", sample, o.year, cut, "fourTag", view, region, var))
+                    for key in files.keys():
+                        if "HHTo4B" in key:
+                            sample = nameTitle(key, "VHH#rightarrowjjb#bar{b}b#bar{b}")
+                            plots.append(TH2Plot(key, sample, o.year, cut, "fourTag", view, region, var))
 
 
 
-                if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files and "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
-                    # sample = nameTitle("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year, "ZHH#rightarrowjjb#bar{b}b#bar{b}")
-                    # var = variable("m4j_vs_leadSt_dR", "m_{4j} [GeV]", "Leading S_{T} Boson Candidate #DeltaR(j,j)")
-                    # TH2 = TH2Plot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", sample, o.year, cut, "fourTag", view, region, var)
-                    # TH2.parameters["functions"] = [["(360./x-0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1],
-                    #                                ["(650./x+0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
-                    # plots.append(TH2)
+                # if "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files and "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year in files:
+                #     massPlane = variable("leadSt_m_vs_sublSt_m", "Leading S_{T} Boson Candidate Mass [GeV]", "Subleading S_{T} Boson Candidate Mass [GeV]")
+                #     WHHandZHH = nameTitle("WHHandZHH"+o.year, "WHH and ZHH#rightarrowjjb#bar{b}b#bar{b}")
+                #     plots.append(TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, massPlane))
+                #     var = variable("m4j_vs_leadSt_dR", "m_{4j} [GeV]", "Leading S_{T} Boson Candidate #DeltaR(j,j)")
+                #     TH2 = TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, var)
+                #     TH2.parameters["functions"] = [["(360./x-0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1],
+                #                                    ["(650./x+0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
+                #     plots.append(TH2)
 
-                    # var = variable("m4j_vs_sublSt_dR", "m_{4j} [GeV]", "Subleading S_{T} Boson Candidate #DeltaR(j,j)")
-                    # TH2 = TH2Plot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", sample, o.year, cut, "fourTag", view, region, var)
-                    # TH2.parameters["functions"] = [["(235./x     - y)",100,1100,0,5,[0],"ROOT.kRed",1],
-                    #                                ["(650./x+0.7 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
-                    # plots.append(TH2)
+                #     var = variable("m4j_vs_sublSt_dR", "m_{4j} [GeV]", "Subleading S_{T} Boson Candidate #DeltaR(j,j)")
+                #     TH2 = TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, var)
+                #     TH2.parameters["functions"] = [["(235./x     - y)",100,1100,0,5,[0],"ROOT.kRed",1],
+                #                                    ["(650./x+0.7 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
+                #     plots.append(TH2)
 
-                    # var = variable("m4j_vs_nViews", "m_{4j} [GeV]", "Number of Event Views")
-                    # TH2 = TH2Plot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", sample, o.year, cut, "fourTag", view, region, var)
-                    # del TH2.parameters["functions"]
-                    # TH2.parameters['yMin'], TH2.parameters['yMax'] = 0.5, 3.5
-                    # TH2.parameters["yNdivisions"] = 003
-                    # plots.append(TH2)
-
-                    # ZZ4b = nameTitle(    "ZZ4b"+o.year, "ZZ#rightarrowb#bar{b}b#bar{b}")
-                    # plots.append(TH2Plot(    "ZZ4b", ZZ4b, o.year, cut, "fourTag", view, region, var))
-
-
-                    massPlane = variable("leadSt_m_vs_sublSt_m", "Leading S_{T} Boson Candidate Mass [GeV]", "Subleading S_{T} Boson Candidate Mass [GeV]")
-                    WHHandZHH = nameTitle("WHHandZHH"+o.year, "WHH and ZHH#rightarrowjjb#bar{b}b#bar{b}")
-                    plots.append(TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, massPlane))
-                    var = variable("m4j_vs_leadSt_dR", "m_{4j} [GeV]", "Leading S_{T} Boson Candidate #DeltaR(j,j)")
-                    TH2 = TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, var)
-                    TH2.parameters["functions"] = [["(360./x-0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1],
-                                                   ["(650./x+0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
-                    plots.append(TH2)
-
-                    var = variable("m4j_vs_sublSt_dR", "m_{4j} [GeV]", "Subleading S_{T} Boson Candidate #DeltaR(j,j)")
-                    TH2 = TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, var)
-                    TH2.parameters["functions"] = [["(235./x     - y)",100,1100,0,5,[0],"ROOT.kRed",1],
-                                                   ["(650./x+0.7 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
-                    plots.append(TH2)
-
-                    var = variable("m4j_vs_nViews", "m_{4j} [GeV]", "Number of Event Views")
-                    TH2 = TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, var)
-                    del TH2.parameters["functions"]
-                    TH2.parameters['yMin'], TH2.parameters['yMax'] = 0.5, 3.5
-                    TH2.parameters["yNdivisions"] = 003
-                    plots.append(TH2)
-
-files = {"data"+o.year  : inputBase+"data"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
-         "WHHandZHH"+o.year : inputBase+"WHHandZHH"+o.year+"/hists.root",
-         "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year : inputBase+"WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year+"/hists.root",
-         "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year : inputBase+"ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year+"/hists.root",
-         "TT"+o.year : inputBase+"TT"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
-         }
+                #     var = variable("m4j_vs_nViews", "m_{4j} [GeV]", "Number of Event Views")
+                #     TH2 = TH2Plot("WHHandZHH", WHHandZHH, o.year, cut, "fourTag", view, region, var)
+                #     del TH2.parameters["functions"]
+                #     TH2.parameters['yMin'], TH2.parameters['yMax'] = 0.5, 3.5
+                #     TH2.parameters["yNdivisions"] = 003
+                #     plots.append(TH2)
 
 class accxEffPlot:
     def __init__(self, topDir, fileName, year, region, denominator = nameTitle('all', ''), tag='_fourTag'):
@@ -960,7 +863,7 @@ class accxEffPlot:
 
 
 
-if o.doAccxEff:
+# if o.doAccxEff:
     # fileName = nameTitle("ggZH4b"+o.year, "gg#rightarrowZH#rightarrowb#bar{b}b#bar{b}")
     # region = nameTitle("ZHSR", "X_{ZH} < 1.5")
     # plots.append(accxEffPlot("ggZH4b", fileName, o.year, region))
@@ -969,20 +872,20 @@ if o.doAccxEff:
     # region = nameTitle("ZHSR", "X_{ZH} < 1.5")
     # plots.append(accxEffPlot("ZH4b", fileName, o.year, region))
 
-    fileName = nameTitle("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year, "ZHH#rightarrowjjb#bar{b}b#bar{b}")
-    region = nameTitle("SR", "SR")
-    plots.append(accxEffPlot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region))
-    plots.append(accxEffPlot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region, tag='_threeTag'))
+    # fileName = nameTitle("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year, "ZHH#rightarrowjjb#bar{b}b#bar{b}")
+    # region = nameTitle("SR", "SR")
+    # plots.append(accxEffPlot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region))
+    # plots.append(accxEffPlot("ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region, tag='_threeTag'))
 
-    fileName = nameTitle("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year, "WHH#rightarrowjjb#bar{b}b#bar{b}")
-    region = nameTitle("SR", "SR")
-    plots.append(accxEffPlot("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region))
-    plots.append(accxEffPlot("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region, tag='_threeTag'))
+    # fileName = nameTitle("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_"+o.year, "WHH#rightarrowjjb#bar{b}b#bar{b}")
+    # region = nameTitle("SR", "SR")
+    # plots.append(accxEffPlot("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region))
+    # plots.append(accxEffPlot("WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_", fileName, o.year, region, tag='_threeTag'))
 
-    fileName = nameTitle("WHHandZHH"+o.year, "WHH, ZHH#rightarrowjjb#bar{b}b#bar{b}")
-    region = nameTitle("SR", "SR")
-    plots.append(accxEffPlot("WHHandZHH", fileName, o.year, region))
-    plots.append(accxEffPlot("WHHandZHH", fileName, o.year, region, tag='_threeTag'))
+    # fileName = nameTitle("WHHandZHH"+o.year, "WHH, ZHH#rightarrowjjb#bar{b}b#bar{b}")
+    # region = nameTitle("SR", "SR")
+    # plots.append(accxEffPlot("WHHandZHH", fileName, o.year, region))
+    # plots.append(accxEffPlot("WHHandZHH", fileName, o.year, region, tag='_threeTag'))
 
 
 nPlots=len(plots)
