@@ -48,10 +48,7 @@ namespace nTupleAnalysis {
     bool makePSDataFromMC = false;
     bool removePSDataFromMC = false;
     bool blind = true;
-    int histogramming = 1e6;  // The bigger the more points in the cutflow are plotted
-    int histDetailLevel = 1e6;  // The bigger the more histograms are created
-                                // < 10 turns off all views 
-                                // < 5  turns off ZZ/ZH specific regions (Just keep inclusive SB/CR/SR)
+
     int treeEvents;
     eventData* event;
     tagCutflowHists* cutflow;
@@ -63,11 +60,7 @@ namespace nTupleAnalysis {
     tagHists* passSvB       = NULL;
     tagHists* passNjOth     = NULL;
     tagHists* passMjjOth    = NULL;
-    //tagHists* passXWt       = NULL;
-    //tagHists* passMDCs      = NULL;
-    //tagHists* passDEtaBB    = NULL;
-    //tagHists* passDEtaBBNoTrig  = NULL;
-    //tagHists* passDEtaBBNoTrigJetPts  = NULL;
+    tagHists* passXWt       = NULL;
 
     triggerStudy* trigStudy  = NULL;
 
@@ -90,7 +83,6 @@ namespace nTupleAnalysis {
     bool fastSkim = false;
     bool looseSkim = false;
     bool doTrigEmulation = false;
-    bool doTrigStudy = false;
     TFile* picoAODFile;
     TTree* picoAODEvents;
     TTree* picoAODRuns;
@@ -99,8 +91,12 @@ namespace nTupleAnalysis {
     //Monitoring Variables
     long int percent;
     std::clock_t start;
-    double duration;
-    double eventRate;
+    double timeTotal;
+    double previousMonitorTime = 0;
+    double timeElapsed = 0;
+    long int previousMonitorEvent = 0;
+    long int eventsElapsed;
+    double eventRate = 0;
     double timeRemaining;
     int hours;
     int minutes;
@@ -223,10 +219,10 @@ namespace nTupleAnalysis {
 
 
     analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year,
-	     int _histogramming, int _histDetailLevel, bool _doReweight, bool _debug, bool _fastSkim = false, bool _doTrigEmulation = false, bool _doTrigStudy = false, bool _isDataMCMix=false, bool _is3bMixed=false,
+	     std::string histDetailLevel, bool _doReweight, bool _debug, bool _fastSkim = false, bool _doTrigEmulation = false, bool _isDataMCMix=false, bool _is3bMixed=false,
 	     std::string bjetSF = "", std::string btagVariations = "central",
 	     std::string JECSyst = "", std::string friendFile = "",
-	     bool looseSkim = false, std::string FvTName = "");
+	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "");
 
     void createPicoAOD(std::string fileName, bool copyInputPicoAOD = true);
 

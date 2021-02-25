@@ -33,6 +33,11 @@ parser.add_option('-m',            action="store_true", dest="doMain",      defa
 parser.add_option('--data',        default=None, help="data file override")
 parser.add_option('--data3b',      default=None, help="data3b file override")
 parser.add_option('--TT',          default=None, help="TT file override")
+parser.add_option('--ZZ',          default=None, help="ZZ file override")
+parser.add_option('--ZH',          default=None, help="ZH file override")
+parser.add_option('--ggZH',          default=None, help="ggZH file override")
+parser.add_option('--bothZH',          default=None, help="bothZH file override")
+parser.add_option('--ZZandZH',          default=None, help="ZZandZH file override")
 parser.add_option('--qcd',         default=None, help="qcd file override")
 parser.add_option('--noSignal',    action="store_true", help="dont plot signal")
 parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      default=False, help="plot JEC variations")
@@ -117,6 +122,27 @@ if o.TT is not None:
     print "Using TT file",o.TT
     files["TT"+o.year] = o.TT
 
+if o.ZZ is not None:
+    print "Using ZZ file",o.ZZ
+    files["ZZ4b"+o.year] = o.ZZ
+
+if o.ZH is not None:
+    print "Using ZH file",o.ZH
+    files["ZH4b"+o.year] = o.ZH
+
+if o.ggZH is not None:
+    print "Using ggZH file",o.ggZH
+    files["ggZH4b"+o.year] = o.ggZH
+
+if o.bothZH is not None:
+    print "Using ggZH file",o.bothZH
+    files["bothZH4b"+o.year] = o.bothZH
+
+if o.ZZandZH is not None:
+    print "Using ZZandZH file",o.ZZandZH
+    files["ZZandZH4b"+o.year] = o.ZZandZH
+
+
 if o.noSignal:
     del files["ZH4b"+o.year]
     del files["ggZH4b"+o.year]
@@ -169,7 +195,7 @@ SRs = [["(((x-"+str(leadH)+")/(0.1*x))**2 +((y-"+str(sublH)+")/(0.1*y))**2)", 0,
 cuts = [#nameTitle("passPreSel", "Preselection"), 
         #nameTitle("passDijetMass", "Pass m(j,j) Cuts"), 
         nameTitle("passMDRs", "Pass #DeltaR(j,j)"), 
-        #nameTitle("passMjjOth", "Pass #DeltaR(j,j)"), 
+        #nameTitle("passMjjOth", "Pass #M(j,j)"), 
         #nameTitle("passXWt", "rWbW > 3"), 
         # nameTitle("passMDCs", "Pass MDC's"), 
         # nameTitle("passDEtaBB", "|#Delta#eta| < 1.5"),
@@ -186,7 +212,7 @@ regions = [#nameTitle("inclusive", ""),
            #nameTitle("ZZSB", "ZZ Sideband"), nameTitle("ZZCR", "ZZ Control Region"), nameTitle("ZZSR", "ZZ Signal Region"),
            #nameTitle("ZHSR", "ZH Signal Region"), nameTitle("ZZSR", "ZZ Signal Region"),
            #nameTitle("SCSR", "SB+CR+SR"),
-           nameTitle("SB", "Sideband"), nameTitle("CR", "Control Region"), nameTitle("SR", "Signal Region"),
+           nameTitle("SB", "Sideband"), nameTitle("CR", "Control Region"), nameTitle("SRNoHH", "Signal Region"),
            #nameTitle("HHSR", "HH Signal Region"),
            ]
 
@@ -643,41 +669,49 @@ variables=[variable("nPVs", "Number of Primary Vertices"),
            variable("canJet3/CSVv2", "Boson Candidate Jet_{3} CSVv2"),
            variable("leadSt/m",    "Leading S_{T} Dijet Mass [GeV]"),
            variable("leadSt/dR",   "Leading S_{T} Dijet #DeltaR(j,j)"),
+           variable("leadSt/dPhi",   "Leading S_{T} Dijet #DeltaPhi(j,j)"),
            variable("leadSt/pt_m", "Leading S_{T} Dijet p_{T} [GeV]"),
            variable("leadSt/eta",  "Leading S_{T} Dijet #eta"),
            variable("leadSt/phi",  "Leading S_{T} Dijet #phi"),
            variable("sublSt/m",    "Subleading S_{T} Dijet Mass [GeV]"),
            variable("sublSt/dR",   "Subleading S_{T} Dijet #DeltaR(j,j)"),
+           variable("sublSt/dPhi",   "Subleading S_{T} Dijet #DeltaPhi(j,j)"),
            variable("sublSt/pt_m", "Subleading S_{T} Dijet p_{T} [GeV]"),
            variable("sublSt/eta",  "Subleading S_{T} Dijet #eta"),
            variable("sublSt/phi",  "Subleading S_{T} Dijet #phi"),
            variable("leadM/m",    "Leading Mass Dijet Mass [GeV]"),
            variable("leadM/dR",   "Leading Mass Dijet #DeltaR(j,j)"),
+           variable("leadM/dPhi",   "Leading Mass Dijet #DeltaPhi(j,j)"),
            variable("leadM/pt_m", "Leading Mass Dijet p_{T} [GeV]"),
            variable("leadM/eta",  "Leading Mass Dijet #eta"),
            variable("leadM/phi",  "Leading Mass Dijet #phi"),
            variable("sublM/m",    "Subleading Mass Dijet Mass [GeV]"),
            variable("sublM/dR",   "Subleading Mass Dijet #DeltaR(j,j)"),
+           variable("sublM/dPhi",   "Subleading Mass Dijet #DeltaPhi(j,j)"),
            variable("sublM/pt_m", "Subleading Mass Dijet p_{T} [GeV]"),
            variable("sublM/eta",  "Subleading Mass Dijet #eta"),
            variable("sublM/phi",  "Subleading Mass Dijet #phi"),
            variable("lead/m",    "Leading P_{T} Dijet Mass [GeV]"),
            variable("lead/dR",   "Leading p_{T} Dijet #DeltaR(j,j)"),
+           variable("lead/dPhi",   "Leading p_{T} Dijet #DeltaPhi(j,j)"),
            variable("lead/pt_m", "Leading p_{T} Dijet p_{T} [GeV]"),
            variable("lead/eta",  "Leading p_{T} Dijet #eta"),
            variable("lead/phi",  "Leading p_{T} Dijet #phi"),
            variable("subl/m",    "Subleading p_{T} Dijet Mass [GeV]"),
            variable("subl/dR",   "Subleading p_{T} Dijet #DeltaR(j,j)"),
+           variable("subl/dPhi",   "Subleading p_{T} Dijet #DeltaPhi(j,j)"),
            variable("subl/pt_m", "Subleading p_{T} Dijet p_{T} [GeV]"),
            variable("subl/eta",  "Subleading p_{T} Dijet #eta"),
            variable("subl/phi",  "Subleading p_{T} Dijet #phi"),
            variable("close/m",    "Minimum #DeltaR(j,j) Dijet Mass [GeV]"),
            variable("close/dR",   "Minimum #DeltaR(j,j) Dijet #DeltaR(j,j)"),
+           variable("close/dPhi",   "Minimum #DeltaR(j,j) Dijet #DeltaPhi(j,j)"),
            variable("close/pt_m", "Minimum #DeltaR(j,j) Dijet p_{T} [GeV]"),
            variable("close/eta",  "Minimum #DeltaR(j,j) Dijet #eta"),
            variable("close/phi",  "Minimum #DeltaR(j,j) Dijet #phi"),
            variable("other/m",    "Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]"),
            variable("other/dR",   "Complement of Minimum #DeltaR(j,j) Dijet #DeltaR(j,j)"),
+           variable("other/dPhi",   "Complement of Minimum #DeltaR(j,j) Dijet #DeltaPhi(j,j)"),
            variable("other/pt_m", "Complement of Minimum #DeltaR(j,j) Dijet p_{T} [GeV]"),
            variable("other/eta",  "Complement of Minimum #DeltaR(j,j) Dijet #eta"),
            variable("other/phi",  "Complement of Minimum #DeltaR(j,j) Dijet #phi"),

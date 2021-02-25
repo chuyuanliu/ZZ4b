@@ -26,17 +26,20 @@ def rmTARBALL(doRun):
     execute(cmd, doRun)    
 
 
-def makeTARBALL(doRun):
+def makeTARBALL(doRun, debug=False):
     base="/uscms/home/"+getUSER()+"/nobackup/HH4b/"
     TARBALL   = "root://cmseos.fnal.gov//store/user/"+getUSER()+"/condor/"+getCMSSW()+".tgz"
 
     if os.path.exists(base+getCMSSW()+".tgz"):
         print "TARBALL already exists, skip making it"
         return
-    cmd  = 'tar -C '+base+' -zcvf '+base+getCMSSW()+'.tgz '+getCMSSW()
+    cmd  = 'tar -C '+base+' -zcf '+base+getCMSSW()+'.tgz '+getCMSSW()
+    if debug:
+        cmd  = 'tar -C '+base+' -zcvf '+base+getCMSSW()+'.tgz '+getCMSSW()
     cmd += ' --exclude="*.pdf" --exclude="*.jdl" --exclude="*.stdout" --exclude="*.stderr" --exclude="*.log"  --exclude="log_*" --exclude="*.stdout" --exclude="*.stderr"'
-    cmd += ' --exclude=".git" --exclude="PlotTools" --exclude="madgraph" --exclude="*.pkl" --exclude="*.root"  --exclude="*.h5"   --exclude=data*hemis.tgz --exclude=plotsWith*  '
-    cmd += ' --exclude="tmp" --exclude="combine" --exclude-vcs --exclude-caches-all'
+    cmd += ' --exclude=".git" --exclude="PlotTools" --exclude="madgraph" --exclude="*.pkl" --exclude="*.root"  --exclude="*.h5"   --exclude=data*hemis.tgz --exclude=plotsWith*  --exclude=plotsNoFvT*  '
+    cmd += ' --exclude=plotsRW* '
+    cmd += ' --exclude="tmp" --exclude="combine" --exclude="genproductions" --exclude-vcs --exclude-caches-all'
     execute(cmd, doRun)
     cmd  = 'ls '+base+' -alh'
     execute(cmd, doRun)

@@ -6,16 +6,17 @@
 #include <signal.h>
 
 #include "ZZ4b/nTupleAnalysis/interface/analysis.h"
+#include "nTupleAnalysis/baseClasses/interface/helpers.h"
 
 using std::cout;  using std::endl;
 
 using namespace nTupleAnalysis;
 
-analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, int _histogramming, int _histDetailLevel, 
-		   bool _doReweight, bool _debug, bool _fastSkim, bool _doTrigEmulation, bool _doTrigStudy, bool _isDataMCMix, bool _is3bMixed,
+analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, std::string histDetailLevel, 
+		   bool _doReweight, bool _debug, bool _fastSkim, bool _doTrigEmulation, bool _isDataMCMix, bool _is3bMixed,
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
-		   bool _looseSkim, std::string FvTName){
+		   bool _looseSkim, std::string FvTName, std::string reweight4bName){
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
   doReweight     = _doReweight;
@@ -47,11 +48,8 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   }
 
   runs       = _runs;
-  histogramming = _histogramming;
-  histDetailLevel = _histDetailLevel;
   fastSkim = _fastSkim;
   doTrigEmulation = _doTrigEmulation;
-  doTrigStudy     = _doTrigStudy;
   
 
   //Calculate MC weight denominator
@@ -83,10 +81,12 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
     cout << "mcEventCount " << mcEventCount << " | mcEventSumw " << mcEventSumw << endl;
   }
 
+  bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
+
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, is3bMixed, FvTName);
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, is3bMixed, FvTName, reweight4bName, doWeightStudy);
   treeEvents = events->GetEntries();
-  cutflow    = new tagCutflowHists("cutflow", fs, isMC);
+  cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
     cutflow->AddCut("mixedEventIsData_3plus4Tag");
     cutflow->AddCut("mixedEventIsMC_3plus4Tag");
@@ -102,22 +102,26 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("NjOth");
   cutflow->AddCut("MjjOth");
 
-  // Need a better way to config the histogrmas via strings
-  if(histogramming >= 4) allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
-  if(histogramming >= 3) passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug);
-  if(histogramming >= 2) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
-  if(histogramming >= 1) passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
-  //if(histogramming >= 1) passSvB       = new   tagHists("passSvB",       fs, true,  isMC, blind, histDetailLevel, debug);
-  if(histogramming >= 1) passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
-  if(histogramming >= 1) passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
-
-  //if(histogramming >= 1) passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
-  //if(histogramming > 1        ) passMDCs     = new   tagHists("passMDCs",   fs,  true, isMC, blind, debug);
-  //if(histogramming > 0        ) passDEtaBB   = new   tagHists("passDEtaBB", fs,  true, isMC, blind, debug);
-  //if(histogramming > 0        ) passDEtaBBNoTrig   = new   tagHists("passDEtaBBNoTrig", fs, true, isMC, blind);
-  //if(histogramming > 0        ) passDEtaBBNoTrigJetPts   = new   tagHists("passDEtaBBNoTrigJetPts", fs, true, isMC, blind);
   
-  if(doTrigStudy)
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"allEvents"))     allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passPreSel"))    passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passSvB"))       passSvB       = new   tagHists("passSvB",       fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMjjOth"))    passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
+  //if(nTupleAnalysis::findSubStr(histDetailLevel,"passXWt"))       passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
+
+
+  if(!allEvents)     std::cout << "Turning off allEvents Hists" << std::endl; 
+  if(!passPreSel)    std::cout << "Turning off passPreSel Hists" << std::endl; 
+  if(!passDijetMass) std::cout << "Turning off passDijetMass Hists" << std::endl; 
+  if(!passMDRs)      std::cout << "Turning off passMDRs Hists" << std::endl; 
+  if(!passSvB)       std::cout << "Turning off passSvB Hists" << std::endl; 
+  if(!passMjjOth)    std::cout << "Turning off passMjjOth Hists" << std::endl; 
+  //if(!passXWt)       std::cout << "Turning off passXWt Hists" << std::endl; 
+  
+
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"trigStudy"))       
     trigStudy     = new triggerStudy("trigStudy",     fs, debug);
 
   histFile = &fs.file();
@@ -131,23 +135,26 @@ void analysis::createPicoAOD(std::string fileName, bool copyInputPicoAOD){
   writePicoAOD = true;
   picoAODFile = TFile::Open(fileName.c_str() , "RECREATE");
   if(copyInputPicoAOD){
-    picoAODEvents     = events    ->CloneTree(0);
+    //We are making a skim so we can directly clone the input TTree
+    picoAODEvents = events->CloneTree(0);
   }else{
+    //We are making a derived TTree which changes some of the branches of the input TTree so start from scratch
     if(emulate4bFrom3b){
-      picoAODEvents     = new TTree("Events", "Events Emulated 4b from 3b");
+      picoAODEvents = new TTree("Events", "Events Emulated 4b from 3b");
     }else{
-      picoAODEvents     = new TTree("Events", "Events from Mixing");
+      picoAODEvents = new TTree("Events", "Events from Mixing");
     }
+    createPicoAODBranches();
   }
+  addDerivedQuantitiesToPicoAOD();
   picoAODRuns       = runs      ->CloneTree();
   picoAODLumiBlocks = lumiBlocks->CloneTree();
-  this->addDerivedQuantitiesToPicoAOD();
 }
 
 
 
 void analysis::createPicoAODBranches(){
-  if(debug) cout << " analysis::createPicoAODBranches " << endl;
+  cout << " analysis::createPicoAODBranches " << endl;
 
   //
   //  Initial Event Data
@@ -269,9 +276,14 @@ void analysis::createPicoAODBranches(){
 
 
 void analysis::picoAODFillEvents(){
-  if(alreadyFilled) std::cout << "ERROR: Filling picoAOD with same event twice" << std::endl;
+  if(debug) std::cout << "analysis::picoAODFillEvents()" << std::endl;
+  if(alreadyFilled){
+    if(debug) std::cout << "analysis::picoAODFillEvents() alreadyFilled" << std::endl;
+    //std::cout << "ERROR: Filling picoAOD with same event twice" << std::endl;
+    return;
+  }
   alreadyFilled = true;
-  if(m4jPrevious == event->m4j) std::cout << "WARNING: previous event had identical m4j = " << m4jPrevious << std::endl;
+  //if(m4jPrevious == event->m4j) std::cout << "WARNING: previous event had identical m4j = " << m4jPrevious << std::endl;
 
   assert( !(event->ZZSR && event->ZZSB) );
   assert( !(event->ZZSR && event->ZZCR) );
@@ -421,13 +433,12 @@ void analysis::picoAODFillEvents(){
         m_h2_match_combinedMass = thisHMixTool->m_h2_match_combinedMass ;
         m_h2_match_dist         = thisHMixTool->m_h2_match_dist         ;
     }    
+  }//end if(loadHSphereFile || emulate4bFrom3b) clause
 
-
-    
-
-  }
-
+  if(debug) std::cout << "picoAODEvents->Fill()" << std::endl;
   picoAODEvents->Fill();  
+  if(debug) std::cout << "analysis::picoAODFillEvents() done" << std::endl;
+  return;
 }
 
 void analysis::createHemisphereLibrary(std::string fileName, fwlite::TFileService& fs){
@@ -454,6 +465,7 @@ void analysis::loadHemisphereLibrary(std::vector<std::string> hLibs_3tag, std::v
 
 
 void analysis::addDerivedQuantitiesToPicoAOD(){
+  cout << "analysis::addDerivedQuantitiesToPicoAOD()" << endl;
   if(fastSkim){
     cout<<"In fastSkim mode, skip adding derived quantities to picoAOD"<<endl;
     return;
@@ -474,15 +486,18 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("canJet0_eta", &event->canJet0_eta); picoAODEvents->Branch("canJet1_eta", &event->canJet1_eta); picoAODEvents->Branch("canJet2_eta", &event->canJet2_eta); picoAODEvents->Branch("canJet3_eta", &event->canJet3_eta);
   picoAODEvents->Branch("canJet0_phi", &event->canJet0_phi); picoAODEvents->Branch("canJet1_phi", &event->canJet1_phi); picoAODEvents->Branch("canJet2_phi", &event->canJet2_phi); picoAODEvents->Branch("canJet3_phi", &event->canJet3_phi);
   picoAODEvents->Branch("canJet0_m"  , &event->canJet0_m  ); picoAODEvents->Branch("canJet1_m"  , &event->canJet1_m  ); picoAODEvents->Branch("canJet2_m"  , &event->canJet2_m  ); picoAODEvents->Branch("canJet3_m"  , &event->canJet3_m  );
+  picoAODEvents->Branch("d01TruthMatch", &event->d01TruthMatch);
+  picoAODEvents->Branch("d23TruthMatch", &event->d23TruthMatch);
+  picoAODEvents->Branch("d02TruthMatch", &event->d02TruthMatch);
+  picoAODEvents->Branch("d13TruthMatch", &event->d13TruthMatch);
+  picoAODEvents->Branch("d03TruthMatch", &event->d03TruthMatch);
+  picoAODEvents->Branch("d12TruthMatch", &event->d12TruthMatch);
+  picoAODEvents->Branch("truthMatch", &event->truthMatch);
+  picoAODEvents->Branch("selectedViewTruthMatch", &event->selectedViewTruthMatch);
   picoAODEvents->Branch("dRjjClose", &event->dRjjClose);
   picoAODEvents->Branch("dRjjOther", &event->dRjjOther);
   picoAODEvents->Branch("aveAbsEta", &event->aveAbsEta);
   picoAODEvents->Branch("aveAbsEtaOth", &event->aveAbsEtaOth);
-  // picoAODEvents->Branch("nOthJets", &event->nOthJets);
-  // picoAODEvents->Branch("othJet_pt",  event->othJet_pt,  "othJet_pt[nOthJets]/F");
-  // picoAODEvents->Branch("othJet_eta", event->othJet_eta, "othJet_eta[nOthJets]/F");
-  // picoAODEvents->Branch("othJet_phi", event->othJet_phi, "othJet_phi[nOthJets]/F");
-  // picoAODEvents->Branch("othJet_m",   event->othJet_m,   "othJet_m[nOthJets]/F");
   picoAODEvents->Branch("nAllNotCanJets", &event->nAllNotCanJets);
   picoAODEvents->Branch("notCanJet_pt",  event->notCanJet_pt,  "notCanJet_pt[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_eta", event->notCanJet_eta, "notCanJet_eta[nAllNotCanJets]/F");
@@ -505,10 +520,8 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("xWt", &event->xWt);
   picoAODEvents->Branch("xbW", &event->xbW);
   picoAODEvents->Branch("xWbW", &event->xWbW);
-  //picoAODEvents->Branch("xWt0", &event->xWt0);
-  //picoAODEvents->Branch("xWt1", &event->xWt1);
-  //picoAODEvents->Branch("dRbW", &event->dRbW);
   picoAODEvents->Branch("nIsoMuons", &event->nIsoMuons);
+  cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
   return;
 }
 
@@ -527,10 +540,17 @@ void analysis::storeHemiSphereFile(){
 
 void analysis::monitor(long int e){
   //Monitor progress
-  percent        = (e+1)*100/nEvents;
-  duration       = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-  eventRate      = (e+1)/duration;
-  timeRemaining  = (nEvents-e)/eventRate;
+  timeTotal = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+  timeElapsed          = timeTotal - previousMonitorTime;
+  eventsElapsed        =         e - previousMonitorEvent;
+  if( timeElapsed < 1 && e+1!=nEvents) return;
+  previousMonitorEvent = e;
+  previousMonitorTime  = timeTotal;
+  percent              = (e+1)*100/nEvents;
+  eventRate            = eventRate ? 0.9*eventRate + 0.1*eventsElapsed/timeElapsed : eventsElapsed/timeElapsed; // Running average with 0.9 momentum
+  timeRemaining        = (nEvents-e)/eventRate;
+  //eventRate      = (e+1)/timeTotal;
+  //timeRemaining  = (nEvents-e)/eventRate;
   hours   = static_cast<int>( timeRemaining/3600 );
   minutes = static_cast<int>( timeRemaining/60   )%60;
   seconds = static_cast<int>( timeRemaining      )%60;
@@ -545,6 +565,7 @@ void analysis::monitor(long int e){
 	                          e+1, nEvents, percent,     eventRate,        hours, minutes, seconds,          usageMB,             nls,          intLumi/1000 );    
   }
   fflush(stdout);
+  return;
 }
 
 int analysis::eventLoop(int maxEvents, long int firstEvent){
@@ -553,16 +574,18 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
   nEvents = (maxEvents > 0 && maxEvents < treeEvents) ? maxEvents : treeEvents;
   
   cout << "\nProcess " << (nEvents - firstEvent) << " of " << treeEvents << " events.\n";
-  if(firstEvent)
+  if(firstEvent){
     cout << " \t... starting with  " <<  firstEvent << " \n";
+    previousMonitorEvent = firstEvent;
+  }
 
   bool mixedEventWasData = false;
 
-  start = std::clock();//2546000 //2546043
+  start = std::clock();
   for(long int e = firstEvent; e < nEvents; e++){
 
     alreadyFilled = false;
-    m4jPrevious = event->m4j;
+    //m4jPrevious = event->m4j;
 
     event->update(e);    
 
@@ -593,7 +616,7 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
       
       //
       // Correct weight so we are not double counting psudotag weight
-      //   (Already factored into weather or not the event pass4bEmulation
+      //   (Already factored into whether or not the event pass4bEmulation
       event->weight /= event->pseudoTagWeight;
 
 
@@ -619,11 +642,11 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
       //
       //  TTbar Veto on mixed event
       //
-      //if(event->t->rWbW < 2){
-      //	//if(!event->passXWt){
-      //	//cout << "Mixing and vetoing on Xwt" << endl;
-      //	continue;
-      //}
+      if(event->t->rWbW < 2){
+      	//if(!event->passXWt){
+      	//cout << "Mixing and vetoing on Xwt" << endl;
+      	continue;
+      }
 
 
       if(event->threeTag) hMixToolLoad3Tag->makeArtificialEvent(event);
@@ -637,9 +660,7 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
     if(debug) cout << "done " << endl;    
 
     //periodically update status
-    if( (e+1)%10000 == 0 || e+1==nEvents || debug) {
-      monitor(e);
-    }
+    monitor(e);
     if(debug) cout << "done loop " << endl;    
   }
 
@@ -649,11 +670,11 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
   cout << endl;
   if(!isMC) cout << "Runs " << firstRun << "-" << lastRun << endl;
 
-  eventRate = (nEvents)/duration;
+  eventRate = (nEvents)/timeTotal;
 
-  hours   = static_cast<int>( duration/3600 );
-  minutes = static_cast<int>( duration/60   )%60;
-  seconds = static_cast<int>( duration      )%60;
+  hours   = static_cast<int>( timeTotal/3600 );
+  minutes = static_cast<int>( timeTotal/60   )%60;
+  seconds = static_cast<int>( timeTotal      )%60;
                                  
   if(isMC){
     fprintf(stdout,"---------------------------\nProcessed  %9li events in %02i:%02i:%02i (%5.0f events/s)",            nEvents, hours, minutes, seconds, eventRate);
@@ -716,6 +737,7 @@ int analysis::processEvent(){
       }
 
     for(const std::string& jcmName : event->jcmNames){
+      if(debug) cout << "event->mcPseudoTagWeightMap[" << jcmName << "]" << endl;
       event->mcPseudoTagWeightMap[jcmName] = event->mcWeight * event->bTagSF * event->pseudoTagWeightMap[jcmName];
     }
 
@@ -734,15 +756,21 @@ int analysis::processEvent(){
       event->weightNoTrigger = 1.0;
     }
 
-  }else{
+  }else{ //!isMC
+
     event->mcPseudoTagWeight = event->pseudoTagWeight;
+
+    // The "*= event->reweight4b" is used to pass the Mixed->Unmixed FvT to the h5 files 
+    event->mcPseudoTagWeight *= event->reweight4b;
 
     for(const std::string& jcmName : event->jcmNames){
       event->mcPseudoTagWeightMap[jcmName] = event->pseudoTagWeightMap[jcmName];
+      event->mcPseudoTagWeightMap[jcmName] *= event->reweight4b;
     }
 
   }
 
+  if(debug) cout << "cutflow->Fill(event, all, true)" << endl;
   cutflow->Fill(event, "all", true);
 
   if(isDataMCMix){
@@ -759,7 +787,7 @@ int analysis::processEvent(){
   //
   //  Do Trigger Study
   //
-  if(doTrigStudy)
+  if(trigStudy)
     trigStudy->Fill(event);
   
 
@@ -786,20 +814,29 @@ int analysis::processEvent(){
   }
   if(allEvents != NULL && event->passHLT) allEvents->Fill(event);
 
+  //
+  // Loose Pre-selection for use in JEC uncertainties
+  //
+  bool jetMultiplicity = (event->selJets.size() >= 4);
+  bool bTags = (event->threeTag || event->fourTag);
+  if(looseSkim){
+    bool passPreSel = jetMultiplicity && bTags;
+    bool passLoosePreSel = (event->selJetsLoosePt.size() >= 4) && (event->tagJetsLoosePt.size() >= 4);
+    if(passLoosePreSel && !passPreSel){
+      picoAODFillEvents();
+    }    
+  }
+
 
   //
   // Preselection
   // 
-  bool jetMultiplicity = (event->selJets.size() >= 4);
-  //bool jetMultiplicity = (event->selJets.size() == 4);
   if(!jetMultiplicity){
     if(debug) cout << "Fail Jet Multiplicity" << endl;
-    //event->dump();
     return 0;
   }
   cutflow->Fill(event, "jetMultiplicity", true);
 
-  bool bTags = (event->threeTag || event->fourTag);
   if(!bTags){
     if(debug) cout << "Fail b-tag " << endl;
     return 0;
@@ -834,7 +871,7 @@ int analysis::processEvent(){
   if(!event->appliedMDRs) event->applyMDRs();
 
   // Fill picoAOD
-  if(writePicoAOD && !writePicoAODBeforeDiJetMass && !looseSkim){//for regular picoAODs, keep them small by filling after dijetMass cut
+  if(writePicoAOD){//for regular picoAODs, keep them small by filling after dijetMass cut
     picoAODFillEvents();
     if(fastSkim) return 0;
   }
@@ -845,9 +882,15 @@ int analysis::processEvent(){
   }
   cutflow->Fill(event, "MDRs");
 
-  if(passMDRs != NULL && event->passHLT) passMDRs->Fill(event, event->views);
+  if(passMDRs != NULL && event->passHLT){
+    passMDRs->Fill(event, event->views);
+  }
 
-  if(passSvB != NULL &&  (event->SvB_ps > 0.85) && event->passHLT) passSvB->Fill(event, event->views);
+  if(passSvB != NULL &&  (event->SvB_ps > 0.85) && event->passHLT){ 
+    passSvB->Fill(event, event->views);
+  }    
+
+
   //
   //  For VHH Study
   //

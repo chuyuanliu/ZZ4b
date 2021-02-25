@@ -37,6 +37,7 @@ namespace nTupleAnalysis {
     bool debug;
     bool printCurrentFile = true;
     bool fastSkim = false;
+    bool looseSkim = false;
     UInt_t    run       =  0;
     UInt_t    lumiBlock =  0;
     ULong64_t event     =  0;
@@ -69,7 +70,7 @@ namespace nTupleAnalysis {
     Float_t   SvB_MA_q_1234 = -99.0;
     Float_t   SvB_MA_q_1324 = -99.0;
     Float_t   SvB_MA_q_1423 = -99.0;
-
+    Float_t   reweight4b = 1.0;
 
     std::map<std::string, Float_t*> classifierVariables;
 
@@ -84,7 +85,6 @@ namespace nTupleAnalysis {
 
     // used for hemisphere mixing
     Float_t   inputBTagSF = 0;
-
 
     nTupleAnalysis::truthData* truth = NULL;
 
@@ -169,6 +169,8 @@ namespace nTupleAnalysis {
      
     nTupleAnalysis::jetData* treeJets;
     std::vector<jetPtr> allJets;//all jets in nTuple
+    std::vector<jetPtr> selJetsLoosePt;//jets passing loose pt/eta requirements
+    std::vector<jetPtr> tagJetsLoosePt;//tagged jets passing loose pt/eta requirements
     std::vector<jetPtr> selJets;//jets passing pt/eta requirements
     std::vector<jetPtr> looseTagJets;//jets passing pt/eta and loose bTagging requirements
     std::vector<jetPtr> tagJets;//jets passing pt/eta and bTagging requirements
@@ -226,14 +228,22 @@ namespace nTupleAnalysis {
     bool passDijetMass;
     bool passMDRs;
     bool passXWt;
-    bool passDEtaBB;
+    //bool passDEtaBB;
+    Int_t d01TruthMatch = 0;
+    Int_t d23TruthMatch = 0;
+    Int_t d02TruthMatch = 0;
+    Int_t d13TruthMatch = 0;
+    Int_t d03TruthMatch = 0;
+    Int_t d12TruthMatch = 0;
+    bool truthMatch = false;
+    bool selectedViewTruthMatch = false;
 
 
     nTupleAnalysis::trigData* treeTrig = NULL;
 
     // Constructors and member functions
     eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
-	      std::string JECSyst = "", bool looseSkim = false, bool is3bMixed = false, std::string FvTName=""); 
+	      std::string JECSyst = "", bool _looseSkim = false, bool is3bMixed = false, std::string FvTName="FvT", std::string reweight4b="MixedToUnmixed", bool doWeightStudy = false); 
     void setTagger(std::string, float);
     void update(long int);
     void buildEvent();
