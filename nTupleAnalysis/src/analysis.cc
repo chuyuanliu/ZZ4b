@@ -108,6 +108,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passSvB"))       passSvB       = new   tagHists("passSvB",       fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passNjOth"))     passNjOth       = new   tagHists("passNjOth",         fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMjjOth"))    passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
   //if(nTupleAnalysis::findSubStr(histDetailLevel,"passXWt"))       passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
 
@@ -117,6 +118,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(!passDijetMass) std::cout << "Turning off passDijetMass Hists" << std::endl; 
   if(!passMDRs)      std::cout << "Turning off passMDRs Hists" << std::endl; 
   if(!passSvB)       std::cout << "Turning off passSvB Hists" << std::endl; 
+  if(!passNjOth)     std::cout << "Turning off passNjOth Hists" << std::endl; 
   if(!passMjjOth)    std::cout << "Turning off passMjjOth Hists" << std::endl; 
   //if(!passXWt)       std::cout << "Turning off passXWt Hists" << std::endl; 
   
@@ -894,18 +896,18 @@ int analysis::processEvent(){
   //
   //  For VHH Study
   //
-  if(passMjjOth != NULL){
-    if(event->othJets.size() > 1){
+
+  if(event->othJets.size() > 1){
+    if(passNjOth!=NULL){
       cutflow->Fill(event,"NjOth");
       if(event->passHLT) passNjOth->Fill(event,event->views);
+    }
+    if(passMjjOth != NULL){
       float mjjOther = (event->othJets.at(0)->p + event->othJets.at(1)->p).M();
-    
       if( (mjjOther > 60)  && (mjjOther < 110)){
-  cutflow->Fill(event, "MjjOth");
-	if(event->passHLT) passMjjOth->Fill(event, event->views);
-	
+        cutflow->Fill(event, "MjjOth");
+        if(event->passHLT) passMjjOth->Fill(event, event->views);
       }
-
     }
   }
 

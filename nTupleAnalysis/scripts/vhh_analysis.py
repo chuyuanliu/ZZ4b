@@ -47,8 +47,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--histogramming',              dest="histogramming",  default="1", help="Histogramming level. 0 to make no kinematic histograms. 1: only make histograms for full event selection, larger numbers add hists in reverse cutflow order.")
-parser.add_option(      '--detailLevel',              dest="detailLevel",  default="8", help="Histogramming detail level. 3 makes allView hists, 5, 7 make ZZ, ZH specific region plots")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passNjOth.passMjjOth.allViews.HHRegions.threeTag.fourTag", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -98,7 +97,7 @@ o, a = parser.parse_args()
 # > python ZZ4b/nTupleAnalysis/scripts/analysis.py --plot -y 2016,2017,2018,RunII -j -e    (before reweighting)
 # > python ZZ4b/nTupleAnalysis/scripts/analysis.py --plot -y 2016,2017,2018,RunII -j -r -e  (after reweighting)
 # To make acceptance X efficiency plots first you need the cutflows without the loosened jet preselection needed for the JEC variations. -a will then make the accXEff plot input hists and make the nice .pdf's:
-# > python ZZ4b/nTupleAnalysis/scripts/analysis.py -s --histogramming 0 -y 2016,2017,2018 -p none -a -e
+# > python ZZ4b/nTupleAnalysis/scripts/analysis.py -s  -y 2016,2017,2018 -p none -a -e
 
 ### 5. Jet Energy Correction Uncertainties!
 # Make JEC variation friend TTrees with
@@ -225,25 +224,24 @@ def doSignal():
                     cmd += " -o "+basePath
                     cmd += " -y "+year
                     cmd += " -l "+lumi
-                    cmd += " --histogramming "+o.histogramming
                     cmd += " --histDetailLevel "+o.detailLevel
                     cmd += " --histFile "+histFile
                     cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
                     cmd += " -r " if o.reweight else ""
                     cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
-                    cmd += " -f " if o.fastSkim else ""
+                    #cmd += " -f " if o.fastSkim else ""
                     cmd += " --isMC"
                     cmd += " --bTag "+bTagDict[year]
                     cmd += " --bTagSF"
                     cmd += " --bTagSyst" if o.bTagSyst else ""
                     cmd += " --nevents "+o.nevents
-                    cmd += " --looseSkim" if o.looseSkim else ""
+                    cmd += " --looseSkim" if (o.createPicoAOD or o.looseSkim) else "" # For signal samples we always want the picoAOD to be loose skim
                     cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
                     cmd += " --JECSyst "+JECSyst if JECSyst else ""
                     if o.createPicoAOD and o.createPicoAOD != "none":
                         if o.createPicoAOD != "picoAOD.root":
                             sample = fileList.split("/")[-1].replace(".txt","")
-                            cmd = '; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
+                            cmd += '; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
 
                     if o.condor:
                         thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
@@ -343,8 +341,7 @@ def doDataTT():
             cmd += " -i "+fileList
             cmd += " -o "+basePath
             cmd += " -y "+year
-            cmd += " --histogramming "+o.histogramming
-            cmd += " --histDetailLevel "+o.detailLevel
+            cmd += " --histDetailLevel allEvents.threeTag.fourTag"
             cmd += " --histFile "+histFile
             cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
             cmd += " -r " if o.reweight else ""
@@ -368,10 +365,10 @@ def doDataTT():
                 cmd += " --inputHLib4Tag "+o.inputHLib4Tag
             cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
 
-            if o.createPicoAOD and o.createPicoAOD != "none":
+            if o.createPicoAOD and o.createPicoAOD != "none"
                 if o.createPicoAOD != "picoAOD.root":
                     sample = fileList.split("/")[-1].replace(".txt","")
-                    cmd = '; xrdcp -f '+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
+                    cmd += '; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
 
             if o.condor:
                 thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
@@ -394,7 +391,7 @@ def doDataTT():
     for year in years:
         if o.doData:
             mkdir(basePath+"data"+year, o.execute)
-            cmd = "hadd -f "+basePath+"data"+year+"/"+histFile+" "+" ".join([basePath+"data"+year+period+"/"+histFile for period in periods[year]])#+" > hadd.log"
+            cmd = "hadd -f "+basePath+"data"+year+"/"+histFile+" "+" ".join([basePath+"data"+year+period+"/"+histFile for period in periods[year]])
             if o.condor:
                 thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
                 thisJDL.make()
@@ -406,7 +403,7 @@ def doDataTT():
             files = ttbarFiles(year)
             if "ZZ4b/fileLists/TTToHadronic"+year+".txt" in files and "ZZ4b/fileLists/TTToSemiLeptonic"+year+".txt" in files and "ZZ4b/fileLists/TTTo2L2Nu"+year+".txt" in files:
                 mkdir(basePath+"TT"+year, o.execute)
-                cmd = "hadd -f "+basePath+"TT"+year+"/"+histFile+" "+basePath+"TTToHadronic"+year+"/"+histFile+" "+basePath+"TTToSemiLeptonic"+year+"/"+histFile+" "+basePath+"TTTo2L2Nu"+year+"/"+histFile#+" > hadd.log"
+                cmd = "hadd -f "+basePath+"TT"+year+"/"+histFile+" "+basePath+"TTToHadronic"+year+"/"+histFile+" "+basePath+"TTToSemiLeptonic"+year+"/"+histFile+" "+basePath+"TTTo2L2Nu"+year+"/"+histFile
                 if o.condor:
                     thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
                     thisJDL.make()
@@ -758,12 +755,21 @@ if o.root2h5:
 if o.xrdcph5:
     xrdcph5(o.xrdcph5)
 
+if o.doQCD:
+    subtractTT()
+
+if o.condor:
+    DAG.submit(o.execute)
+    if o.execute and DAG.jobLines:
+        print "# wait 10s for DAG jobs to start before starting condor_monitor"
+        time.sleep(10)
+    if DAG.jobLines:
+        cmd = 'python nTupleAnalysis/python/condor_monitor.py'
+        execute(cmd, o.execute)
+
 if o.doAccxEff:
     doAccxEff()
     doPlots("-a")
-
-if o.doQCD:
-    subtractTT()
 
 if o.doPlots:
     doPlots("-m")
@@ -771,5 +777,3 @@ if o.doPlots:
 if o.doCombine:
     doCombine()
 
-if o.condor:
-    DAG.submit(o.execute)
