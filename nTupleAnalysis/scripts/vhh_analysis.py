@@ -238,10 +238,10 @@ def doSignal():
                     cmd += " --looseSkim" if (o.createPicoAOD or o.looseSkim) else "" # For signal samples we always want the picoAOD to be loose skim
                     cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
                     cmd += " --JECSyst "+JECSyst if JECSyst else ""
-                    if o.createPicoAOD and o.createPicoAOD != "none":
-                        if o.createPicoAOD != "picoAOD.root":
-                            sample = fileList.split("/")[-1].replace(".txt","")
-                            cmd += '; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
+                    # if o.createPicoAOD and o.createPicoAOD != "none":
+                    #     if o.createPicoAOD != "picoAOD.root":
+                    #         sample = fileList.split("/")[-1].replace(".txt","")
+                    #         cmd += ' ; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
 
                     if o.condor:
                         thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
@@ -365,10 +365,10 @@ def doDataTT():
                 cmd += " --inputHLib4Tag "+o.inputHLib4Tag
             cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
 
-            if o.createPicoAOD and o.createPicoAOD != "none"
-                if o.createPicoAOD != "picoAOD.root":
-                    sample = fileList.split("/")[-1].replace(".txt","")
-                    cmd += '; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
+            # if o.createPicoAOD and o.createPicoAOD != "none":
+            #     if o.createPicoAOD != "picoAOD.root":
+            #         sample = fileList.split("/")[-1].replace(".txt","")
+            #         cmd += ' ; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
 
             if o.condor:
                 thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
