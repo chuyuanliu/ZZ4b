@@ -228,7 +228,6 @@ namespace nTupleAnalysis {
     bool HHSB; bool HHCR; bool HHSR;
     bool ZHSB; bool ZHCR; bool ZHSR;
     bool ZZSB; bool ZZCR; bool ZZSR;
-    bool HHSB; bool HHCR; bool HHSR;
     bool SB; bool CR; bool SR;
     float leadStM; float sublStM;
 
