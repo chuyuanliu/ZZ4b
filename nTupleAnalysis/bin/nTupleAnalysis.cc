@@ -192,12 +192,9 @@ int main(int argc, char * argv[]){
 			doReweight, debug, fastSkim, doTrigEmulation, isDataMCMix, is3bMixed, 
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
-<<<<<<< HEAD
 			looseSkim, FvTName, reweight4bName,
       SvBScore);
-=======
-			looseSkim, FvTName, reweight4bName, reweightDvTName);
->>>>>>> upstream/master
+
   a.event->setTagger(bTagger, bTag);
   a.makePSDataFromMC = makePSDataFromMC;
   a.removePSDataFromMC = removePSDataFromMC;
