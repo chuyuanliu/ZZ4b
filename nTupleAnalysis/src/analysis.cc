@@ -16,7 +16,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
 		   bool _doReweight, bool _debug, bool _fastSkim, bool _doTrigEmulation, bool _isDataMCMix, bool _is3bMixed,
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
-		   bool _looseSkim, std::string FvTName, std::string reweight4bName,
+		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
        float _SvBScore){
 
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
@@ -108,7 +108,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   
   if(nTupleAnalysis::findSubStr(histDetailLevel,"allEvents"))     allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passPreSel"))    passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug);
-  //if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passNjOth"))     passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"SvBOnly"))       SvBOnly = new   tagHists("SvBOnly", fs, true,  isMC, blind, histDetailLevel, debug);  

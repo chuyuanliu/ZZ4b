@@ -192,7 +192,7 @@ int main(int argc, char * argv[]){
 			doReweight, debug, fastSkim, doTrigEmulation, isDataMCMix, is3bMixed, 
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
-			looseSkim, FvTName, reweight4bName,
+			looseSkim, FvTName, reweight4bName,reweightDvTName,
       SvBScore);
 
   a.event->setTagger(bTagger, bTag);
