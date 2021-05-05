@@ -47,7 +47,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passNjOth.passMjjOth.allViews.HHRegions.threeTag.fourTag", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passNjOth.SvBOnly.passSvB.passMjjOth.HHRegions.threeTag.fourTag", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -58,7 +58,8 @@ parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagE
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
 # for VHH study
-parser.add_option(   '--coupling ', dest = 'coupling', default = 'CV:0_5,C2V:0_0,,C3:2_0,C2V:2_0,CV:1_5', help = 'change signal coupling')
+parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'change signal coupling')
+parser.add_option(   '--SvBScore ', dest = 'SvBScore', default = '0.8', help = 'SvB classifier score cut')
 o, a = parser.parse_args()
 
 
@@ -109,6 +110,19 @@ o, a = parser.parse_args()
 # Specify the model.onnx above in the python variable SvB_ONNX
 # Run signal samples with --SvB_ONNX --doJECSyst in sl7 and CMSSW_11
 
+### VHH SvB classifier
+# signal  python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2017,2018 -e -p picoAOD_f.root
+# data python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -r -j -y 2017,2018 -e -p picoAOD_f.root
+# python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py -i "/uscms/home/chuyuanl/nobackup/VHH/*/picoAOD_f.root"
+# unset PYTHONPATH
+# source /cvmfs/cms-lpc.opensciencegrid.org/sl7/gpu/Setup.sh
+# source activate mlenv4
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c FvT -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B*/picoAOD_f.h5" -m ZZ4b/nTupleAnalysis/pytorchModels/FvT_ResNet+multijetAttention_8_8_8_np1494_lr0.01_epochs20_offset0_epoch20.pkl -u
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier_1sg.py -c SvB_MA -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_1_0_C2V_1_0_C3_1_0_201*/picoAOD_f.h5" --train
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier_1sg.py -c SvB_MA -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B*201*/picoAOD_f.h5" -m ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_ResNet+multijetAttention_8_8_8_np1484_lr0.01_epochs20_offset1_epoch20.pkl -u
+# python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py -i "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD_f.h5 /uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD_f.h5 /uscms/home/chuyuanl/nobackup/VHH/*HHTo4B*201*/picoAOD_f.h5"
+# signal python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2017,2018 -e
+# data python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -r -j -y 2017,2018 -e
 
 # Condor
 # tar -zcvf CMSSW_11_1_0_pre5.tgz CMSSW_11_1_0_pre5 --exclude="*.pdf" --exclude=".git" --exclude="PlotTools" --exclude="madgraph" --exclude="*.pkl" --exclude="*.root" --exclude="tmp" --exclude="combine" --exclude-vcs --exclude-caches-all; ls -alh
@@ -121,13 +135,13 @@ o, a = parser.parse_args()
 nWorkers   = 3
 script     = "ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py"
 years      = o.year.split(",")
-lumiDict   = {#"2016":  "35.9e3",35.8791
+lumiDict   = {"2016":  "35.9e3",#35.8791
               "2017":  "36.7e3",#36.7338
               "2018":  "60.0e3",#59.9656
               "17+18": "96.7e3",
-              #"RunII":"132.6e3",
-              }
-bTagDict   = {#"2016": "0.6",#"0.3093", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
+              "RunII":"132.6e3",
+            }
+bTagDict   = {"2016": "0.6",#"0.3093", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
               "2017": "0.6",#"0.3033", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
               "2018": "0.6",#"0.2770"} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
               }
@@ -135,7 +149,7 @@ outputBase = o.outputBase
 gitRepoBase= 'ZZ4b/nTupleAnalysis/weights/'
 
 # File lists
-periods = {#"2016": "BCDEFGH",
+periods = {"2016": "BCDEFGH",
            "2017": "CDEF",
            "2018": "ABCD"}
 
@@ -229,8 +243,9 @@ def doSignal():
                     cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
                     cmd += " -r " if o.reweight else ""
                     cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
-                    #cmd += " -f " if o.fastSkim else ""
+                    cmd += " -f " if o.fastSkim else ""
                     cmd += " --isMC"
+                    cmd += " --SvBScore "+o.SvBScore
                     cmd += " --bTag "+bTagDict[year]
                     cmd += " --bTagSF"
                     cmd += " --bTagSyst" if o.bTagSyst else ""
@@ -341,12 +356,13 @@ def doDataTT():
             cmd += " -i "+fileList
             cmd += " -o "+basePath
             cmd += " -y "+year
-            cmd += " --histDetailLevel allEvents.threeTag.fourTag"
+            cmd += " --histDetailLevel "+o.detailLevel
             cmd += " --histFile "+histFile
             cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
             cmd += " -r " if o.reweight else ""
             cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
             cmd += " -f " if o.fastSkim else ""
+            cmd += " --SvBScore "+o.SvBScore
             cmd += " --bTag "+bTagDict[year]
             cmd += " --nevents "+o.nevents
             if fileList in ttbarFiles(year):
@@ -417,8 +433,26 @@ def doDataTT():
         babySit(cmds, o.execute, maxJobs=nWorkers)
 
     cmds = []
-    if "2017" in years and "2018" in years:
-        for sample in ['data', 'TT']:
+    if "2017" in years and "2018" in years and "2016" in years:
+        samples = []
+        if o.doData: samples.append('data')
+        if o.doTT: samples.append('TT')
+        for sample in samples:
+            mkdir(basePath + sample + "RunII/", o.execute)
+            cmd = "hadd -f"
+            for year in ["RunII", "2016", "2017", "2018"]:
+                cmd += " " + basePath + sample + year + "/" + histFile
+            if o.condor:
+                thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+                thisJDL.make()
+                DAG.addJob( thisJDL )
+            else:
+                cmds.append(cmd)
+    elif "2017" in years and "2018" in years:
+        samples = []
+        if o.doData: samples.append('data')
+        if o.doTT: samples.append('TT')
+        for sample in samples:
             mkdir(basePath + sample + "17+18/", o.execute)
             cmd = "hadd -f"
             for year in ["17+18", "2017", "2018"]:
@@ -574,7 +608,19 @@ def subtractTT():
         babySit(cmds, o.execute, maxJobs=nWorkers)
 
     cmds = []
-    if "2017" in years and "2018" in years:
+    
+    if "2017" in years and "2018" in years and "2016" in years:
+        mkdir(basePath + "qcdRunII/", o.execute)
+        cmd = "hadd -f"
+        for year in ["RunII", "2016", "2017", "2018"]:
+            cmd += " " + basePath + "qcd" + year + "/" + histFile
+        if o.condor:
+            thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
+            thisJDL.make()
+            DAG.addJob( thisJDL )
+        else:
+            cmds.append(cmd)
+    elif "2017" in years and "2018" in years:
         mkdir(basePath + "qcd17+18/", o.execute)
         cmd = "hadd -f"
         for year in ["17+18", "2017", "2018"]:
@@ -614,8 +660,10 @@ def doWeights():
 
 def doPlots(extraPlotArgs=""):
     plotYears = copy(years)
-    if "2017" in years and "2018" in years:
-        plotYears = ["17+18"]
+    if "2016" in years and "2017" in years and "2018" in years:
+        plotYears += ["RunII"]
+    elif "2017" in years and "2018" in years:
+        plotYears += ["17+18"]
 
     for samples in couplings:
         samples = samples[0:3] + ['data', 'TT']

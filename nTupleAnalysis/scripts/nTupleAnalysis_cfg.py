@@ -69,6 +69,7 @@ parser.add_option(      '--FvTName',    dest="FvTName", type="string", default="
 parser.add_option(      '--reweight4bName',    dest="reweight4bName", type="string", default="", help="FVT Name to load FvT+XXX")
 parser.add_option(      '--SvB_ONNX', dest="SvB_ONNX", default="", help="path to ONNX version of SvB model. If none specified, it won't be used.")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="currenty does nothing. Try to keep it that way")
+parser.add_option(   '--SvBScore',   dest='SvBScore', type='float', default='0.0',   help='SvB classifier score cut')
 o, a = parser.parse_args()
 
 
@@ -343,6 +344,7 @@ process.nTupleAnalysis = cms.PSet(
     firstEvent  = cms.int32(int(o.firstEvent)),
     xs      = cms.double(xs),
     fourbkfactor = cms.double(fourbkfactor),
+    SvBScore = cms.double(o.SvBScore),
     bTag    = cms.double(o.bTag),
     bTagger = cms.string(o.bTagger),
     bjetSF  = cms.string(bjetSF),

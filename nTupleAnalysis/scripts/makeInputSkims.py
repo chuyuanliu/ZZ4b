@@ -14,6 +14,7 @@ parser.add_option('--cleanPicoAODs',  action="store_true",      help="rm local p
 parser.add_option('--makeInputFileLists',  action="store_true",      help="make Input file lists")
 parser.add_option('--noTT',       action="store_true",      help="Skip TTbar")
 parser.add_option('-c',   '--condor',   action="store_true", default=False,           help="Run on condor")
+parser.add_option('--debug',   action="store_true", default=False,           help="Run on condor")
 parser.add_option('--email',            default=None,      help="")
 
 o, a = parser.parse_args()
@@ -41,7 +42,8 @@ if o.condor:
 #
 # In the following "3b" refers to 3b subsampled to have the 4b statistics
 #
-outputDir="/uscms/home/jda102/nobackup/HH4b/CMSSW_11_1_3/src/closureTests/nominal/"
+#outputDir="/uscms/home/jda102/nobackup/HH4b/CMSSW_11_1_3/src/closureTests/nominal/"
+outputDir="/uscms/home/"+USER+"/nobackup/"+ ("VHH/" if o.makeVHHSkims else "HH4b/")
 
 # Helpers
 runCMD='nTupleAnalysis ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py'
@@ -55,12 +57,9 @@ if o.noTT:
 years = o.year.split(",")
 
 yearOpts = {}
-#yearOpts["2018"]=' -y 2018 --bTag 0.2770 '
-#yearOpts["2017"]=' -y 2017 --bTag 0.3033 '
-#yearOpts["2016"]=' -y 2016 --bTag 0.3093 '
-yearOpts["2018"]=' -y 2018 --bTag 0.6 '
-yearOpts["2017"]=' -y 2017 --bTag 0.6 '
-yearOpts["2016"]=' -y 2016 --bTag 0.6 '
+yearOpts["2018"]=' -y 2018 --bTag 0.3 '
+yearOpts["2017"]=' -y 2017 --bTag 0.3 '
+yearOpts["2016"]=' -y 2016 --bTag 0.3 '
 
 
 MCyearOpts = {}
@@ -104,6 +103,7 @@ WHHSamples["2017"] = [
 ZHHSamples["2017"] = [
     "ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_2017",
     "ZHHTo4B_CV_1_0_C2V_0_0_C3_1_0_2017",
+    "ZHHTo4B_CV_1_0_C2V_1_0_C3_0_0_2017",
     "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_2017",
     "ZHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2017",
     "ZHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2017",
@@ -133,7 +133,7 @@ ZHHSamples["2018"] = [
 VHHSamples = [WHHSamples,ZHHSamples]
 
 #tagID = "b0p6"
-tagID = "b0p60p3"
+tagID = "b0p30p3"
 
 #
 # Make skims with out the di-jet Mass cuts
@@ -145,7 +145,7 @@ if o.makeSkims:
 
     for y in years:
         
-        histConfig = " --histogramming 0 --histDetailLevel 1 --histFile histsFromNanoAOD.root "
+        histConfig = "--histFile histsFromNanoAOD.root "
         picoOut = " -p picoAOD_noDiJetMjj_"+tagID+".root "
 
         #
@@ -175,7 +175,7 @@ if o.makeVHHSkims:
     dag_config = []
     condor_jobs = []
 
-    histConfig = " --histogramming 0 --histDetailLevel 1 --histFile histsFromNanoAOD.root "
+    histConfig = "--histFile histsFromNanoAOD.root"
     picoOut = " -p picoAOD_"+tagID+".root "
     EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/VHHSkims/"
 
@@ -185,7 +185,7 @@ if o.makeVHHSkims:
         for y in ["2017","2018"]:
         
             for d in sample[y]:
-                cmd = runCMD+" -i ZZ4b/fileLists/"+d+".txt -o "+EOSOUTDIR+  MCyearOpts[y] + histConfig + picoOut +" --fastSkim "
+                cmd = runCMD+" -i ZZ4b/fileLists/"+d+".txt -o "+EOSOUTDIR+  MCyearOpts[y] + histConfig + picoOut +" --fastSkim " + (" --debug" if o.debug else "")
                 condor_jobs.append(makeCondorFile(cmd, "None", d+"_"+tagID, outputDir=outputDir, filePrefix="skimVHH_"))
 
 

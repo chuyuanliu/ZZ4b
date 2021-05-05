@@ -218,8 +218,10 @@ void eventData::resetEvent(){
   views  .clear();
   appliedMDRs = false;
   m4j = -99;
+  mVjj = -99;
   ZZSB = false; ZZCR = false; ZZSR = false;
   ZHSB = false; ZHCR = false; ZHSR = false;
+  HHSB = false; HHCR = false; HHSR = false;
   SB = false; CR = false; SR = false;
   leadStM = -99; sublStM = -99;
   passDijetMass = false;
@@ -234,7 +236,8 @@ void eventData::resetEvent(){
   passMDRs = false;
   passXWt = false;
   //passDEtaBB = false;
-  p4j    .SetPtEtaPhiM(0,0,0,0);
+  p4j.SetPtEtaPhiM(0,0,0,0);
+  pVjj.SetPtEtaPhiM(0,0,0,0);
   canJet1_pt = -99;
   canJet3_pt = -99;
   aveAbsEta = -99; aveAbsEtaOth = -0.1; stNotCan = 0;
@@ -384,7 +387,7 @@ void eventData::buildEvent(){
   if(looseSkim){
     selJetsLoosePt = treeJets->getJets(       allJets, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning);
     tagJetsLoosePt = treeJets->getJets(selJetsLoosePt, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
-  }
+  } 
   selJets       = treeJets->getJets(     allJets, jetPtMin, 1e6, jetEtaMax, doJetCleaning);
   looseTagJets  = treeJets->getJets(     selJets, jetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger);
   tagJets       = treeJets->getJets(looseTagJets, jetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
@@ -636,6 +639,13 @@ void eventData::chooseCanJets(){
   for(uint i = 0; i < 3;        ++i) topQuarkBJets.push_back(selJets.at(i));
   for(uint i = 2; i < nSelJets; ++i) topQuarkWJets.push_back(selJets.at(i));
   nOthJets = othJets.size();
+
+  auto getBTag = +[](const std::shared_ptr<nTupleAnalysis::jet>& jet){return jet->deepB;}; 
+  if(bTagger == "CSVv2")
+    getBTag = +[](const std::shared_ptr<nTupleAnalysis::jet>& jet){return jet->CSVv2;};
+  else if(bTagger == "deepFlavB" || bTagger == "deepjet")
+    getBTag = +[](const std::shared_ptr<nTupleAnalysis::jet>& jet){return jet->deepFlavB;};
+  canJet0_btag = getBTag(canJets[0]); canJet1_btag = getBTag(canJets[1]); canJet2_btag = getBTag(canJets[2]); canJet3_btag = getBTag(canJets[3]);
   // order by decreasing pt
   std::sort(selJets.begin(), selJets.end(), sortPt); 
 
@@ -684,7 +694,10 @@ void eventData::chooseCanJets(){
   canJet0_phi = canJets[0]->phi; canJet1_phi = canJets[1]->phi; canJet2_phi = canJets[2]->phi; canJet3_phi = canJets[3]->phi;
   canJet0_m   = canJets[0]->m  ; canJet1_m   = canJets[1]->m  ; canJet2_m   = canJets[2]->m  ; canJet3_m   = canJets[3]->m  ;
   //canJet0_e   = canJets[0]->e  ; canJet1_e   = canJets[1]->e  ; canJet2_e   = canJets[2]->e  ; canJet3_e   = canJets[3]->e  ;
-
+  if(othJets.size() > 1){
+    pVjj = othJets[0]->p + othJets[1]->p;
+    mVjj = pVjj.M();
+  }
   return;
 }
 
@@ -899,6 +912,7 @@ void eventData::applyMDRs(){
   if(passMDRs){
     ZHSB = views[0]->ZHSB; ZHCR = views[0]->ZHCR; ZHSR = views[0]->ZHSR;
     ZZSB = views[0]->ZZSB; ZZCR = views[0]->ZZCR; ZZSR = views[0]->ZZSR;
+    HHSB = views[0]->HHSB; HHCR = views[0]->HHCR; HHSR = views[0]->HHSR;
     SB = views[0]->SB; CR = views[0]->CR; SR = views[0]->SR;
     leadStM = views[0]->leadSt->m; sublStM = views[0]->sublSt->m;
     //passDEtaBB = views[0]->passDEtaBB;

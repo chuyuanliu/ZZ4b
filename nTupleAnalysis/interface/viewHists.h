@@ -174,6 +174,12 @@ namespace nTupleAnalysis {
     weightStudyHists* weightStudy_os012 = NULL;
     weightStudyHists* weightStudy_e25   = NULL;
 
+    TH1F* canJet0BTag;
+    TH1F* canJet1BTag;
+    TH1F* canJet2BTag;
+    TH1F* canJet3BTag;
+    TH2F* canJet23BTag;
+
     viewHists(std::string, fwlite::TFileService&, bool isMC = false, bool _debug = false, eventData* event = NULL, std::string histDetailLevel="");
     void Fill(eventData*, std::unique_ptr<eventView>&);
     ~viewHists(); 

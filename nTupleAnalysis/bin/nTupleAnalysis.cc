@@ -82,6 +82,8 @@ int main(int argc, char * argv[]){
   std::vector<std::string> inputWeightFiles = parameters.getParameter<std::vector<std::string> >("inputWeightFiles");
   std::vector<std::string> inputWeightFiles4b = parameters.getParameter<std::vector<std::string> >("inputWeightFiles4b");
 
+  float SvBScore = parameters.getParameter<double>("SvBScore");
+
   //lumiMask
   const edm::ParameterSet& inputs = process.getParameter<edm::ParameterSet>("inputs");   
   std::vector<edm::LuminosityBlockRange> lumiMask;
@@ -173,7 +175,8 @@ int main(int argc, char * argv[]){
 			doReweight, debug, fastSkim, doTrigEmulation, isDataMCMix, is3bMixed, 
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
-			looseSkim, FvTName, reweight4bName);
+			looseSkim, FvTName, reweight4bName,
+      SvBScore);
   a.event->setTagger(bTagger, bTag);
   a.makePSDataFromMC = makePSDataFromMC;
   a.removePSDataFromMC = removePSDataFromMC;

@@ -178,6 +178,11 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
     //weightStudy_v0v1 = new weightStudyHists(name+"/FvTStudy_v0v1", fs, debug);
   }
 
+  canJet0BTag = dir.make<TH1F>("canJet0BTag", (name+"/canJet0BTag; b-tagging score; Entries").c_str(),  100,0,1);
+  canJet1BTag = dir.make<TH1F>("canJet1BTag", (name+"/canJet1BTag; b-tagging score; Entries").c_str(),  100,0,1);
+  canJet2BTag = dir.make<TH1F>("canJet2BTag", (name+"/canJet2BTag; b-tagging score; Entries").c_str(),  100,0,1);
+  canJet3BTag = dir.make<TH1F>("canJet3BTag", (name+"/canJet3BTag; b-tagging score; Entries").c_str(),  100,0,1);
+  canJet23BTag = dir.make<TH2F>("canJet23BTag", (name+"/canJet23BTag; b-tagging score of canJet2; b-tagging score of canJet3; Entries").c_str(), 100,0,1, 100,0,1);
 } 
 
 void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
@@ -225,8 +230,8 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   for(auto &jet: event->othJets) othJets->Fill(jet, event->weight);
 
   if(event->othJets.size() > 1){
-    mjjOther ->Fill( (event->othJets.at(0)->p + event->othJets.at(1)->p).M(),    event->weight);
-    ptjjOther->Fill( (event->othJets.at(0)->p + event->othJets.at(1)->p).Pt(),   event->weight);
+    mjjOther ->Fill( event->mVjj,    event->weight);
+    ptjjOther->Fill( event->pVjj.Pt(),   event->weight);
   }
 
   aveAbsEta->Fill(event->aveAbsEta, event->weight);
@@ -370,6 +375,12 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   if(weightStudy_v0v1)  weightStudy_v0v1 ->Fill(event, view);
   if(weightStudy_os012) weightStudy_os012->Fill(event, view);
   if(weightStudy_e25)   weightStudy_e25  ->Fill(event, view);
+
+  canJet0BTag->Fill(event->canJet0_btag, event->weight);
+  canJet1BTag->Fill(event->canJet1_btag, event->weight);
+  canJet2BTag->Fill(event->canJet2_btag, event->weight);
+  canJet3BTag->Fill(event->canJet3_btag, event->weight);
+  canJet23BTag->Fill(event->canJet2_btag,event->canJet3_btag, event->weight);
 
   if(debug) std::cout << "viewHists::Fill done " << std::endl;
   return;

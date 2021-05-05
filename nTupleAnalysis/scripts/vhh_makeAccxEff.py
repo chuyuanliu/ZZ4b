@@ -20,7 +20,8 @@ cuts=["all",
       "MDRs",
       "NjOth",
       "MjjOth",
-      "MjjOth_HHSR"
+      "SvB",
+      "SvB_HHSR"
       ]
 
 triggers=["",

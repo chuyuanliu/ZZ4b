@@ -199,6 +199,7 @@ namespace nTupleAnalysis {
     float m4j;
     float m123; float m013; float m023; float m012;
     float s4j;
+    float canJet0_btag; float canJet1_btag; float canJet2_btag; float canJet3_btag;//order by decreasing btag score
     float canJet0_pt ; float canJet1_pt ; float canJet2_pt ; float canJet3_pt ;
     float canJet0_eta; float canJet1_eta; float canJet2_eta; float canJet3_eta;
     float canJet0_phi; float canJet1_phi; float canJet2_phi; float canJet3_phi;
@@ -209,10 +210,13 @@ namespace nTupleAnalysis {
     float dR0123; float dR0213; float dR0312;
     float othJet_pt[40]; float othJet_eta[40]; float othJet_phi[40]; float othJet_m[40];
     float notCanJet_pt[40]; float notCanJet_eta[40]; float notCanJet_phi[40]; float notCanJet_m[40];
+    TLorentzVector pVjj;
+    float mVjj;
     
     bool appliedMDRs;
     bool ZHSB; bool ZHCR; bool ZHSR;
     bool ZZSB; bool ZZCR; bool ZZSR;
+    bool HHSB; bool HHCR; bool HHSR;
     bool SB; bool CR; bool SR;
     float leadStM; float sublStM;
 

@@ -32,7 +32,7 @@ def convert(inFile):
     print inFile
     h5File = inFile
     removeLocalH5File = False
-    outFile = args.outFile if args.outFile else inFile.replace(".h5",".root")
+    outFile = args.outFile if args.outFile else inFile.replace("_f.h5",".root")
     if "root://" in inFile: # first need to copy h5 file locally
         picoAODh5 = inFile.split('/')[-1]
         cmd = 'xrdcp -f '+inFile+' '+picoAODh5
@@ -106,20 +106,10 @@ def convert(inFile):
                  variable("FvT_q_1234"),
                  variable("FvT_q_1324"),
                  variable("FvT_q_1423"),
-                 variable("SvB_ps"),
-                 variable("SvB_pzz"),
-                 variable("SvB_pzh"),
-                 variable("SvB_ptt"),
-                 variable("SvB_q_1234"),
-                 variable("SvB_q_1324"),
-                 variable("SvB_q_1423"),
                  variable("SvB_MA_ps"),
-                 variable("SvB_MA_pzz"),
-                 variable("SvB_MA_pzh"),
-                 variable("SvB_MA_ptt"),
-                 variable("SvB_MA_q_1234"),
-                 variable("SvB_MA_q_1324"),
-                 variable("SvB_MA_q_1423"),
+                 variable("SvB_MA_pwhh"),
+                 variable("SvB_MA_pzhh"),
+                 variable("SvB_MA_ptt")
                  ]
 
     if args.fvtNameList:

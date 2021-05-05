@@ -13,6 +13,7 @@ o, a = parser.parse_args()
 inFile = ROOT.TFile.Open(o.data)
 ttFile = ROOT.TFile.Open(o.tt)
 if "root://" in o.qcd: qcd = o.qcd.split("/")[-1]
+else: qcd=o.qcd
 f_qcd  = ROOT.TFile(qcd,"RECREATE")
 
 print "Subtracting ttbar MC from data to make qcd hists"

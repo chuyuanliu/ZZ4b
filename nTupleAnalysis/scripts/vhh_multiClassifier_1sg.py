@@ -43,10 +43,9 @@ d3 = classInfo(abbreviation='d3', name= 'ThreeTag Data',       index=1, color='o
 t4 = classInfo(abbreviation='t4', name= r'FourTag $t\bar{t}$', index=2, color='green')
 t3 = classInfo(abbreviation='t3', name=r'ThreeTag $t\bar{t}$', index=3, color='cyan')
 
-whh = classInfo(abbreviation='whh', name= 'WHH MC',          index=0, color='red')
-zhh = classInfo(abbreviation='zhh', name= 'ZHH MC',          index=1, color='orange')
-tt = classInfo(abbreviation='tt', name=r'$t\bar{t}$ MC',  index=2, color='green')
-mj = classInfo(abbreviation='mj', name= 'Multijet Model', index=3, color='cyan')
+vhh = classInfo(abbreviation='vhh', name= 'VHH MC',          index=0, color='red')
+tt = classInfo(abbreviation='tt', name=r'$t\bar{t}$ MC',  index=1, color='green')
+mj = classInfo(abbreviation='mj', name= 'Multijet Model', index=2, color='cyan')
 
 sg = classInfo(abbreviation='sg', name='Signal',     index=0, color='blue')
 bg = classInfo(abbreviation='bg', name='Background', index=1, color='brown')
@@ -79,9 +78,6 @@ def getFramesHACK(fileReaders,getFrame,dataFiles):
 
     return frames
 
-# nS 60366
-# nB 95580
-
 trigger="passHLT"
 def getFrameSvB(fileName):
     #print("Reading",fileName)    
@@ -89,35 +85,26 @@ def getFrameSvB(fileName):
     year = float(fileName[yearIndex:yearIndex+4])
     thisFrame = pd.read_hdf(fileName, key='df')
     fourTag = False if "data201" in fileName else True
+    #TODO: HH region?
     thisFrame = thisFrame.loc[ (thisFrame['nSelJets']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
     #thisFrame = thisFrame.loc[ (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['SR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
     thisFrame['year'] = pd.Series(year*np.ones(thisFrame.shape[0], dtype=np.float32), index=thisFrame.index)
-    if "WHHTo4B" in fileName: 
-        index = whh.index
+    if "HHTo4B" in fileName: 
+        index = vhh.index
         #index = sg.index
-        thisFrame['whh'] = pd.Series(np. ones(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
-        thisFrame['zhh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
-        thisFrame['tt'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
-        thisFrame['mj'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
-    if "ZHHTo4B" in fileName: 
-        index = zhh.index
-        #index = sg.index
-        thisFrame['whh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
-        thisFrame['zhh'] = pd.Series(np. ones(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
+        thisFrame['vhh'] = pd.Series(np. ones(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
         thisFrame['tt'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
         thisFrame['mj'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
     if "TTTo" in fileName:
         index = tt.index
         #index = bg.index
-        thisFrame['whh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
-        thisFrame['zhh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
+        thisFrame['vhh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
         thisFrame['tt'] = pd.Series(np. ones(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
         thisFrame['mj'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
     if "data201" in fileName:
         index = mj.index
         #index = bg.index
-        thisFrame['whh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
-        thisFrame['zhh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
+        thisFrame['vhh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
         thisFrame['tt'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
         thisFrame['mj'] = pd.Series(np. ones(thisFrame.shape[0], dtype=np.uint8), index=thisFrame.index)
     thisFrame['target']  = pd.Series(index*np.ones(thisFrame.shape[0], dtype=np.float32), index=thisFrame.index)
@@ -289,7 +276,7 @@ if classifier in ['SvB', 'SvB_MA']:
     print("Using weight:",weight,"for classifier:",classifier) 
     yTrueLabel = 'target'
 
-    classes = [whh,zhh,tt,mj]
+    classes = [vhh,tt,mj]
     eps = 0.0001
 
     nClasses = len(classes)
@@ -300,8 +287,7 @@ if classifier in ['SvB', 'SvB_MA']:
     #wC = torch.FloatTensor([1 for i in range(nClasses)])#.to("cuda")
 
     updateAttributes = [
-        nameTitle('pwhh', classifier+'_pwhh'),
-        nameTitle('pzhh', classifier+'_pzhh'),
+        nameTitle('pvhh', classifier+'_pvhh'),
         nameTitle('ptt', classifier+'_ptt'),
         nameTitle('pmj', classifier+'_pmj'),
         nameTitle('psg', classifier+'_ps'),
@@ -355,14 +341,12 @@ if classifier in ['SvB', 'SvB_MA']:
         print("nB",nB)
 
         # compute relative weighting for S and B
-        nwhh, wwhh = dfS.whh.sum(), dfS.loc[dfS.whh==1][weight].sum()
-        nzhh, wzhh = dfS.zhh.sum(), dfS.loc[dfS.zhh==1][weight].sum()
+        nvhh, wvhh = dfS.vhh.sum(), dfS.loc[dfS.vhh==1][weight].sum()
         sum_wS = np.sum(np.float32(dfS[weight]))
         sum_wB = np.sum(np.float32(dfB[weight]))
         print("sum_wS",sum_wS)
         print("sum_wB",sum_wB)
-        print("nwhh = %7d, wwhh = %6.1f"%(nwhh,wwhh))
-        print("nzhh = %7d, wzhh = %6.1f"%(nzhh,wzhh))
+        print("nvhh = %7d, wvhh = %6.1f"%(nvhh,wvhh))
 
         # sum_wStoS = np.sum(np.float32(dfS.loc[dfS[ZB+'SR']==True ][weight]))
         # sum_wBtoB = np.sum(np.float32(dfB.loc[dfB[ZB+'SR']==False][weight]))
@@ -373,7 +357,7 @@ if classifier in ['SvB', 'SvB_MA']:
         # print("Cut Based WP:",rate_StoS,"Signal Eff.", rate_BtoB,"1-Background Eff.")
 
         #dfS[weight] *= sum_wB/sum_wS #normalize signal to background
-        dfS[weight] = dfS[weight]*(dfS.whh==1)*sum_wB/wwhh + dfS[weight]*(dfS.zhh==1)*sum_wB/wzhh
+        dfS[weight] = dfS[weight]*(dfS.vhh==1)*sum_wB/wvhh
         #dfS[weight] = dfS[weight]*(dfS.zh==1)*sum_wB/wzh
 
         df = pd.concat([dfB, dfS], sort=False)
@@ -545,14 +529,11 @@ class roc_data:
         self.maxSigma=None
         if "Background" in self.falseName:
             lumiRatio = 1#140/59.6
-            if "WHH" in self.trueName: 
-                wS = wwhh
-                self.pName = "P($WHH$)"
-            if "ZHH" in self.trueName: 
-                wS = wzhh
-                self.pName = "P($ZHH$)"
+            if "VHH" in self.trueName: 
+                wS = wvhh
+                self.pName = "P($VHH$)"
             if "Signal" in self.trueName: 
-                wS = wwhh+wzhh
+                wS = wvhh
                 self.pName = "P(Signal)"
             self.S = self.tpr*wS*lumiRatio
             self.S[self.tpr<0.10] = 0 # require at least 10% signal acceptance 
@@ -589,56 +570,42 @@ if classifier in ['SvB', 'SvB_MA']:
             self.norm_d4_over_B = 0
 
         def splitAndScale(self):
-            self.pwhh = self.y_pred[:,whh.index]
-            self.pzhh = self.y_pred[:,zhh.index]
+            self.pvhh = self.y_pred[:,vhh.index]
             self.ptt = self.y_pred[:,tt.index]
             self.pmj = self.y_pred[:,mj.index]
 
             self.pbg = self.pmj + self.ptt
-            self.psg = self.pwhh + self.pzhh
+            self.psg = self.pvhh
 
             self.pbgbg = self.pbg[(self.y_true==tt.index)|(self.y_true==mj.index)]
             self.pbgsg = self.psg[(self.y_true==tt.index)|(self.y_true==mj.index)]
-            self.psgsg = self.psg[(self.y_true==whh.index)|(self.y_true==zhh.index)]
-            self.psgbg = self.pbg[(self.y_true==whh.index)|(self.y_true==zhh.index)]
+            self.psgsg = self.psg[self.y_true==vhh.index]
+            self.psgbg = self.pbg[self.y_true==vhh.index]
 
-            self.psgwhh = self.y_pred[(self.y_true==whh.index)|(self.y_true==zhh.index)][:,whh.index]
-            self.psgzhh = self.y_pred[(self.y_true==whh.index)|(self.y_true==zhh.index)][:,zhh.index]
-            self.psgtt = self.y_pred[(self.y_true==whh.index)|(self.y_true==zhh.index)][:,tt.index]
-            self.psgmj = self.y_pred[(self.y_true==whh.index)|(self.y_true==zhh.index)][:,mj.index]
+            self.psgvhh = self.y_pred[self.y_true==vhh.index][:,vhh.index]
+            self.psgtt = self.y_pred[self.y_true==vhh.index][:,tt.index]
+            self.psgmj = self.y_pred[self.y_true==vhh.index][:,mj.index]
 
-            self.pbgwhh = self.y_pred[(self.y_true==tt.index)|(self.y_true==mj.index)][:,whh.index]
-            self.pbgzhh = self.y_pred[(self.y_true==tt.index)|(self.y_true==mj.index)][:,zhh.index]
+            self.pbgvhh = self.y_pred[(self.y_true==tt.index)|(self.y_true==mj.index)][:,vhh.index]
             self.pbgtt = self.y_pred[(self.y_true==tt.index)|(self.y_true==mj.index)][:,tt.index]
             self.pbgmj = self.y_pred[(self.y_true==tt.index)|(self.y_true==mj.index)][:,mj.index]
 
-            #regressed probabilities for WHH to be each class
-            self.pwhhwhh = self.y_pred[self.y_true==whh.index][:,whh.index]
-            self.pwhhzhh = self.y_pred[self.y_true==whh.index][:,zhh.index]
-            self.pwhhtt = self.y_pred[self.y_true==whh.index][:,tt.index]
-            self.pwhhmj = self.y_pred[self.y_true==whh.index][:,mj.index]
-            self.pwhhsg = self.psg[self.y_true==whh.index]
-            self.pwhhbg = self.pbg[self.y_true==whh.index]
-
-            #regressed probabilities for ZHH to be each class
-            self.pzhhwhh = self.y_pred[self.y_true==zhh.index][:,whh.index]
-            self.pzhhzhh = self.y_pred[self.y_true==zhh.index][:,zhh.index]
-            self.pzhhtt = self.y_pred[self.y_true==zhh.index][:,tt.index]
-            self.pzhhmj = self.y_pred[self.y_true==zhh.index][:,mj.index]
-            self.pzhhsg = self.psg[self.y_true==zhh.index]
-            self.pzhhbg = self.pbg[self.y_true==zhh.index]
+            #regressed probabilities for VHH to be each class
+            self.pvhhvhh = self.y_pred[self.y_true==vhh.index][:,vhh.index]
+            self.pvhhtt = self.y_pred[self.y_true==vhh.index][:,tt.index]
+            self.pvhhmj = self.y_pred[self.y_true==vhh.index][:,mj.index]
+            self.pvhhsg = self.psg[self.y_true==vhh.index]
+            self.pvhhbg = self.pbg[self.y_true==vhh.index]
 
             #regressed probabilities for ttbar to be each class
-            self.pttwhh = self.y_pred[self.y_true==tt.index][:,whh.index]
-            self.pttzhh = self.y_pred[self.y_true==tt.index][:,zhh.index]
+            self.pttvhh = self.y_pred[self.y_true==tt.index][:,vhh.index]
             self.ptttt = self.y_pred[self.y_true==tt.index][:,tt.index]
             self.pttmj = self.y_pred[self.y_true==tt.index][:,mj.index]
             self.pttsg = self.psg[self.y_true==tt.index]
             self.pttbg = self.pbg[self.y_true==tt.index]
 
             #regressed probabilities for multijet model to be each class
-            self.pmjwhh = self.y_pred[self.y_true==mj.index][:,whh.index]
-            self.pmjzhh = self.y_pred[self.y_true==mj.index][:,zhh.index]
+            self.pmjvhh = self.y_pred[self.y_true==mj.index][:,vhh.index]
             self.pmjtt = self.y_pred[self.y_true==mj.index][:,tt.index]
             self.pmjmj = self.y_pred[self.y_true==mj.index][:,mj.index]
             self.pmjsg = self.psg[self.y_true==mj.index]
@@ -660,23 +627,21 @@ if classifier in ['SvB', 'SvB_MA']:
 
             # Weights for each class
             self.wbg = self.w[(self.y_true==tt.index)|(self.y_true==mj.index)]
-            self.wsg = self.w[(self.y_true==whh.index)|(self.y_true==zhh.index)]
-            self.wwhh = self.w[self.y_true==whh.index]
-            self.wzhh = self.w[self.y_true==zhh.index]
+            self.wsg = self.w[self.y_true==vhh.index]
+            self.wvhh = self.w[self.y_true==vhh.index]
             self.wtt = self.w[self.y_true==tt.index]
             self.wmj = self.w[self.y_true==mj.index]
 
             #cross entropy for each class
-            self.cewhh = self.cross_entropy[self.y_true==whh.index]
-            self.cezhh = self.cross_entropy[self.y_true==zhh.index]
+            self.cevhh = self.cross_entropy[self.y_true==vhh.index]
             self.cett = self.cross_entropy[self.y_true==tt.index]
             self.cemj = self.cross_entropy[self.y_true==mj.index]
 
             self.splitAndScale()
 
             if doROC:
-                self.roc = roc_data(np.array((self.y_true==whh.index)|(self.y_true==zhh.index), dtype=np.float), 
-                                    self.y_pred[:,whh.index]+self.y_pred[:,zhh.index], 
+                self.roc = roc_data(np.array(self.y_true==vhh.index, dtype=np.float), 
+                                    self.y_pred[:,vhh.index], 
                                     self.w,
                                     'Signal',
                                     'Background')
