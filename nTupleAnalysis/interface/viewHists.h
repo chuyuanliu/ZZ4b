@@ -65,9 +65,11 @@ namespace nTupleAnalysis {
     trigHists*  allTrigJets = NULL;
 
     TH1F* nAllMuons;
-    TH1F* nIsoMuons;
+    TH1F* nIsoMed25Muons;
+    TH1F* nIsoMed40Muons;
     muonHists* allMuons;
-    muonHists* isoMuons;
+    muonHists* muons_isoMed25;
+    muonHists* muons_isoMed40;
 
     dijetHists* lead;
     dijetHists* subl;
@@ -76,6 +78,7 @@ namespace nTupleAnalysis {
     dijetHists* leadSt;
     dijetHists* sublSt;
     TH2F* leadSt_m_vs_sublSt_m;
+
     TH2F* m4j_vs_leadSt_dR;
     TH2F* m4j_vs_sublSt_dR;
 
@@ -171,8 +174,17 @@ namespace nTupleAnalysis {
     TH1F* nTrueBJets;
 
     weightStudyHists* weightStudy_v0v1  = NULL;
+    weightStudyHists* weightStudy_v0v9  = NULL;
     weightStudyHists* weightStudy_os012 = NULL;
-    weightStudyHists* weightStudy_e25   = NULL;
+    weightStudyHists* weightStudy_e20   = NULL;
+
+    TH1F* DvT_pt;
+    TH1F* DvT_pt_l;
+
+    TH1F* DvT_pm;
+    TH1F* DvT_pm_l;
+
+    TH1F* DvT_raw;
 
     TH1F* canJet0BTag;
     TH1F* canJet1BTag;

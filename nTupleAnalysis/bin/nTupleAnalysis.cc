@@ -63,6 +63,8 @@ int main(int argc, char * argv[]){
   bool blind = parameters.getParameter<bool>("blind");
   std::string histDetailLevel = parameters.getParameter<std::string>("histDetailLevel");
   bool doReweight = parameters.getParameter<bool>("doReweight");
+  bool doDvTReweight = parameters.getParameter<bool>("doDvTReweight");
+  bool doTTbarPtReweight = parameters.getParameter<bool>("doTTbarPtReweight");
   float lumi = parameters.getParameter<double>("lumi");
   float xs   = parameters.getParameter<double>("xs");
   float fourbkfactor   = parameters.getParameter<double>("fourbkfactor");
@@ -79,8 +81,10 @@ int main(int argc, char * argv[]){
   bool writeOutEventNumbers = parameters.getParameter<bool>("writeOutEventNumbers");
   std::string FvTName = parameters.getParameter<std::string>("FvTName");
   std::string reweight4bName = parameters.getParameter<std::string>("reweight4bName");
+  std::string reweightDvTName = parameters.getParameter<std::string>("reweightDvTName");
   std::vector<std::string> inputWeightFiles = parameters.getParameter<std::vector<std::string> >("inputWeightFiles");
   std::vector<std::string> inputWeightFiles4b = parameters.getParameter<std::vector<std::string> >("inputWeightFiles4b");
+  std::vector<std::string> inputWeightFilesDvT = parameters.getParameter<std::vector<std::string> >("inputWeightFilesDvT");
 
   float SvBScore = parameters.getParameter<double>("SvBScore");
 
@@ -107,6 +111,7 @@ int main(int argc, char * argv[]){
   bool      createHSphereLib = hSphereParameters.getParameter<bool>("create");
   bool      writePicoAODBeforeDiJetMass = hSphereParameters.getParameter<bool>("noMjjInPAOD");
   bool      loadHSphereLib   = hSphereParameters.getParameter<bool>("load");
+  bool      useHemiWeights   = hSphereParameters.getParameter<bool>("useHemiWeights");
   std::string hSphereLibFile = hSphereParameters.getParameter<std::string>("fileName");
   std::vector<std::string> hSphereLibFiles_3tag = hSphereParameters.getParameter<std::vector<std::string> >("inputHLibs_3tag");
   std::vector<std::string> hSphereLibFiles_4tag = hSphereParameters.getParameter<std::vector<std::string> >("inputHLibs_4tag");
@@ -158,6 +163,18 @@ int main(int argc, char * argv[]){
     events->AddFriend(eventWeights4b);
   }
 
+  if(inputWeightFilesDvT.size()){
+    TChain* eventWeightsDvT     = new TChain("Events");
+    for(std::string inputWeightFileDvT : inputWeightFilesDvT){
+      std::cout << "           Input DvT Weight File: " << inputWeightFileDvT << std::endl;
+      int e = eventWeightsDvT    ->AddFile(inputWeightFileDvT.c_str());
+      if(e!=1){ std::cout << "ERROR" << std::endl; return 1;}
+    }
+    eventWeightsDvT->SetName("EventsDvTWeights");
+    events->AddFriend(eventWeightsDvT);
+  }
+
+
 
   //Histogram output
   fwlite::OutputFiles histOutput(process);
@@ -175,14 +192,28 @@ int main(int argc, char * argv[]){
 			doReweight, debug, fastSkim, doTrigEmulation, isDataMCMix, is3bMixed, 
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
+<<<<<<< HEAD
 			looseSkim, FvTName, reweight4bName,
       SvBScore);
+=======
+			looseSkim, FvTName, reweight4bName, reweightDvTName);
+>>>>>>> upstream/master
   a.event->setTagger(bTagger, bTag);
   a.makePSDataFromMC = makePSDataFromMC;
   a.removePSDataFromMC = removePSDataFromMC;
   a.mcUnitWeight = mcUnitWeight;
   a.skip4b = skip4b;
   a.skip3b = skip3b;
+
+  if(doDvTReweight){
+    std::cout << "\t doDvTReweight = true " << std::endl;    
+    a.event->doDvTReweight = true;
+  }
+
+  if(doTTbarPtReweight){
+    std::cout << "\t doTTbarPtReweight = true " << std::endl;    
+    a.event->doTTbarPtReweight = true;
+  }
 
   if(isMC){
     a.lumi     = lumi;
@@ -249,7 +280,8 @@ int main(int argc, char * argv[]){
 
   if(loadHSphereLib){
     std::cout << "     Loading hemi-sphere files... " << std::endl;
-    a.loadHemisphereLibrary(hSphereLibFiles_3tag, hSphereLibFiles_4tag, fsh, maxNHemis);
+    std::cout << "     \t useHemiWeights set to " << useHemiWeights << std::endl;
+    a.loadHemisphereLibrary(hSphereLibFiles_3tag, hSphereLibFiles_4tag, fsh, maxNHemis, useHemiWeights);
   }
 
   // if(createPicoAOD && (loadHSphereLib || emulate4bFrom3b)){

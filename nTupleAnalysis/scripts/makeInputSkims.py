@@ -8,10 +8,13 @@ parser = optparse.OptionParser()
 parser.add_option('-e',            action="store_true", dest="execute",        default=False, help="Execute commands. Default is to just print them")
 parser.add_option('-y',                                 dest="year",      default="2018,2017,2016", help="Year or comma separated list of years")
 parser.add_option('--makeSkims',  action="store_true",      help="Make input skims")
+parser.add_option('--copySkims',  action="store_true",      help="Make input skims")
+parser.add_option('--makeSignalSkims',  action="store_true",      help="Make input skims")
 parser.add_option('--makeVHHSkims',  action="store_true",      help="Make input skims")
 parser.add_option('--copyToEOS',  action="store_true",      help="Copy to EOS")
 parser.add_option('--cleanPicoAODs',  action="store_true",      help="rm local picoAODs")
 parser.add_option('--makeInputFileLists',  action="store_true",      help="make Input file lists")
+parser.add_option('--makeSignalFileLists',  action="store_true",      help="make Input file lists")
 parser.add_option('--noTT',       action="store_true",      help="Skip TTbar")
 parser.add_option('-c',   '--condor',   action="store_true", default=False,           help="Run on condor")
 parser.add_option('--debug',   action="store_true", default=False,           help="Enable debug")
@@ -43,13 +46,17 @@ if o.condor:
 # In the following "3b" refers to 3b subsampled to have the 4b statistics
 #
 #outputDir="/uscms/home/jda102/nobackup/HH4b/CMSSW_11_1_3/src/closureTests/nominal/"
+<<<<<<< HEAD
 outputDir="/uscms/home/"+USER+"/nobackup/"+ ("VHH/" if o.makeVHHSkims else "HH4b/")
+=======
+outputDir="closureTests/nominal/"
+>>>>>>> upstream/master
 
 # Helpers
 runCMD='nTupleAnalysis ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py'
 
 ttbarSamples = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-
+signalSamples = ["ZZ4b","ZH4b","ggZH4b"]
 
 if o.noTT:
     ttbarSamples = []
@@ -70,13 +77,13 @@ MCyearOpts["2016"]=yearOpts["2016"]+' --bTagSF -l 35.9e3 --isMC '
 
 dataPeriods = {}
 # All
-#dataPeriods["2018"] = ["A","B","C","D"]
-#dataPeriods["2017"] = ["B","C","D","E","F"]
-#dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
+dataPeriods["2018"] = ["A","B","C","D"]
+dataPeriods["2017"] = ["B","C","D","E","F"]
+dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
 # for skimming 
-dataPeriods["2018"] = []
-dataPeriods["2017"] = []
-dataPeriods["2016"] = []
+#dataPeriods["2018"] = []
+#dataPeriods["2017"] = []
+#dataPeriods["2016"] = []
 
 # for skimming
 ttbarSamplesByYear = {}
@@ -86,6 +93,10 @@ ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
 #ttbarSamplesByYear["2018"] = []
 #ttbarSamplesByYear["2017"] = []
 #ttbarSamplesByYear["2016"] = ["TTTo2L2Nu"]
+
+eosls = "eos root://cmseos.fnal.gov ls"
+eoslslrt = "eos root://cmseos.fnal.gov ls -lrt"
+eosmkdir = "eos root://cmseos.fnal.gov mkdir "
 
 WHHSamples  = {}
 ZHHSamples  = {}
@@ -145,7 +156,11 @@ if o.makeSkims:
 
     for y in years:
         
+<<<<<<< HEAD
         histConfig = "--histFile histsFromNanoAOD.root "
+=======
+        histConfig = " --histDetailLevel allEvents.threeTag.fourTag --histFile histsFromNanoAOD.root "
+>>>>>>> upstream/master
         picoOut = " -p picoAOD_noDiJetMjj_"+tagID+".root "
 
         #
@@ -164,6 +179,45 @@ if o.makeSkims:
 
     babySit(cmds, doRun, logFiles=logs)
     if o.email: execute('echo "Subject: [make3bMix4bClosure] mixInputs  Done" | sendmail '+o.email,doRun)
+
+
+#
+# Make skims with out the di-jet Mass cuts
+#
+if o.copySkims:
+    cmds = []
+
+    for y in years:
+
+        picoName = "picoAOD.root"
+
+        #
+        #  Data
+        #
+        for p in dataPeriods[y]:
+            #cmds.append(eosmkdir +"/store/user/johnda/condor/ZH4b/UL/data"+y+p)
+            #cmds.append(eoslslrt+" /store/user/bryantp/condor/data"+y+p+"/"+picoName)
+            #cmds.append("xrdcp root://cmseos.fnal.gov//store/user/bryantp/condor/data"+y+p+"/"+picoName+" root://cmseos.fnal.gov//store/user/johnda/condor/ZH4b/UL/data"+y+p+"/"+picoName)
+            pass
+
+        #
+        #  TTbar
+        # 
+        for tt in ttbarSamplesByYear[y]:
+            
+            if y == "2016":
+                for vfp in ["_preVFP","_postVFP"]:
+                    #cmds.append(eosmkdir +"/store/user/johnda/condor/ZH4b/UL/"+tt+y+vfp)
+                    #cmds.append(eoslslrt+" /store/user/bryantp/condor/"+tt+y+vfp+"/"+picoName)
+                    cmds.append("xrdcp root://cmseos.fnal.gov//store/user/bryantp/condor/"+tt+y+vfp+"/"+picoName+" root://cmseos.fnal.gov//store/user/johnda/condor/ZH4b/UL/"+tt+y+vfp+"/"+picoName)
+            else:
+                #cmds.append(eosmkdir +"/store/user/johnda/condor/ZH4b/UL/"+tt+y)
+                #cmds.append(eoslslrt+" /store/user/bryantp/condor/"+tt+y+"/"+picoName)
+                #cmds.append("xrdcp root://cmseos.fnal.gov//store/user/bryantp/condor/"+tt+y+"/"+picoName+" root://cmseos.fnal.gov//store/user/johnda/condor/ZH4b/UL/"+tt+y+"/"+picoName)
+                pass
+
+    babySit(cmds, doRun)
+    
 
 
 #
@@ -271,8 +325,63 @@ if o.makeInputFileLists:
             run("echo "+eosDir+"/"+tt+y+"/picoAOD_noDiJetMjj_"+tagID+".root >> "+fileList)
 
     
+
+#
+#  Make Hists Signal Hists
+#
+if o.makeSignalSkims: 
+
+    #
+    #  Make Hists
+    #
+    dag_config = []
+    condor_jobs = []
+
+    histConfig = " --histDetailLevel allEvents.threeTag.fourTag --histFile histsFromNanoAOD.root "
+    picoOut = " -p picoAOD_noDiJetMjj_"+tagID+".root "
+    outDir = " -o "+getOutDir()+" "
+
+    for y in years:
+
+        for sig in signalSamples:
+        
+            inputFile = " -i ZZ4b/fileLists/"+sig+y+".txt "
+            cmd = runCMD + inputFile + outDir + MCyearOpts[y]+ histConfig + picoOut  + " --fastSkim  --noDiJetMassCutInPicoAOD "
+            condor_jobs.append(makeCondorFile(cmd, "None", sig+y, outputDir=outputDir, filePrefix="skimSignal_"))
+
+
+    dag_config.append(condor_jobs)
+    
+
+    execute("rm "+outputDir+"skimSignal_All.dag", doRun)
+    execute("rm "+outputDir+"skimSignal_All.dag.*", doRun)
+
+    dag_file = makeDAGFile("skimSignal_All.dag",dag_config, outputDir=outputDir)
+    cmd = "condor_submit_dag "+dag_file
+    execute(cmd, o.execute)
         
 
 
+#
+#   Make inputs fileLists
+#
+if o.makeSignalFileLists:
+
+    def run(cmd):
+        if doRun: os.system(cmd)
+        else:     print cmd
+
+
+    #mkdir(outputDir+"/fileLists", execute=doRun)
+
+    eosDir = "root://cmseos.fnal.gov//store/user/johnda/condor/nominal/"    
+
+    for y in years:
+
+        for sig in signalSamples:
+            fileList = outputDir+"/fileLists/"+sig+y+"_noMjj_"+tagID+".txt"    
+            run("rm "+fileList)
+
+            run("echo "+eosDir+"/"+sig+y+"/picoAOD_noDiJetMjj_"+tagID+".root >> "+fileList)
 
 

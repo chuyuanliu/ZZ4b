@@ -45,10 +45,15 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   aveAbsEtaOth = dir.make<TH1F>("aveAbsEtaOth", (name+"/aveAbsEtaOth; Other Jets <|#eta|>; Entries").c_str(), 27, -0.2, 2.5);
   //allTrigJets = new trigHists(name+"/allTrigJets", fs, "All Trig Jets");
     
+
   nAllMuons = dir.make<TH1F>("nAllMuons", (name+"/nAllMuons; Number of Muons (no selection); Entries").c_str(),  6,-0.5,5.5);
-  nIsoMuons = dir.make<TH1F>("nIsoMuons", (name+"/nIsoMuons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
-  allMuons = new muonHists(name+"/allMuons", fs, "All Muons");
-  isoMuons = new muonHists(name+"/isoMuons", fs, "Prompt Muons");
+  nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
+  nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
+  allMuons        = new muonHists(name+"/allMuons", fs, "All Muons");
+  muons_isoMed25  = new muonHists(name+"/isoMed25", fs, "iso Medium 25 Muons");
+  muons_isoMed40  = new muonHists(name+"/isoMed40", fs, "iso Medium 40 Muons");
+
+
 
   lead   = new dijetHists(name+"/lead",   fs,    "Leading p_{T} boson candidate");
   subl   = new dijetHists(name+"/subl",   fs, "Subleading p_{T} boson candidate");
@@ -57,6 +62,8 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   leadSt = new dijetHists(name+"/leadSt", fs,    "Leading S_{T} boson candidate");
   sublSt = new dijetHists(name+"/sublSt", fs, "Subleading S_{T} boson candidate");
   leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
+
+
   m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
   m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1100, 25,0,5);
 
@@ -172,9 +179,10 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   }
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy")){
-    weightStudy_v0v1  = new weightStudyHists(name+"/FvTStudy_v0v1",  fs, "weight_FvT_3bMix4b_rWbW2_v0", "weight_FvT_3bMix4b_rWbW2_v1",       debug);
-    weightStudy_os012 = new weightStudyHists(name+"/FvTStudy_os012", fs, "weight_FvT_3bMix4b_rWbW2_v0", "weight_FvT_3bMix4b_rWbW2_v0_os012", debug);
-    weightStudy_e25   = new weightStudyHists(name+"/FvTStudy_e25",   fs, "weight_FvT_3bMix4b_rWbW2_v0", "weight_FvT_3bMix4b_rWbW2_v0_e25",   debug);
+    weightStudy_v0v1  = new weightStudyHists(name+"/FvTStudy_v0v1",  fs, "weight_FvT_3bMix4b_rWbW2_v0_e25_os012", "weight_FvT_3bMix4b_rWbW2_v1_e25_os012", debug);
+    weightStudy_v0v9  = new weightStudyHists(name+"/FvTStudy_v0v9",  fs, "weight_FvT_3bMix4b_rWbW2_v0_e25_os012", "weight_FvT_3bMix4b_rWbW2_v9_e25_os012", debug);
+    weightStudy_os012 = new weightStudyHists(name+"/FvTStudy_os012", fs, "weight_FvT_3bMix4b_rWbW2_v0_e25",       "weight_FvT_3bMix4b_rWbW2_v0_e25_os012", debug);
+    weightStudy_e20   = new weightStudyHists(name+"/FvTStudy_e20",   fs, "weight_FvT_3bMix4b_rWbW2_v0_os012",     "weight_FvT_3bMix4b_rWbW2_v0_e25_os012",       debug);
     //weightStudy_v0v1 = new weightStudyHists(name+"/FvTStudy_v0v1", fs, debug);
   }
 
@@ -183,6 +191,12 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   canJet2BTag = dir.make<TH1F>("canJet2BTag", (name+"/canJet2BTag; b-tagging score; Entries").c_str(),  100,0,1);
   canJet3BTag = dir.make<TH1F>("canJet3BTag", (name+"/canJet3BTag; b-tagging score; Entries").c_str(),  100,0,1);
   canJet23BTag = dir.make<TH2F>("canJet23BTag", (name+"/canJet23BTag; b-tagging score of canJet2; b-tagging score of canJet3; Entries").c_str(), 100,0,1, 100,0,1);
+  DvT_pt   = dir.make<TH1F>("DvT_pt",   (name+"/DvT_pt; TTbar Prob; Entries").c_str(),   100, -0.1, 2);
+  DvT_pt_l = dir.make<TH1F>("DvT_pt_l", (name+"/DvT_pt_l; TTbar Prob; Entries").c_str(), 100, -0.1, 10);
+  DvT_pm   = dir.make<TH1F>("DvT_pm",   (name+"/DvT_pm; Multijet Prob; Entries").c_str(),   100, -2, 2);
+  DvT_pm_l = dir.make<TH1F>("DvT_pm_l", (name+"/DvT_pm_l; Multijet Prob; Entries").c_str(), 100, -10, 10);
+  DvT_raw = dir.make<TH1F>("DvT_raw", (name+"/DvT_raw; TTbar Prob raw; Entries").c_str(), 100, -0.1, 2);
+
 } 
 
 void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
@@ -247,10 +261,14 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   }
 
   if(debug) std::cout << "viewHists::Fill muons " << std::endl;
+
   nAllMuons->Fill(event->allMuons.size(), event->weight);
-  nIsoMuons->Fill(event->isoMuons.size(), event->weight);
+  nIsoMed25Muons->Fill(event->muons_isoMed25.size(), event->weight);
+  nIsoMed40Muons->Fill(event->muons_isoMed40.size(), event->weight);
   for(auto &muon: event->allMuons) allMuons->Fill(muon, event->weight);
-  for(auto &muon: event->isoMuons) isoMuons->Fill(muon, event->weight);
+  for(auto &muon: event->muons_isoMed25) muons_isoMed25->Fill(muon, event->weight);
+  for(auto &muon: event->muons_isoMed40) muons_isoMed40->Fill(muon, event->weight);
+
 
   lead  ->Fill(view->lead,   event->weight);
   subl  ->Fill(view->subl,   event->weight);
@@ -373,8 +391,18 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   }
 
   if(weightStudy_v0v1)  weightStudy_v0v1 ->Fill(event, view);
+  if(weightStudy_v0v9)  weightStudy_v0v9 ->Fill(event, view);
   if(weightStudy_os012) weightStudy_os012->Fill(event, view);
-  if(weightStudy_e25)   weightStudy_e25  ->Fill(event, view);
+  if(weightStudy_e20)   weightStudy_e20  ->Fill(event, view);
+
+
+  DvT_pt     -> Fill(event->DvT_pt, event->weight);
+  DvT_pt_l   -> Fill(event->DvT_pt, event->weight);
+
+  DvT_pm     -> Fill(event->DvT_pm, event->weight);
+  DvT_pm_l   -> Fill(event->DvT_pm, event->weight);
+
+  DvT_raw -> Fill(event->DvT_raw, event->weight);
 
   canJet0BTag->Fill(event->canJet0_btag, event->weight);
   canJet1BTag->Fill(event->canJet1_btag, event->weight);

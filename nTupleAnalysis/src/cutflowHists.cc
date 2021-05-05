@@ -39,6 +39,8 @@ void cutflowHists::AddCut(std::string cut){
   weighted->GetXaxis()->FindBin((cut+"_SR_HLT").c_str());
   unitWeight->GetXaxis()->FindBin((cut+"_HHSR_HLT").c_str());  
   weighted->GetXaxis()->FindBin((cut+"_HHSR_HLT").c_str());
+  unitWeight->GetXaxis()->FindBin((cut+"_SR_HLT_VetoHH").c_str());  
+  weighted->GetXaxis()->FindBin((cut+"_SR_HLT_VetoHH").c_str());
   if(truthM4b != NULL){
     truthM4b->GetYaxis()->FindBin(cut.c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_SR").c_str());
@@ -46,6 +48,7 @@ void cutflowHists::AddCut(std::string cut){
     truthM4b->GetYaxis()->FindBin((cut+"_HLT").c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_SR_HLT").c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_HHSR_HLT").c_str());
+    truthM4b->GetYaxis()->FindBin((cut+"_SR_HLT_VetoHH").c_str());
   }
 }
 
@@ -108,6 +111,7 @@ void cutflowHists::Fill(const std::string& cut, eventData* event){
 	if(event->HLT_j500)                    BasicFill(cut+"_SR_HLT_j500", event);
 	if(event->HLT_2j300ave)                BasicFill(cut+"_SR_HLT_2j300ave", event);
 	if(event->passHLT)                     BasicFill(cut+"_SR_HLT", event);
+	if(event->passHLT & !event->HHSR)      BasicFill(cut+"_SR_HLT_VetoHH", event);
       }
     }
       //Cut+HHSR

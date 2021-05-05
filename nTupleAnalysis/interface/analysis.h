@@ -55,13 +55,19 @@ namespace nTupleAnalysis {
 
     eventHists* allEvents   = NULL;
     tagHists* passPreSel    = NULL;
-    tagHists* passDijetMass = NULL;
+    //tagHists* passDijetMass = NULL;
     tagHists* passMDRs      = NULL;
     tagHists* passNjOth     = NULL;
     tagHists* SvBOnly       = NULL;
     tagHists* passMjjOth    = NULL;
+<<<<<<< HEAD
     tagHists* passSvB       = NULL;
     tagHists* passXWt       = NULL;
+=======
+    tagHists* failrWbW2     = NULL;
+    tagHists* passMuon      = NULL;
+    tagHists* passDvT05     = NULL;
+>>>>>>> upstream/master
 
     triggerStudy* trigStudy  = NULL;
 
@@ -89,6 +95,9 @@ namespace nTupleAnalysis {
     TTree* picoAODEvents;
     TTree* picoAODRuns;
     TTree* picoAODLumiBlocks;
+
+    // debugging
+    long int currentEvent = 0;
 
     //Monitoring Variables
     long int percent;
@@ -134,6 +143,7 @@ namespace nTupleAnalysis {
     ULong64_t m_event     =  0;
     Float_t   m_genWeight =  0;
     Float_t   m_bTagSF    =  0;
+    Float_t   m_ttbarWeight =  0;
     
     nTupleAnalysis::jetData*  m_mixed_jetData = NULL;
     nTupleAnalysis::muonData*  m_mixed_muonData = NULL;
@@ -149,6 +159,9 @@ namespace nTupleAnalysis {
     Bool_t m_L1_HTT300		   ; 
     Bool_t m_L1_TripleJet_88_72_56_VBF   ;
     Bool_t m_L1_DoubleJetC100	    	   ;
+    Bool_t m_HLT_2j100_dEta1p6_2b;
+    Bool_t m_L1_SingleJet200     ;
+
 
     // 2017
     Bool_t m_HLT_HT300_4j_75_60_45_40_3b                                      ;
@@ -158,7 +171,7 @@ namespace nTupleAnalysis {
     Bool_t m_L1_HTT280er_QuadJet_70_55_40_35_er2p5                            ;
     Bool_t m_L1_SingleJet170                                                  ;
     Bool_t m_L1_HTT300er                                                      ;
-
+    Bool_t m_L1_DoubleJet100er2p3_dEta_Max1p6 ;
 
     //2018
     Bool_t m_HLT_HT330_4j_75_60_45_40_3b;
@@ -179,6 +192,7 @@ namespace nTupleAnalysis {
 
     UInt_t    m_h1_run       =  0;
     ULong64_t m_h1_event     =  0;
+    Float_t   m_h1_eventWeight     =  0;
     Bool_t    m_h1_hemiSign  =  0;
     Int_t     m_h1_NJet       =  0;
     Int_t     m_h1_NBJet      =  0;
@@ -200,6 +214,7 @@ namespace nTupleAnalysis {
 
     UInt_t    m_h2_run       =  0;
     ULong64_t m_h2_event     =  0;
+    Float_t   m_h2_eventWeight     =  0;
     Bool_t    m_h2_hemiSign  =  0;
     Int_t     m_h2_NJet       =  0;
     Int_t     m_h2_NBJet      =  0;
@@ -224,8 +239,12 @@ namespace nTupleAnalysis {
 	     std::string histDetailLevel, bool _doReweight, bool _debug, bool _fastSkim = false, bool _doTrigEmulation = false, bool _isDataMCMix=false, bool _is3bMixed=false,
 	     std::string bjetSF = "", std::string btagVariations = "central",
 	     std::string JECSyst = "", std::string friendFile = "",
+<<<<<<< HEAD
 	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "",
        float _SvBScore = 0.0);
+=======
+	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "", std::string reweightDvTName = "");
+>>>>>>> upstream/master
 
     void createPicoAOD(std::string fileName, bool copyInputPicoAOD = true);
 
@@ -240,7 +259,7 @@ namespace nTupleAnalysis {
 
 
     void createHemisphereLibrary(std::string, fwlite::TFileService& fs );
-    void loadHemisphereLibrary(std::vector<std::string> hLibs_3tag, std::vector<std::string> hLibs_4tag, fwlite::TFileService& fs, int maxNHemis);
+    void loadHemisphereLibrary(std::vector<std::string> hLibs_3tag, std::vector<std::string> hLibs_4tag, fwlite::TFileService& fs, int maxNHemis, bool useHemiWeights);
 
     // Write out all event and run numbers to histogram file
     bool writeOutEventNumbers = false;

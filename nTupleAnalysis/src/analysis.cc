@@ -18,6 +18,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
 		   std::string JECSyst, std::string friendFile,
 		   bool _looseSkim, std::string FvTName, std::string reweight4bName,
        float _SvBScore){
+
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
   doReweight     = _doReweight;
@@ -86,7 +87,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, is3bMixed, FvTName, reweight4bName, doWeightStudy);
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, is3bMixed, FvTName, reweight4bName, reweightDvTName, doWeightStudy);
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
@@ -107,14 +108,16 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   
   if(nTupleAnalysis::findSubStr(histDetailLevel,"allEvents"))     allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passPreSel"))    passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
+  //if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passNjOth"))     passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"SvBOnly"))       SvBOnly = new   tagHists("SvBOnly", fs, true,  isMC, blind, histDetailLevel, debug);  
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMjjOth"))    passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passSvB"))       passSvB       = new   tagHists("passSvB",       fs, true,  isMC, blind, histDetailLevel, debug);  
   //if(nTupleAnalysis::findSubStr(histDetailLevel,"passXWt"))       passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
-
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"failrWbW2"))     failrWbW2     = new   tagHists("failrWbW2",     fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMuon"))      passMuon      = new   tagHists("passMuon",      fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passDvT05"))     passDvT05     = new   tagHists("passDvT05",     fs, true,  isMC, blind, histDetailLevel, debug);
 
   if(!allEvents)     std::cout << "Turning off allEvents Hists" << std::endl; 
   if(!passPreSel)    std::cout << "Turning off passPreSel Hists" << std::endl; 
@@ -124,7 +127,10 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(!passSvB)       std::cout << "Turning off passSvB Hists" << std::endl; 
   if(!passMjjOth)    std::cout << "Turning off passMjjOth Hists" << std::endl; 
   //if(!passXWt)       std::cout << "Turning off passXWt Hists" << std::endl; 
-  
+  if(failrWbW2)     std::cout << "Turning on failrWbW2 Hists" << std::endl; 
+  if(passMuon)      std::cout << "Turning on passMuon Hists" << std::endl; 
+  if(passDvT05)     std::cout << "Turning on passDvT05 Hists" << std::endl; 
+
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"trigStudy"))       
     trigStudy     = new triggerStudy("trigStudy",     fs, debug);
@@ -172,6 +178,8 @@ void analysis::createPicoAODBranches(){
     outputBranch(picoAODEvents, "genWeight",       m_genWeight,  "F");
     outputBranch(picoAODEvents, "bTagSF",          m_bTagSF,  "F");
   }
+  
+
 
   m_mixed_jetData  = new nTupleAnalysis::jetData("Jet",picoAODEvents, false, "");
   m_mixed_muonData = new nTupleAnalysis::muonData("Muon",picoAODEvents, false );
@@ -181,6 +189,7 @@ void analysis::createPicoAODBranches(){
   
   outputBranch(picoAODEvents, "PV_npvs",         m_nPVs, "I");
   outputBranch(picoAODEvents, "PV_npvsGood",     m_nPVsGood, "I");
+  outputBranch(picoAODEvents, "ttbarWeight",     m_ttbarWeight,  "F");
 
   //triggers
   //trigObjs = new trigData("TrigObj", tree);
@@ -192,6 +201,8 @@ void analysis::createPicoAODBranches(){
     outputBranch(picoAODEvents, "L1_TripleJet_88_72_56_VBF",                   m_L1_TripleJet_88_72_56_VBF,"O");
     outputBranch(picoAODEvents, "L1_DoubleJetC100",                            m_L1_DoubleJetC100,"O");
     outputBranch(picoAODEvents, "L1_SingleJet170",                             m_L1_SingleJet170,"O");            
+    outputBranch(picoAODEvents, "HLT_DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6", m_HLT_2j100_dEta1p6_2b, "O");
+    outputBranch(picoAODEvents, "L1_SingleJet200",                             m_L1_SingleJet200, "O");
   }
   
   if(year=="2017"){
@@ -204,6 +215,8 @@ void analysis::createPicoAODBranches(){
     outputBranch(picoAODEvents, "L1_SingleJet170",                                                m_L1_SingleJet170,  "O");
     outputBranch(picoAODEvents, "L1_SingleJet180",                                                m_L1_SingleJet180,  "O");
     outputBranch(picoAODEvents, "L1_HTT300er",                                                    m_L1_HTT300er            ,  "O");                                          
+    outputBranch(picoAODEvents, "HLT_DoublePFJets100MaxDeta1p6_DoubleCaloBTagCSV_p33",            m_HLT_2j100_dEta1p6_2b, "O");
+    outputBranch(picoAODEvents, "L1_DoubleJet100er2p3_dEta_Max1p6",                               m_L1_DoubleJet100er2p3_dEta_Max1p6, "O");
   }
 
   if(year=="2018"){
@@ -234,6 +247,7 @@ void analysis::createPicoAODBranches(){
     //
     outputBranch(picoAODEvents,     "h1_run"               ,   m_h1_run               ,         "i");
     outputBranch(picoAODEvents,     "h1_event"             ,   m_h1_event             ,         "l");
+    outputBranch(picoAODEvents,     "h1_eventWeight"       ,   m_h1_eventWeight       ,         "F");
     outputBranch(picoAODEvents,     "h1_hemiSign"          ,   m_h1_hemiSign          ,         "O");
     outputBranch(picoAODEvents,     "h1_NJet"              ,   m_h1_NJet              ,         "i");     
     outputBranch(picoAODEvents,     "h1_NBJet"             ,   m_h1_NBJet             ,         "i");     
@@ -256,6 +270,7 @@ void analysis::createPicoAODBranches(){
 
     outputBranch(picoAODEvents,     "h2_run"               ,   m_h2_run               ,         "i");
     outputBranch(picoAODEvents,     "h2_event"             ,   m_h2_event             ,         "l");
+    outputBranch(picoAODEvents,     "h2_eventWeight"       ,   m_h2_eventWeight       ,         "F");
     outputBranch(picoAODEvents,     "h2_hemiSign"          ,   m_h2_hemiSign          ,         "O");
     outputBranch(picoAODEvents,     "h2_NJet"              ,   m_h2_NJet              ,         "i");     
     outputBranch(picoAODEvents,     "h2_NBJet"             ,   m_h2_NBJet             ,         "i");     
@@ -344,6 +359,7 @@ void analysis::picoAODFillEvents(){
 
     m_nPVs = event->nPVs;
     m_nPVsGood = event->nPVsGood;    
+    m_ttbarWeight   = event->ttbarWeight;
 
     //2016
     if(year == "2016"){
@@ -354,6 +370,8 @@ void analysis::picoAODFillEvents(){
       m_L1_TripleJet_88_72_56_VBF    =   event->L1_TripleJet_88_72_56_VBF ;  
       m_L1_DoubleJetC100	     =   event->L1_DoubleJetC100	  ;    
       m_L1_SingleJet170              =   event->L1_SingleJet170           ;  
+      m_HLT_2j100_dEta1p6_2b         =   event->HLT_2j100_dEta1p6_2b      ;
+      m_L1_SingleJet200              =   event->L1_SingleJet200           ;    
     }
 
     //2017
@@ -367,6 +385,8 @@ void analysis::picoAODFillEvents(){
       m_L1_SingleJet170                                                    = event->L1_SingleJet170                                                  ;
       m_L1_SingleJet180                                                    = event->L1_SingleJet180                                                  ;
       m_L1_HTT300er                                                        = event->L1_HTT300er                                                      ;
+      m_HLT_2j100_dEta1p6_2b                                               = event->HLT_2j100_dEta1p6_2b              ;
+      m_L1_DoubleJet100er2p3_dEta_Max1p6                                   = event->L1_DoubleJet100er2p3_dEta_Max1p6;
     }
 
 
@@ -397,6 +417,7 @@ void analysis::picoAODFillEvents(){
     
         m_h1_run                = thisHMixTool->m_h1_run                ;
         m_h1_event              = thisHMixTool->m_h1_event              ;
+        m_h1_eventWeight        = thisHMixTool->m_h1_eventWeight        ;
         m_h1_hemiSign           = thisHMixTool->m_h1_hemiSign           ;
         m_h1_NJet               = thisHMixTool->m_h1_NJet               ;
         m_h1_NBJet              = thisHMixTool->m_h1_NBJet              ;
@@ -419,6 +440,7 @@ void analysis::picoAODFillEvents(){
     
         m_h2_run                = thisHMixTool->m_h2_run                ;
         m_h2_event              = thisHMixTool->m_h2_event              ;
+        m_h2_eventWeight        = thisHMixTool->m_h2_eventWeight        ;
         m_h2_hemiSign           = thisHMixTool->m_h2_hemiSign           ;
         m_h2_NJet               = thisHMixTool->m_h2_NJet               ;
         m_h2_NBJet              = thisHMixTool->m_h2_NBJet              ;
@@ -458,13 +480,17 @@ void analysis::createHemisphereLibrary(std::string fileName, fwlite::TFileServic
 }
 
 
-void analysis::loadHemisphereLibrary(std::vector<std::string> hLibs_3tag, std::vector<std::string> hLibs_4tag, fwlite::TFileService& fs, int maxNHemis){
+void analysis::loadHemisphereLibrary(std::vector<std::string> hLibs_3tag, std::vector<std::string> hLibs_4tag, fwlite::TFileService& fs, int maxNHemis, bool useHemiWeights){
 
   //
   // Load Hemisphere Mixing 
   //
   hMixToolLoad3Tag = new hemisphereMixTool("3TagEvents", "dummyName", hLibs_3tag, false, fs, maxNHemis, debug, true, false, false, true);
+  hMixToolLoad3Tag->m_useHemiWeights = useHemiWeights;
+
   hMixToolLoad4Tag = new hemisphereMixTool("4TagEvents", "dummyName", hLibs_4tag, false, fs, maxNHemis, debug, true, false, false, true);
+  hMixToolLoad4Tag->m_useHemiWeights = useHemiWeights;
+
   loadHSphereFile = true;
 }
 
@@ -508,6 +534,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("notCanJet_eta", event->notCanJet_eta, "notCanJet_eta[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_phi", event->notCanJet_phi, "notCanJet_phi[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_m",   event->notCanJet_m,   "notCanJet_m[nAllNotCanJets]/F");
+  picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
   picoAODEvents->Branch("ZHSB", &event->ZHSB); picoAODEvents->Branch("ZHCR", &event->ZHCR); picoAODEvents->Branch("ZHSR", &event->ZHSR);
   picoAODEvents->Branch("ZZSB", &event->ZZSB); picoAODEvents->Branch("ZZCR", &event->ZZCR); picoAODEvents->Branch("ZZSR", &event->ZZSR);
   picoAODEvents->Branch("SB", &event->SB); picoAODEvents->Branch("CR", &event->CR); picoAODEvents->Branch("SR", &event->SR);
@@ -518,7 +545,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("nSelJets", &event->nSelJets);
   picoAODEvents->Branch("nPSTJets", &event->nPSTJets);
   picoAODEvents->Branch("passHLT", &event->passHLT);
-  picoAODEvents->Branch("passDijetMass", &event->passDijetMass);
+  //picoAODEvents->Branch("passDijetMass", &event->passDijetMass);
   picoAODEvents->Branch("passXWt", &event->passXWt);
   picoAODEvents->Branch("xW", &event->xW);
   picoAODEvents->Branch("xt", &event->xt);
@@ -529,6 +556,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   //VHH
   picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
   picoAODEvents->Branch("nOthJets", &event->nOthJets);
+  picoAODEvents->Branch("ttbarWeight", &event->ttbarWeight);
   cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
   return;
 }
@@ -591,6 +619,8 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
 
   start = std::clock();
   for(long int e = firstEvent; e < nEvents; e++){
+    
+    currentEvent = e;
 
     alreadyFilled = false;
     //m4jPrevious = event->m4j;
@@ -611,6 +641,7 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
     if(skip4b && event->fourTag)  continue;
     if(skip3b && event->threeTag) continue;
 
+
     //
     //  Get the Data/MC Mixing 
     //
@@ -625,8 +656,8 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
       //
       // Correct weight so we are not double counting psudotag weight
       //   (Already factored into whether or not the event pass4bEmulation
-      event->weight /= event->pseudoTagWeight;
-
+      //event->weight /= event->pseudoTagWeight;
+      event->weight = 1.0;
 
       //
       // Treat canJets as Tag jets
@@ -650,11 +681,11 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
       //
       //  TTbar Veto on mixed event
       //
-      if(event->t->rWbW < 2){
-      	//if(!event->passXWt){
-      	//cout << "Mixing and vetoing on Xwt" << endl;
-      	continue;
-      }
+      //if(event->t->rWbW < 2){
+      //	//if(!event->passXWt){
+      //	//cout << "Mixing and vetoing on Xwt" << endl;
+      //	continue;
+      //}
 
 
       if(event->threeTag) hMixToolLoad3Tag->makeArtificialEvent(event);
@@ -698,7 +729,7 @@ int analysis::processEvent(){
   if(isMC){
     event->mcWeight = event->genWeight * (lumi * xs * kFactor / mcEventSumw);
     if(event->nTrueBJets>=4) event->mcWeight *= fourbkfactor;
-    event->mcPseudoTagWeight = event->mcWeight * event->bTagSF * event->pseudoTagWeight;
+    event->mcPseudoTagWeight = event->mcWeight * event->bTagSF * event->pseudoTagWeight * event->ttbarWeight;
     event->weight *= event->mcWeight;
     event->weightNoTrigger *= event->mcWeight;
 
@@ -746,7 +777,7 @@ int analysis::processEvent(){
 
     for(const std::string& jcmName : event->jcmNames){
       if(debug) cout << "event->mcPseudoTagWeightMap[" << jcmName << "]" << endl;
-      event->mcPseudoTagWeightMap[jcmName] = event->mcWeight * event->bTagSF * event->pseudoTagWeightMap[jcmName];
+      event->mcPseudoTagWeightMap[jcmName] = event->mcWeight * event->bTagSF * event->pseudoTagWeightMap[jcmName] * event->ttbarWeight;
     }
 
     //
@@ -822,6 +853,7 @@ int analysis::processEvent(){
   }
   if(allEvents != NULL && event->passHLT) allEvents->Fill(event);
 
+
   //
   // Loose Pre-selection for use in JEC uncertainties
   //
@@ -863,14 +895,14 @@ int analysis::processEvent(){
   }
 
 
-  // Dijet mass preselection. Require at least one view has leadM(sublM) dijets with masses between 45(45) and 190(190) GeV.
-  if(!event->passDijetMass){
-    if(debug) cout << "Fail dijet mass cut" << endl;
-    return 0;
-  }
-  cutflow->Fill(event, "DijetMass");
+  // // Dijet mass preselection. Require at least one view has leadM(sublM) dijets with masses between 45(45) and 190(190) GeV.
+  // if(!event->passDijetMass){
+  //   if(debug) cout << "Fail dijet mass cut" << endl;
+  //   return 0;
+  // }
+  // cutflow->Fill(event, "DijetMass");
 
-  if(passDijetMass != NULL && event->passHLT) passDijetMass->Fill(event, event->views);
+  // if(passDijetMass != NULL && event->passHLT) passDijetMass->Fill(event, event->views);
 
   
   //
@@ -889,6 +921,7 @@ int analysis::processEvent(){
     return 0;
   }
   cutflow->Fill(event, "MDRs");
+
 
   if(passMDRs != NULL && event->passHLT){
     passMDRs->Fill(event, event->views);
@@ -934,17 +967,28 @@ int analysis::processEvent(){
     passSvB->Fill(event, event->views);
   }
 
-  // //
-  // // ttbar veto
-  // //
-  // if(fastSkim) return 0; // in fast skim mode, we do not construct top quark candidates. Return early.
-  // if(!event->passXWt){
-  //   if(debug) cout << "Fail xWt" << endl;
-  //   return 0;
-  // }
-  // cutflow->Fill(event, "xWt");
+  //
+  // ttbar CRs
+  //
+  if(failrWbW2 != NULL && event->passHLT){
+    if(event->t->rWbW < 2){
+      failrWbW2->Fill(event, event->views);
+    }
+  }
 
-  // if(passXWt != NULL && event->passHLT) passXWt->Fill(event, event->views);
+  if(passMuon != NULL && event->passHLT){
+    if(event->muons_isoMed40.size() > 0){
+      passMuon->Fill(event, event->views);
+    }
+  }
+
+  if(passDvT05 != NULL && event->passHLT){
+    if(event->DvT_raw > 0.5){
+      passDvT05->Fill(event, event->views);
+    }
+  }
+
+   
   return 0;
 }
 

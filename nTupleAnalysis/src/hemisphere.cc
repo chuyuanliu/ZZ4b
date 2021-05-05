@@ -21,6 +21,7 @@ void hemisphere::write(hemisphereMixTool* hMixTool, int localPairIndex){
   
   outputData->m_Run   = Run;
   outputData->m_Event = Event;
+  outputData->m_eventWeight = eventWeight;
   outputData->m_HemiSign = HemiSign;
   outputData->m_tAxis_x = thrustAxis.X();
   outputData->m_tAxis_y = thrustAxis.Y();
@@ -39,7 +40,7 @@ void hemisphere::write(hemisphereMixTool* hMixTool, int localPairIndex){
   std::vector<jetPtr> outputJets;
   for(const jetPtr& tagJet : tagJets){
     if(tagJet->AppliedBRegression()) tagJet->undo_bRegression();
-    //if(tagJet->pt < 40) cout << "ERROR tagJet pt " << tagJet->pt << endl;
+    if(tagJet->pt < 40) cout << "ERROR tagJet pt " << tagJet->pt << " " << tagJet->pt - 40 <<  " " << tagJet->pt - tagJet->pt_wo_bRegCorr <<  " " << tagJet->pt_wo_bRegCorr - 40 << " " << tagJet->pt_wo_bRegCorr << endl;
     tagJet->isTag = true;
     tagJet->isSel = true;
     outputJets.push_back(tagJet);
@@ -156,6 +157,7 @@ hemisphereData::hemisphereData(std::string name, TTree* hemiTree, bool readIn, b
 
   connectBranch(readIn, hemiTree, "runNumber",   m_Run, "i");
   connectBranch(readIn, hemiTree, "evtNumber",   m_Event, "l");
+  connectBranch(readIn, hemiTree, "evtWeight",   m_eventWeight, "F");
   connectBranch(readIn, hemiTree, "hemiSign",    m_HemiSign, "O");
   connectBranch(readIn, hemiTree, "tAxis_x",     m_tAxis_x, "F");
   connectBranch(readIn, hemiTree, "tAxis_y",     m_tAxis_y, "F");
@@ -178,7 +180,7 @@ hemisphereData::hemisphereData(std::string name, TTree* hemiTree, bool readIn, b
 
 hemiPtr hemisphereData::getHemi(bool loadJets)
 {
-  hemiPtr outHemi = std::make_shared<hemisphere>(hemisphere(m_Run, m_Event, m_HemiSign, m_tAxis_x, m_tAxis_y));
+  hemiPtr outHemi = std::make_shared<hemisphere>(hemisphere(m_Run, m_Event, m_eventWeight, m_HemiSign, m_tAxis_x, m_tAxis_y));
   outHemi->sumPz = m_sumPz;
   outHemi->sumPt_T = m_sumPt_T;
   outHemi->sumPt_Ta = m_sumPt_Ta;
