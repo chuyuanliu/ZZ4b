@@ -14,7 +14,7 @@ parser.add_option('--cleanPicoAODs',  action="store_true",      help="rm local p
 parser.add_option('--makeInputFileLists',  action="store_true",      help="make Input file lists")
 parser.add_option('--noTT',       action="store_true",      help="Skip TTbar")
 parser.add_option('-c',   '--condor',   action="store_true", default=False,           help="Run on condor")
-parser.add_option('--debug',   action="store_true", default=False,           help="Run on condor")
+parser.add_option('--debug',   action="store_true", default=False,           help="Enable debug")
 parser.add_option('--email',            default=None,      help="")
 
 o, a = parser.parse_args()
@@ -133,7 +133,7 @@ ZHHSamples["2018"] = [
 VHHSamples = [WHHSamples,ZHHSamples]
 
 #tagID = "b0p6"
-tagID = "b0p30p3"
+tagID = "b0p3"
 
 #
 # Make skims with out the di-jet Mass cuts
