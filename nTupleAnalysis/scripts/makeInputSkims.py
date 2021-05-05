@@ -46,11 +46,8 @@ if o.condor:
 # In the following "3b" refers to 3b subsampled to have the 4b statistics
 #
 #outputDir="/uscms/home/jda102/nobackup/HH4b/CMSSW_11_1_3/src/closureTests/nominal/"
-<<<<<<< HEAD
 outputDir="/uscms/home/"+USER+"/nobackup/"+ ("VHH/" if o.makeVHHSkims else "HH4b/")
-=======
-outputDir="closureTests/nominal/"
->>>>>>> upstream/master
+
 
 # Helpers
 runCMD='nTupleAnalysis ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py'
@@ -77,21 +74,21 @@ MCyearOpts["2016"]=yearOpts["2016"]+' --bTagSF -l 35.9e3 --isMC '
 
 dataPeriods = {}
 # All
-dataPeriods["2018"] = ["A","B","C","D"]
-dataPeriods["2017"] = ["B","C","D","E","F"]
-dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
+# dataPeriods["2018"] = ["A","B","C","D"]
+# dataPeriods["2017"] = ["B","C","D","E","F"]
+# dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
 # for skimming 
-#dataPeriods["2018"] = []
-#dataPeriods["2017"] = []
-#dataPeriods["2016"] = []
+dataPeriods["2018"] = []
+dataPeriods["2017"] = []
+dataPeriods["2016"] = []
 
 # for skimming
 ttbarSamplesByYear = {}
-ttbarSamplesByYear["2018"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-ttbarSamplesByYear["2017"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-#ttbarSamplesByYear["2018"] = []
-#ttbarSamplesByYear["2017"] = []
+# ttbarSamplesByYear["2018"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+# ttbarSamplesByYear["2017"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+# ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+ttbarSamplesByYear["2018"] = []
+ttbarSamplesByYear["2017"] = []
 #ttbarSamplesByYear["2016"] = ["TTTo2L2Nu"]
 
 eosls = "eos root://cmseos.fnal.gov ls"
@@ -156,11 +153,8 @@ if o.makeSkims:
 
     for y in years:
         
-<<<<<<< HEAD
-        histConfig = "--histFile histsFromNanoAOD.root "
-=======
+
         histConfig = " --histDetailLevel allEvents.threeTag.fourTag --histFile histsFromNanoAOD.root "
->>>>>>> upstream/master
         picoOut = " -p picoAOD_noDiJetMjj_"+tagID+".root "
 
         #

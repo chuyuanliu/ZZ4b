@@ -225,7 +225,6 @@ for c in cuts:
 views = [#"allViews",
          "mainView",
          ]
-<<<<<<< HEAD
 
 
 

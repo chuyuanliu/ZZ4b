@@ -60,14 +60,11 @@ namespace nTupleAnalysis {
     tagHists* passNjOth     = NULL;
     tagHists* SvBOnly       = NULL;
     tagHists* passMjjOth    = NULL;
-<<<<<<< HEAD
     tagHists* passSvB       = NULL;
     tagHists* passXWt       = NULL;
-=======
     tagHists* failrWbW2     = NULL;
     tagHists* passMuon      = NULL;
     tagHists* passDvT05     = NULL;
->>>>>>> upstream/master
 
     triggerStudy* trigStudy  = NULL;
 
@@ -239,12 +236,9 @@ namespace nTupleAnalysis {
 	     std::string histDetailLevel, bool _doReweight, bool _debug, bool _fastSkim = false, bool _doTrigEmulation = false, bool _isDataMCMix=false, bool _is3bMixed=false,
 	     std::string bjetSF = "", std::string btagVariations = "central",
 	     std::string JECSyst = "", std::string friendFile = "",
-<<<<<<< HEAD
 	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "",
        float _SvBScore = 0.0);
-=======
-	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "", std::string reweightDvTName = "");
->>>>>>> upstream/master
+
 
     void createPicoAOD(std::string fileName, bool copyInputPicoAOD = true);
 
