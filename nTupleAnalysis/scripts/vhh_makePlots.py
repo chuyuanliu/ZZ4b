@@ -36,6 +36,8 @@ parser.add_option('--TT',          default=None, help="TT file override")
 parser.add_option('--qcd',         default=None, help="qcd file override")
 parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      default=False, help="plot JEC variations")
 parser.add_option('--coupling ',   dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'change signal coupling')
+parser.add_option('--skim ',   action="store_true",dest = 'skim', default = False, help = 'make selected plots')
+parser.add_option('--signalOnly ',   action="store_true",dest = 'signalOnly', default = False, help = 'only plot signal')
 
 o, a = parser.parse_args()
 
@@ -69,6 +71,8 @@ mu_qcd = jcm['mu_qcd_passMDRs']
 files = {"data"+o.year  : inputBase+"data"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
          "TT"+o.year : inputBase+"TT"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
          }
+if o.signalOnly:
+    files = {}
 for coupling in couplings:
     filename = coupling[2]+o.year
     files[filename] = inputBase + filename + "/hists.root"
@@ -135,9 +139,9 @@ SRs = [["(((x-"+str(leadH)+")/(0.1*x))**2 +((y-"+str(sublH)+")/(0.1*y))**2)", 0,
 cuts = [#nameTitle("passPreSel", "Preselection"), 
         #nameTitle("passDijetMass", "Pass m(j,j) Cuts"), 
         nameTitle("passMDRs", "Pass #DeltaR(j,j)"), 
-        nameTitle("passNjOth", "#font[42]{N_{j}#geq 6}"), 
-        nameTitle("passMjjOth", "#font[42]{60#leq m_{V}#leq 110}"), 
-        nameTitle("passSvB", "#font[42]{SvB> 0.8}"), 
+        #nameTitle("passNjOth", "#font[42]{N_{j}#geq 6}"), 
+        #nameTitle("passMjjOth", "#font[42]{60#leq m_{V}#leq 110}"), 
+        #nameTitle("passSvB", "#font[42]{SvB> 0.8}"), 
         # nameTitle("SvBOnly", "#font[42]{SvB> 0.8}"), 
         #nameTitle("passXWt", "rWbW > 3"), 
         # nameTitle("passMDCs", "Pass MDC's"), 
@@ -155,9 +159,9 @@ regions = [#nameTitle("inclusive", ""),
            #nameTitle("ZZSB", "ZZ Sideband"), nameTitle("ZZCR", "ZZ Control Region"), nameTitle("ZZSR", "ZZ Signal Region"),
            #nameTitle("ZHSR", "ZH Signal Region"), nameTitle("ZZSR", "ZZ Signal Region"),
            #nameTitle("SCSR", "SB+CR+SR"),
-           nameTitle("SB", "Sideband"), 
+           #nameTitle("SB", "Sideband"), 
            #nameTitle("SR", "Signal Region"),
-           nameTitle("CR", "Control Region"),
+           #nameTitle("CR", "Control Region"),
            nameTitle("HHSR", "HH Signal Region"),
            ]
 
@@ -186,25 +190,26 @@ class standardPlot:
         for key in files.keys():
             self.samples[files[key]] = collections.OrderedDict()
 
-        self.samples[files[  "data"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label" : ("Data %.1f/fb, "+year)%(lumi),
-            "legend": 1,
-            "isData" : True,
-            "ratio" : "numer A",
-            "color" : "ROOT.kBlack"}
-        self.samples[files[multijet]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label" : "Multijet Model",
-            "weight": var.mu_qcd,
-            "legend": 2,
-            "stack" : 3,
-            "ratio" : "denom A",
-            "color" : "ROOT.kYellow"}
-        self.samples[files["TT"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label" : "t#bar{t}",
-            "legend": 3,
-            "stack" : 2,
-            "ratio" : "denom A",
-            "color" : "ROOT.kAzure-9"}
+        if not o.signalOnly:
+            self.samples[files[  "data"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
+                "label" : ("Data %.1f/fb, "+year)%(lumi),
+                "legend": 1,
+                "isData" : True,
+                "ratio" : "numer A",
+                "color" : "ROOT.kBlack"}
+            self.samples[files[multijet]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
+                "label" : "Multijet Model",
+                "weight": var.mu_qcd,
+                "legend": 2,
+                "stack" : 3,
+                "ratio" : "denom A",
+                "color" : "ROOT.kYellow"}
+            self.samples[files["TT"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
+                "label" : "t#bar{t}",
+                "legend": 3,
+                "stack" : 2,
+                "ratio" : "denom A",
+                "color" : "ROOT.kAzure-9"}
 
         signalScale = 5000
         signalCount = 3
@@ -620,6 +625,40 @@ variables=[variable("nPVs", "Number of Primary Vertices"),
            variable("SvB_MA_ps",  "SvB_MA Regressed P(VHH)",normalize=True),
            ]
 
+if o.skim:
+    # variables=[variable("nTruVJets",  "Number of Truth Matched Vector Boson Jets in Other Jets"),
+    # variable("truVJets/pt_m",  "p_{T} of Truth Matched Vector Boson Jets in Other Jets"),
+    # variable("truVJets/eta",  "#eta of Truth Matched Vector Boson Jets in Other Jets"),
+    # variable("truVJets/phi",  "#phi of Truth Matched Vector Boson Jets in Other Jets"),
+    # variable("truVJet0/pt_m",  "p_{T} of the First Truth Matched Vector Boson Jet in Other Jets"),
+    # variable("truVJet0/eta",  "#eta of the First Truth Matched Vector Boson Jet in Other Jets"),
+    # variable("truVJet0/phi",  "#phi of the First Truth Matched Vector Boson Jet in Other Jets"),
+    # variable("truVJet1/pt_m",  "p_{T} of the Second Truth Matched Vector Boson Jet in Other Jets"),
+    # variable("truVJet1/eta",  "#eta of the Second Truth Matched Vector Boson Jet in Other Jets"),
+    # variable("truVJet1/phi",  "#phi of the Second Truth Matched Vector Boson Jet in Other Jets"),
+    # variable("nCanHTruVJets",  "Number of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("canHTruVJets/pt_m",  "p_{T} of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("canHTruVJets/eta",  "#eta of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("canHTruVJets/phi",  "#phi of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("nNotAllTruVQuarks",  "Number of Truth Matched Vector Boson Jets in Selected Jets"),
+    # variable("ptNotAllTruVQuarks",  "p_{T} of Truth Vector Boson Quarks not in All Jets"),
+    # variable("etaNotAllTruVQuarks",  "#eta of Truth Vector Boson Quarks not in All Jets"),
+    # variable("phiNotAllTruVQuarks",  "#phi of Truth Vector Boson Quarks not in All Jets")
+    # ]
+    variables=[variable("nCanVJetsTruth",  "Number of Truth Matched Vector Boson Jets in Other Jets"),
+    variable("canVJetsTruth/pt_m",  "p_{T} of Truth Matched Vector Boson Jets in Other Jets"),
+    variable("canVJetsTruth/eta",  "#eta of Truth Matched Vector Boson Jets in Other Jets"),
+    variable("canVJetsTruth/phi",  "#phi of Truth Matched Vector Boson Jets in Other Jets"),
+    # variable("nCanHTruVJets",  "Number of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("canHTruVJets/pt_m",  "p_{T} of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("canHTruVJets/eta",  "#eta of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("canHTruVJets/phi",  "#phi of Truth Matched Vector Boson Jets Considered as Higgs Candidate Jets"),
+    # variable("nNotAllTruVQuarks",  "Number of Truth Matched Vector Boson Jets in Selected Jets"),
+    # variable("ptNotAllTruVQuarks",  "p_{T} of Truth Vector Boson Quarks not in All Jets"),
+    # variable("etaNotAllTruVQuarks",  "#eta of Truth Vector Boson Quarks not in All Jets"),
+    # variable("phiNotAllTruVQuarks",  "#phi of Truth Vector Boson Quarks not in All Jets")
+    ]
+
 if o.doMain:
     for cut in cuts:
         for view in views:
@@ -650,6 +689,10 @@ variables2d = [variable("leadSt_m_vs_sublSt_m", "Leading S_{T} Dijet Mass [GeV]"
                variable("t1/xW_vs_xt", "x_{W}", "x_{t}"),
                variable("t1/xW_vs_xbW", "x_{W}", "x_{bW}"),                               
                ]
+
+if o.skim:
+    variables2d=[]
+
 if o.doMain:# and  False:
     for cut in cuts:
         for view in views:
@@ -672,7 +715,7 @@ if o.doMain:# and  False:
 # cuts = [nameTitle("passDijetMass", "Pass m(j,j)")] + cuts
 # views = ["allViews"] + views
 # regions = [nameTitle("inclusive", "")] + regions
-if o.doMain:
+if o.doMain and not o.skim:
     for cut in cuts:
         for view in views:
             for region in regions:

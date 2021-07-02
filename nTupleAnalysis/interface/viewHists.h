@@ -59,8 +59,27 @@ namespace nTupleAnalysis {
     TH1F* aveAbsEta;
     TH1F* aveAbsEtaOth;
     TH1F* stNotCan;
-    TH1F* mjjOther;
-    TH1F* ptjjOther;
+    //VHH
+    TH1F* nTruVJets;
+    jetHists* truVJets;
+    jetHists* truVJet0;
+    jetHists* truVJet1;
+    TH1F* nCanHTruVJets;
+    jetHists* canHTruVJets;
+    TH1F* nSelTruVJets;
+    TH1F* nNotAllTruVQuarks;
+    TH1F* ptNotAllTruVQuarks;
+    TH1F* etaNotAllTruVQuarks;
+    TH1F* phiNotAllTruVQuarks;
+    dijetHists* allDijets;
+    dijetHists* truVDijets;
+    dijetHists* notTruVDijets;
+    TH1F* nAllDijets;
+    TH1F* nTruVDijets;
+    TH1F* nCanVDijets;
+    TH1F* nCanVTruVDijets;
+    dijetHists* canVDijets;
+    dijetHists* canVTruVDijets;
 
     trigHists*  allTrigJets = NULL;
 

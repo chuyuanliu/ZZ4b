@@ -103,7 +103,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("DijetMass");
   cutflow->AddCut("MDRs");
   cutflow->AddCut("NjOth");
-  cutflow->AddCut("MjjOth");
+  cutflow->AddCut("MV");
   cutflow->AddCut("SvB");
   
   if(nTupleAnalysis::findSubStr(histDetailLevel,"allEvents"))     allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
@@ -112,7 +112,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passNjOth"))     passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"SvBOnly"))       SvBOnly = new   tagHists("SvBOnly", fs, true,  isMC, blind, histDetailLevel, debug);  
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMjjOth"))    passMjjOth    = new   tagHists("passMjjOth",    fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMV"))        passMV    = new   tagHists("passMV",    fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passSvB"))       passSvB       = new   tagHists("passSvB",       fs, true,  isMC, blind, histDetailLevel, debug);  
   //if(nTupleAnalysis::findSubStr(histDetailLevel,"passXWt"))       passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"failrWbW2"))     failrWbW2     = new   tagHists("failrWbW2",     fs, true,  isMC, blind, histDetailLevel, debug);
@@ -125,7 +125,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(!passMDRs)      std::cout << "Turning off passMDRs Hists" << std::endl; 
   if(!passNjOth)     std::cout << "Turning off passNjOth Hists" << std::endl; 
   if(!passSvB)       std::cout << "Turning off passSvB Hists" << std::endl; 
-  if(!passMjjOth)    std::cout << "Turning off passMjjOth Hists" << std::endl; 
+  if(!passMV)    std::cout << "Turning off passMV Hists" << std::endl; 
   //if(!passXWt)       std::cout << "Turning off passXWt Hists" << std::endl; 
   if(failrWbW2)     std::cout << "Turning on failrWbW2 Hists" << std::endl; 
   if(passMuon)      std::cout << "Turning on passMuon Hists" << std::endl; 
@@ -948,13 +948,13 @@ int analysis::processEvent(){
   }
 
     // Vector boson candidate dijet mass cut
-  if( event->mVjj < 60  || event->mVjj > 110){
+  if( !event->passMV ){
     if(debug) cout << "Fail vector boson mass cut" << endl;
     return 0;
   }
-  cutflow->Fill(event,"MjjOth");
-  if (passMjjOth!=NULL && event->passHLT){
-    passMjjOth->Fill(event, event->views);
+  cutflow->Fill(event,"MV");
+  if (passMV!=NULL && event->passHLT){
+    passMV->Fill(event, event->views);
   }
 
   // SvB classfier score cut

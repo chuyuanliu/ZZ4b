@@ -29,9 +29,9 @@ class ReCoupling:
             self.RootFiles[year] = {}
             for signal in signals:
                 self.RootFiles[year][signal] = []
-        sampleCouplings = [{},{'CV':0.5},{'CV':1.5},{'C2V':0},{'C2V':2},{'C3':0},{'C3':2}]
-        sampleFilenames = fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0')
-        cMat = np.empty((7,6))
+        sampleCouplings = [{'CV':0.5},{'CV':1.5},{'C2V':0.0},{'C2V':2.0},{'C3':0.0},{'C3':2.0}]
+        sampleFilenames = fh.getCouplingList('CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0')
+        cMat = np.empty((6,6))
         for i in range(len(sampleCouplings)):
             cMat[i][:]=self.GetWeights(**sampleCouplings[i])
         self.CInv = np.linalg.pinv(cMat)
@@ -197,23 +197,24 @@ class ReCoupling:
 if __name__ == '__main__':
     with ReCoupling() as producer:
         producer.Debug = True
-        producer.AddHists(['passMjjOth/fourTag/mainView/HHSR/*','passMjjOth/fourTag/mainView/HHSR/v4j/*',
-        'passSvB/fourTag/mainView/HHSR/*','passSvB/fourTag/mainView/HHSR/v4j/*'])
-        producer.RemoveHists(['pass*/fourTag/mainView/HHSR/SvB*','pass*/fourTag/mainView/HHSR/FvT*'])
-        producer.AddHists(['passMjjOth/fourTag/mainView/HHSR/SvB_MA_ps','passSvB/fourTag/mainView/HHSR/SvB_MA_ps'])
-        for value in range(-10,11,1):
-            producer.Create(C2V=value)
-            producer.Create(C3=value)
+        # producer.AddHists(['passMjjOth/fourTag/mainView/HHSR/*','passMjjOth/fourTag/mainView/HHSR/v4j/*',
+        # 'passSvB/fourTag/mainView/HHSR/*','passSvB/fourTag/mainView/HHSR/v4j/*'])
+        # producer.RemoveHists(['pass*/fourTag/mainView/HHSR/SvB*','pass*/fourTag/mainView/HHSR/FvT*'])
+        # producer.AddHists(['passMjjOth/fourTag/mainView/HHSR/SvB_MA_ps','passSvB/fourTag/mainView/HHSR/SvB_MA_ps'])
+        # for value in range(-10,11,1):
+        #     producer.Create(C2V=value)
+        #     producer.Create(C3=value)
 
 
 #LO Madgraph xsecs
-#WHH_CV_1_0_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0004157 +- 1.319e-06 pb
-#WHH_CV_1_0_C2V_2_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.001114 +- 3.251e-06 pb
-#WHH_CV_1_0_C2V_1_0_C3_2_0_13TeV-madgraph.log:     Cross-section :   0.0006848 +- 1.987e-06 pb
-#WHH_CV_1_0_C2V_0_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0001492 +- 6.739e-07 pb
 #WHH_CV_0_5_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0002864 +- 9.158e-07 pb
-#WHH_CV_1_5_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0008897 +- 3.418e-06 pb
+#WHH_CV_1_5_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0008897 +- 3.418e-06 pb 
+#WHH_CV_1_0_C2V_2_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.001114 +- 3.251e-06 pb
+#WHH_CV_1_0_C2V_0_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0001492 +- 6.739e-07 pb
+#WHH_CV_1_0_C2V_1_0_C3_2_0_13TeV-madgraph.log:     Cross-section :   0.0006848 +- 1.987e-06 pb
 #WHH_CV_1_0_C2V_1_0_C3_0_0_13TeV-madgraph.log:     Cross-section :   0.0002366 +- 1.025e-06 pb
+
+#WHH_CV_1_0_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0004157 +- 1.319e-06 pb
 
 #ZHH_CV_1_0_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0002632 +- 1.022e-06 pb
 #ZHH_CV_1_0_C2V_2_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0006739 +- 2.855e-06 pb

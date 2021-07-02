@@ -39,8 +39,28 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   canJet2 = new jetHists(name+"/canJet2", fs, "Boson Candidate Jet_{2}");
   canJet3 = new jetHists(name+"/canJet3", fs, "Boson Candidate Jet_{3}");
   othJets = new jetHists(name+"/othJets", fs, "Other Selected Jets");
-  mjjOther = dir.make<TH1F>("mjjOther", (name+"/mjjOther; Mass of other 2 jets; Entries").c_str(),  100,0,500);
-  ptjjOther = dir.make<TH1F>("ptjjOther", (name+"/ptjjOther; Pt of other 2 jets; Entries").c_str(),  100,0,500);
+  //VHH
+  nTruVJets = dir.make<TH1F>("nTruVJets", (name+"/nTruVJets; Number of Truth Matched Vector Boson Jets in Other Jets; Entries").c_str(), 16,-0.5,15.5);
+  truVJets = new jetHists(name+"/truVJets", fs, "Truth Matched Vector Boson Jets in Other Jets");
+  truVJet0 = new jetHists(name+"/truVJet0", fs, "Truth Matched Vector Boson Jet_{0} in Other Jets");
+  truVJet1 = new jetHists(name+"/truVJet1", fs, "Truth Matched Vector Boson Jet_{1} in Other Jets");
+  nCanHTruVJets = dir.make<TH1F>("nCanHTruVJets", (name+"/nCanHTruVJets; Number of Truth Matched Vector Boson Jets in Higgs Candidate Jets; Entries").c_str(), 16,-0.5,15.5);
+  canHTruVJets = new jetHists(name+"/canHTruVJets", fs, "Truth Matched Vector Boson Jets in Higgs Candidate Jets");
+  nSelTruVJets =dir.make<TH1F>("nSelTruVJets", (name+"/nSelTruVJets; Number of Truth Matched Vector Boson Jets in Selected Jets; Entries").c_str(), 16,-0.5,15.5);
+  nNotAllTruVQuarks = dir.make<TH1F>("nNotAllTruVQuarks", (name+"/nNotAllTruVQuarks; Number of Truth Vector Boson Quarks not in All Jets; Entries").c_str(), 16,-0.5,15.5);
+  ptNotAllTruVQuarks = dir.make<TH1F>("ptNotAllTruVQuarks", (name+"/ptNotAllTruVQuarks; p_{T} of Truth Vector Boson Quarks not in All Jets; Entries").c_str(), 25,0,25);
+  etaNotAllTruVQuarks = dir.make<TH1F>("etaNotAllTruVQuarks", (name+"/etaNotAllTruVQuarks; #eta of Truth Vector Boson Quarks not in All Jets; Entries").c_str(), 40,-5,5);
+  phiNotAllTruVQuarks = dir.make<TH1F>("phiNotAllTruVQuarks", (name+"/phiNotAllTruVQuarks; #phi of Truth Vector Boson Quarks not in All Jets; Entries").c_str(), 40,-5,5);
+  allDijets   = new dijetHists(name+"/allDijets",   fs,    "All Dijets formed by Other Jets");
+  truVDijets   = new dijetHists(name+"/truVDijets",   fs,    "Truth Matched Vector Boson Dijets");
+  notTruVDijets   = new dijetHists(name+"/notTruVDijets",   fs,    "Not Truth Matched Vector Boson Dijets");
+  nAllDijets =dir.make<TH1F>("nAllDijets", (name+"/nAllDijets; Number of All Dijets formed by Other Jets; Entries").c_str(), 16,-0.5,15.5);
+  nTruVDijets =dir.make<TH1F>("nTruVDijets", (name+"/nTruVDijets; Number of Truth Matched Vector Boson Dijets; Entries").c_str(), 16,-0.5,15.5);
+  nCanVDijets =dir.make<TH1F>("nCanVDijets", (name+"/nCanVDijets; Number of Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
+  nCanVTruVDijets =dir.make<TH1F>("nCanVTruVDijets", (name+"/nCanVTruVDijets; Number of Truth Matched Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
+  canVDijets   = new dijetHists(name+"/canVDijets",   fs,    "Vector Boson Candidate Dijets");
+  canVTruVDijets   = new dijetHists(name+"/canVTruVDijets",   fs,    "Truth Matched Vector Boson Candidate Dijets");
+
   aveAbsEta = dir.make<TH1F>("aveAbsEta", (name+"/aveAbsEta; <|#eta|>; Entries").c_str(), 25, 0 , 2.5);
   aveAbsEtaOth = dir.make<TH1F>("aveAbsEtaOth", (name+"/aveAbsEtaOth; Other Jets <|#eta|>; Entries").c_str(), 27, -0.2, 2.5);
   //allTrigJets = new trigHists(name+"/allTrigJets", fs, "All Trig Jets");
@@ -243,10 +263,30 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   canJet3->Fill(event->canJets[3], event->weight);
   for(auto &jet: event->othJets) othJets->Fill(jet, event->weight);
 
-  if(event->othJets.size() > 1){
-    mjjOther ->Fill( event->mVjj,    event->weight);
-    ptjjOther->Fill( event->pVjj.Pt(),   event->weight);
+  nTruVJets->Fill(event->truVJets.size(), event->weight);
+  for(auto &jet: event->truVJets) truVJets->Fill(jet, event->weight);
+  if(event->truVJets.size()>1){
+    truVJet0->Fill(event->truVJets[0], event->weight);
+    truVJet1->Fill(event->truVJets[1], event->weight);
   }
+  nCanHTruVJets->Fill(event->canHTruVJets.size(), event->weight);
+  for(auto &jet: event->canHTruVJets) canHTruVJets->Fill(jet, event->weight);
+  nSelTruVJets->Fill(event->truVJets.size()+event->canHTruVJets.size(), event->weight);
+  nNotAllTruVQuarks->Fill(event->notAllTruVQuarks.size(), event->weight);
+  for(auto &particle: event->notAllTruVQuarks){
+    ptNotAllTruVQuarks->Fill(particle->pt, event->weight);
+    etaNotAllTruVQuarks->Fill(particle->eta, event->weight);
+    phiNotAllTruVQuarks->Fill(particle->phi, event->weight);
+  }
+  for(auto &dijet: event->allDijets) allDijets->Fill(dijet, event->weight);
+  for(auto &dijet: event->truVDijets) truVDijets->Fill(dijet, event->weight);
+  for(auto &dijet: event->notTruVDijets) notTruVDijets->Fill(dijet, event->weight);
+  for(auto &dijet: event->canVDijets) canVDijets->Fill(dijet, event->weight);
+  for(auto &dijet: event->canVTruVDijets) canVTruVDijets->Fill(dijet, event->weight);
+  nAllDijets->Fill(event->allDijets.size(), event->weight);
+  nTruVDijets->Fill(event->truVDijets.size(), event->weight);
+  nCanVDijets->Fill(event->canVDijets.size(), event->weight);
+  nCanVTruVDijets->Fill(event->canVTruVDijets.size(), event->weight);
 
   aveAbsEta->Fill(event->aveAbsEta, event->weight);
   aveAbsEtaOth->Fill(event->aveAbsEtaOth, event->weight);

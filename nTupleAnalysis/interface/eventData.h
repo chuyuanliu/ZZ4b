@@ -173,7 +173,8 @@ namespace nTupleAnalysis {
     bool doHtTurnOnStudy = true;
     bool HLT_HT330_4j_75_60_45_40    = false;
 
-    float jetPtMin = 40;
+    const float jetPtMin = 20;
+    const float HJetPtMin = 40;
     const float jetEtaMax= 2.4;
     const int puIdMin = 0b110;//7=tight, 6=medium, 4=loose working point
     const bool doJetCleaning=false;
@@ -183,6 +184,7 @@ namespace nTupleAnalysis {
     std::vector<jetPtr> selJetsLoosePt;//jets passing loose pt/eta requirements
     std::vector<jetPtr> tagJetsLoosePt;//tagged jets passing loose pt/eta requirements
     std::vector<jetPtr> selJets;//jets passing pt/eta requirements
+    std::vector<jetPtr> selJetsH;//jets passing H boson jet pt/eta requirements
     std::vector<jetPtr> looseTagJets;//jets passing pt/eta and loose bTagging requirements
     std::vector<jetPtr> tagJets;//jets passing pt/eta and bTagging requirements
     std::vector<jetPtr> antiTag;//jets passing pt/eta and failing bTagging requirements
@@ -194,8 +196,26 @@ namespace nTupleAnalysis {
     std::vector<trigPtr> selTrigJets;//sel jets in nTuple
     float ht, ht30, L1ht, L1ht30, HLTht, HLTht30, HLTht30Calo, HLTht30CaloAll, HLTht30Calo2p6;
     std::vector<jetPtr> allNotCanJets;//other jets pt>20
- 
+    
+    
+
+    // VHH
+    std::vector<jetPtr> canHTruVJets; //truth matched jets from V decay, selected as H candidate
+    std::vector<jetPtr> truVJets; //truth matched jets from V decay
+    std::vector<particlePtr> notAllTruVQuarks; // truth quarks from V decay, not in all jets
+    std::vector<dijetPtr> allDijets; // all dijets formed by othJets
+    std::vector<dijetPtr> truVDijets; // truth matched dijets from V decay
+    std::vector<dijetPtr> notTruVDijets; // not truth matched dijets from V decay
+    std::vector<dijetPtr> canVDijets; // v candidate dijet
+    std::vector<dijetPtr> canVTruVDijets; // truth matched v candidate dijet
+
+    template<class T1, class T2> bool matchJet(const T1& jet, const std::vector<T2>& jets);
+    bool matchDijet(const dijetPtr& dijet, const truthData* truth);
+
+    bool passMV;
+
     uint nSelJets;
+    uint nSelJetsH;
     uint nLooseTagJets;
     uint nTagJets;
     uint nAntiTag;
@@ -221,8 +241,6 @@ namespace nTupleAnalysis {
     float dR0123; float dR0213; float dR0312;
     float othJet_pt[40]; float othJet_eta[40]; float othJet_phi[40]; float othJet_m[40];
     float notCanJet_pt[40]; float notCanJet_eta[40]; float notCanJet_phi[40]; float notCanJet_m[40];
-    TLorentzVector pVjj;
-    float mVjj;
     
     bool appliedMDRs;
     bool HHSB; bool HHCR; bool HHSR;

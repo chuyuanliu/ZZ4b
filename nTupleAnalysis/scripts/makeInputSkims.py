@@ -15,10 +15,12 @@ parser.add_option('--copyToEOS',  action="store_true",      help="Copy to EOS")
 parser.add_option('--cleanPicoAODs',  action="store_true",      help="rm local picoAODs")
 parser.add_option('--makeInputFileLists',  action="store_true",      help="make Input file lists")
 parser.add_option('--makeSignalFileLists',  action="store_true",      help="make Input file lists")
+parser.add_option('--noData',       action="store_true",      help="Skip data")
 parser.add_option('--noTT',       action="store_true",      help="Skip TTbar")
 parser.add_option('-c',   '--condor',   action="store_true", default=False,           help="Run on condor")
 parser.add_option('--debug',   action="store_true", default=False,           help="Enable debug")
 parser.add_option('--email',            default=None,      help="")
+parser.add_option('--bTag',   default='0.3',           help="change b-tagging working point")
 
 o, a = parser.parse_args()
 
@@ -46,17 +48,11 @@ if o.condor:
 # In the following "3b" refers to 3b subsampled to have the 4b statistics
 #
 #outputDir="/uscms/home/jda102/nobackup/HH4b/CMSSW_11_1_3/src/closureTests/nominal/"
-outputDir="/uscms/home/"+USER+"/nobackup/"+ ("VHH/" if o.makeVHHSkims else "HH4b/")
+outputDir="/uscms/home/"+USER+"/nobackup/VHH/"
 
 
 # Helpers
 runCMD='nTupleAnalysis ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py'
-
-ttbarSamples = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-signalSamples = ["ZZ4b","ZH4b","ggZH4b"]
-
-if o.noTT:
-    ttbarSamples = []
 
 years = o.year.split(",")
 
@@ -74,22 +70,22 @@ MCyearOpts["2016"]=yearOpts["2016"]+' --bTagSF -l 35.9e3 --isMC '
 
 dataPeriods = {}
 # All
-# dataPeriods["2018"] = ["A","B","C","D"]
-# dataPeriods["2017"] = ["B","C","D","E","F"]
-# dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
+dataPeriods["2018"] = ["A","B","C","D"]
+dataPeriods["2017"] = ["C","D","E","F"]
+dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
 # for skimming 
-dataPeriods["2018"] = []
-dataPeriods["2017"] = []
-dataPeriods["2016"] = []
+# dataPeriods["2018"] = []
+# dataPeriods["2017"] = []
+# dataPeriods["2016"] = []
 
 # for skimming
 ttbarSamplesByYear = {}
-# ttbarSamplesByYear["2018"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-# ttbarSamplesByYear["2017"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-# ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-ttbarSamplesByYear["2018"] = []
-ttbarSamplesByYear["2017"] = []
-#ttbarSamplesByYear["2016"] = ["TTTo2L2Nu"]
+ttbarSamplesByYear["2018"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+ttbarSamplesByYear["2017"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+# ttbarSamplesByYear["2018"] = []
+# ttbarSamplesByYear["2017"] = []
+#ttbarSamplesByYear["2016"] = []
 
 eosls = "eos root://cmseos.fnal.gov ls"
 eoslslrt = "eos root://cmseos.fnal.gov ls -lrt"
@@ -140,38 +136,53 @@ ZHHSamples["2018"] = [
 
 VHHSamples = [WHHSamples,ZHHSamples]
 
+if o.noTT:
+    ttbarSamplesByYear = {"2016":[],"2017":[],"2018":[]}
+
+if o.noData:
+    dataPeriods = {"2016":[],"2017":[],"2018":[]}
+
 #tagID = "b0p6"
-tagID = "b0p3"
+tagID = "b"+o.bTag.replace('.','p')
 
 #
 # Make skims with out the di-jet Mass cuts
 #
 if o.makeSkims:
 
-    cmds = []
-    logs = []
+    dag_config = []
+    condor_jobs = []
 
     for y in years:
         
 
-        histConfig = " --histDetailLevel allEvents.threeTag.fourTag --histFile histsFromNanoAOD.root "
-        picoOut = " -p picoAOD_noDiJetMjj_"+tagID+".root "
+        histConfig = "--histFile histsFromNanoAOD.root"
+        picoOut = " -p picoAOD_"+tagID+".root "
+        EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/skims/"
 
         #
         #  Data
         #
-        for p in dataPeriods[y]:
-            cmds.append(runCMD+"  -i ZZ4b/fileLists/data"+y+p+".txt -o "+outputDir+  yearOpts[y] + histConfig + picoOut + " --fastSkim  --noDiJetMassCutInPicoAOD ")
-            logs.append(outputDir+"/log_skim_"+tagID+"_"+y+p)
+        for d in dataPeriods[y]:
+            cmd = runCMD+" -i ZZ4b/fileLists/data"+y+d+".txt -o "+EOSOUTDIR+  yearOpts[y] + histConfig + picoOut +" --fastSkim --noDiJetMassCutInPicoAOD" + (" --debug" if o.debug else "")
+            condor_jobs.append(makeCondorFile(cmd, "None", "data"+y+d+"_"+tagID, outputDir=outputDir, filePrefix="data_"))
 
         #
         #  TTbar
         # 
         for tt in ttbarSamplesByYear[y]:
-            cmds.append(runCMD+" -i ZZ4b/fileLists/"+tt+y+".txt -o"+outputDir+  MCyearOpts[y] + histConfig + picoOut +" --fastSkim --noDiJetMassCutInPicoAOD ")
-            logs.append(outputDir+"/log_skim_"+tagID+"_"+tt+y)
+            cmd = runCMD+" -i ZZ4b/fileLists/"+tt+y+".txt -o "+EOSOUTDIR+  MCyearOpts[y] + histConfig + picoOut +" --fastSkim --noDiJetMassCutInPicoAOD" + (" --debug" if o.debug else "")
+            condor_jobs.append(makeCondorFile(cmd, "None", tt+y+"_"+tagID, outputDir=outputDir, filePrefix="TTbar_"))
 
-    babySit(cmds, doRun, logFiles=logs)
+    dag_config.append(condor_jobs)
+    execute("rm "+outputDir+"data_All.dag", doRun)
+    execute("rm "+outputDir+"data_All.dag.*", doRun)
+    execute("rm "+outputDir+"TTbar_All.dag", doRun)
+    execute("rm "+outputDir+"TTbar_All.dag.*", doRun)
+    dag_file = makeDAGFile("data_All.dag",dag_config, outputDir=outputDir)
+    cmd = "condor_submit_dag "+dag_file
+    execute(cmd, o.execute)
+
     if o.email: execute('echo "Subject: [make3bMix4bClosure] mixInputs  Done" | sendmail '+o.email,doRun)
 
 

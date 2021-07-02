@@ -5,6 +5,7 @@ import os, re, shutil
 import sys
 import subprocess
 import shlex
+from glob import glob
 import optparse
 from threading import Thread
 sys.path.insert(0, 'nTupleAnalysis/python/') #https://github.com/patrickbryant/nTupleAnalysis
@@ -20,11 +21,12 @@ class nameTitle:
 
 CMSSW = getCMSSW()
 USER = getUSER()
-EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/"
-CONDOROUTPUTBASE = "/store/user/"+USER+"/condor/"
+EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/VHH/"
+CONDOROUTPUTBASE = "/store/user/"+USER+"/condor/VHH/"
 TARBALL   = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/"+CMSSW+".tgz"
 
 parser = optparse.OptionParser()
+parser.add_option('--makeFileList',action="store_true",                        default=False, help="Make file list with DAS queries")
 parser.add_option('-e',            action="store_true", dest="execute",        default=False, help="Execute commands. Default is to just print them")
 parser.add_option('-s',            action="store_true", dest="doSignal",       default=False, help="Run signal MC")
 parser.add_option('-t',            action="store_true", dest="doTT",           default=False, help="Run ttbar MC")
@@ -34,7 +36,7 @@ parser.add_option('-q',            action="store_true", dest="doQCD",          d
 parser.add_option('-y',                                 dest="year",           default="2016,2017,2018", help="Year or comma separated list of years")
 parser.add_option('-o',                                 dest="outputBase",     default="/uscms/home/"+USER+"/nobackup/VHH/", help="path to output")
 parser.add_option('-w',            action="store_true", dest="doWeights",      default=False, help="Fit jetCombinatoricModel and nJetClassifier TSpline")
-#parser.add_option('--makeJECSyst', action="store_true", dest="makeJECSyst",    default=False, help="Make jet energy correction systematics friend TTrees")
+parser.add_option('--makeJECSyst', action="store_true", dest="makeJECSyst",    default=False, help="Make jet energy correction systematics friend TTrees")
 parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      default=False, help="Run event loop for jet energy correction systematics")
 parser.add_option('-j',            action="store_true", dest="useJetCombinatoricModel",       default=False, help="Use the jet combinatoric model")
 parser.add_option('-r',            action="store_true", dest="reweight",       default=False, help="Do reweighting with nJetClassifier TSpline")
@@ -47,7 +49,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passNjOth.SvBOnly.passSvB.passMjjOth.HHRegions.threeTag.fourTag", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passNjOth.passMV.HHRegions.fourTag.threeTag", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -58,11 +60,11 @@ parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagE
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
 # for VHH study
-parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'change signal coupling')
-parser.add_option(   '--SvBScore ', dest = 'SvBScore', default = '0.8', help = 'SvB classifier score cut')
+parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'set signal coupling')
+parser.add_option(   '--SvBScore ', dest = 'SvBScore', default = '0.8', help = 'set cut on SvB classifier score')
 o, a = parser.parse_args()
 
-
+fromNANOAOD = (o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none") 
 #
 # Analysis in several "easy" steps
 #
@@ -136,14 +138,16 @@ nWorkers   = 3
 script     = "ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py"
 years      = o.year.split(",")
 lumiDict   = {"2016":  "35.9e3",#35.8791
+              '2016_preVFP': '19.5e3',
+              '2016_postVFP': '16.5e3',
               "2017":  "36.7e3",#36.7338
               "2018":  "60.0e3",#59.9656
               "17+18": "96.7e3",
               "RunII":"132.6e3",
             }
-bTagDict   = {"2016": "0.6",#"0.3093", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
-              "2017": "0.6",#"0.3033", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
-              "2018": "0.6",#"0.2770"} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
+bTagDict   = {"2016": "0.3",#"0.3093", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
+              "2017": "0.3",#"0.3033", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
+              "2018": "0.3",#"0.2770"} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
               }
 outputBase = o.outputBase
 gitRepoBase= 'ZZ4b/nTupleAnalysis/weights/'
@@ -171,7 +175,7 @@ def jetCombinatoricModel(year):
     return gitRepoBase+"dataRunII/jetCombinatoricModel_"+JCMRegion+"_"+JCMVersion+".txt"
 #reweight = gitRepoBase+"data"+year+"/reweight_"+JCMRegion+"_"+JCMVersion+".root"
 
-SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/SvB_ResNet_9_9_9_np1713_lr0.008_epochs40_stdscale_epoch40_loss0.2138.onnx"
+SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/SvB_ResNet_8_8_8_np1391_lr0.01_epochs20_epoch20.onnx"
 
 def signalFiles(signals, year):
     return ["ZZ4b/fileLists/" + signal + year + ".txt" for signal in signals]
@@ -181,8 +185,9 @@ def ttbarFiles(year):
 
 def accxEffFiles(signals, year):
     return [outputBase + signal + year + "/hists.root" for signal in signals]
-
-DAG = dag(fileName="analysis.dag")
+DAG = None
+if o.condor:
+    DAG = dag(fileName="analysis.dag")
 
 # def makeJECSyst():
 #     cmds=[]
@@ -199,11 +204,16 @@ DAG = dag(fileName="analysis.dag")
 def makeTARBALL():
     base="/uscms/home/"+USER+"/nobackup/"
     if os.path.exists(base+CMSSW+".tgz"):
-        print "TARBALL already exists, skip making it"
+        print "# TARBALL already exists, skip making it"
         return
     cmd  = 'tar -C '+base+' -zcvf '+base+CMSSW+'.tgz '+CMSSW
     cmd += ' --exclude="*.pdf" --exclude="*.jdl" --exclude="*.stdout" --exclude="*.stderr" --exclude="*.log"'
-    cmd += ' --exclude=".git" --exclude="PlotTools" --exclude="madgraph" --exclude="*.pkl" --exclude="*.root"'
+    cmd += ' --exclude=".git" --exclude="PlotTools" --exclude="madgraph" --exclude="*.pkl"'# --exclude="*.root"'#some root files needed for nano_postproc.py jetmetCorrector
+    cmd += ' --exclude="toy4b"'
+    cmd += ' --exclude="CombineHarvester"'
+    cmd += ' --exclude="HiggsAnalysis"'
+    cmd += ' --exclude="closureFits"'
+    cmd += ' --exclude="higgsCombine*.root"'
     cmd += ' --exclude="tmp" --exclude="combine" --exclude-vcs --exclude-caches-all'
     execute(cmd, o.execute)
     cmd  = 'ls '+base+' -alh'
@@ -237,13 +247,18 @@ def doSignal():
                     cmd += " -i "+fileList
                     cmd += " -o "+basePath
                     cmd += " -y "+year
+                    if '2016' in fileList:
+                        if 'preVFP' in fileList:
+                            lumi = lumiDict['2016_preVFP']
+                        else: 
+                            lumi = lumiDict['2016_postVFP']
                     cmd += " -l "+lumi
                     cmd += " --histDetailLevel "+o.detailLevel
                     cmd += " --histFile "+histFile
                     cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
                     cmd += " -r " if o.reweight else ""
                     cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
-                    cmd += " -f " if o.fastSkim else ""
+                    #cmd += " -f " if o.fastSkim else ""
                     cmd += " --isMC"
                     cmd += " --SvBScore "+o.SvBScore
                     cmd += " --bTag "+bTagDict[year]
@@ -258,21 +273,11 @@ def doSignal():
                     #         sample = fileList.split("/")[-1].replace(".txt","")
                     #         cmd += ' ; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
 
-                    if o.condor:
-                        thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-                        thisJDL.make()
-                        DAG.addJob(thisJDL)
-                    else:
-                        cmds.append(cmd)
+                    cmds.append(cmd)
 
     if o.condor:
         DAG.addGeneration()
-    else:
-        # wait for jobs to finish
-        if len(cmds)>1:
-            babySit(cmds, o.execute, maxJobs=nWorkers)
-        else:
-            execute(cmd, o.execute)
+    execute(cmds, o.execute, condor_dag=DAG)
 
     cmds = []
 
@@ -285,17 +290,12 @@ def doSignal():
                 cmd = "hadd -f"
                 for i in [2,1,0]:
                     cmd += " " + basePath + signals[i] + year + "/" + histFile
-                if o.condor:
-                    thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-                    thisJDL.make()
-                    DAG.addJob( thisJDL )
-                else:
+
                     cmds.append(cmd)
 
     if o.condor: 
         DAG.addGeneration()
-    else:
-        babySit(cmds, o.execute, maxJobs=nWorkers)        
+    execute(cmds, o.execute, condor_dag=DAG)
 
     cmds = []
     if "2017" in years and "2018" in years:
@@ -308,17 +308,11 @@ def doSignal():
                     cmd = "hadd -f"
                     for year in ["17+18", "2017", "2018"]:
                         cmd += " " + basePath + sample + year + "/" + histFile
-                    if o.condor:
-                        thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-                        thisJDL.make()
-                        DAG.addJob( thisJDL )
-                    else:
                         cmds.append(cmd)
                 
     if o.condor:
         DAG.addGeneration()
-    else:
-        babySit(cmds, o.execute, maxJobs=nWorkers)
+    execute(cmds, o.execute, condor_dag=DAG)
 
       
 def doAccxEff():   
@@ -347,10 +341,10 @@ def doDataTT():
     if o.createPicoAOD == "picoAOD.root": histFile = "histsFromNanoAOD.root"
 
     for year in years:
+        lumi = lumiDict[year]
         files = []
         if o.doData: files += dataFiles(year)
         if o.doTT:   files += ttbarFiles(year)
-        lumi = lumiDict[year]
         for fileList in files:
             cmd  = "nTupleAnalysis "+script
             cmd += " -i "+fileList
@@ -366,10 +360,14 @@ def doDataTT():
             cmd += " --bTag "+bTagDict[year]
             cmd += " --nevents "+o.nevents
             if fileList in ttbarFiles(year):
-                cmd += " --bTagSF"
-            
-            #cmd += " --bTagSyst" if o.bTagSyst else ""
+                if '2016' in fileList:
+                    if 'preVFP' in fileList:
+                        lumi = lumiDict['2016_preVFP']
+                    else: 
+                        lumi = lumiDict['2016_postVFP']
                 cmd += " -l "+lumi
+                cmd += " --bTagSF"
+            #cmd += " --bTagSyst" if o.bTagSyst else ""
                 cmd += " --isMC "
             if o.createHemisphereLibrary  and fileList not in ttbarFiles:
                 cmd += " --createHemisphereLibrary "
@@ -385,22 +383,15 @@ def doDataTT():
             #     if o.createPicoAOD != "picoAOD.root":
             #         sample = fileList.split("/")[-1].replace(".txt","")
             #         cmd += ' ; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
-
-            if o.condor:
-                thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-                thisJDL.make()
-                DAG.addJob( thisJDL )
-            else:
-                cmds.append(cmd)
+            
+            cmds.append(cmd)
 
     if o.condor:
         DAG.addGeneration()
-    else:
-        # wait for jobs to finish
-        if len(cmds)>1:
-            babySit(cmds, o.execute, maxJobs=nWorkers)
-        else:
-            execute(cmd, o.execute)
+    execute(cmds, o.execute, condor_dag=DAG)
+
+
+
 
     # make combined histograms for plotting purposes
     cmds = []
@@ -408,12 +399,7 @@ def doDataTT():
         if o.doData:
             mkdir(basePath+"data"+year, o.execute)
             cmd = "hadd -f "+basePath+"data"+year+"/"+histFile+" "+" ".join([basePath+"data"+year+period+"/"+histFile for period in periods[year]])
-            if o.condor:
-                thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-                thisJDL.make()
-                DAG.addJob( thisJDL )
-            else:
-                cmds.append(cmd)
+            cmds.append(cmd)
     
         if o.doTT:
             files = ttbarFiles(year)
@@ -544,42 +530,23 @@ def h52root():
             subdir = process+year
             cmd = "python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py"
             cmd += " -i "+basePath+subdir+'/picoAOD.h5'
-            if o.condor:
-                #cmd += " -o picoAOD.root"
-                thisJDL = jdl(CMSSW=CMSSW, EOSOUTDIR=EOSOUTDIR+subdir, TARBALL=TARBALL, cmd=cmd)
-                thisJDL.make()
-                DAG.addJob( thisJDL )
-            else:
-                cmds.append( cmd )
+            cmds.append( cmd )
 
         for period in periods[year]:
             subdir = 'data'+year+period
             cmd = "python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py"
             cmd += " -i "+basePath+subdir+'/picoAOD.h5'
-            if o.condor:
-                #cmd += " -o picoAOD.root"
-                thisJDL = jdl(CMSSW=CMSSW, EOSOUTDIR=EOSOUTDIR+subdir, TARBALL=TARBALL, cmd=cmd)
-                thisJDL.make()
-                DAG.addJob( thisJDL )
-            else:
-                cmds.append( cmd )                
+            cmds.append( cmd )                
 
         for process in ['TTToHadronic', 'TTToSemiLeptonic', 'TTTo2L2Nu']:
             subdir = process+year
             cmd = "python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py"
             cmd += " -i "+basePath+subdir+'/picoAOD.h5'
-            if o.condor:
-                #cmd += " -o picoAOD.root"
-                thisJDL = jdl(CMSSW=CMSSW, EOSOUTDIR=EOSOUTDIR+subdir, TARBALL=TARBALL, cmd=cmd)
-                thisJDL.make()
-                DAG.addJob( thisJDL )
-            else:
-                cmds.append( cmd )
+            cmds.append( cmd )
 
     if o.condor:
         DAG.addGeneration()
-    else:
-        babySit(cmds, o.execute, maxJobs=nWorkers)
+    execute(cmds, o.execute, condor_dag=DAG)
     
 
 
@@ -594,18 +561,11 @@ def subtractTT():
         cmd += " -d   "+ basePath+"data"+year+"/"+histFile
         cmd += " --tt "+ basePath+  "TT"+year+"/"+histFile
         cmd += " -q   "+ basePath+ "qcd"+year+"/"+histFile
-        if o.condor:
-            subdir = "qcd"+year
-            thisJDL = jdl(CMSSW=CMSSW, EOSOUTDIR=EOSOUTDIR+subdir, TARBALL=TARBALL, cmd=cmd)
-            thisJDL.make()
-            DAG.addJob( thisJDL )
-        else:
-            cmds.append( cmd )
+        cmds.append( cmd )
 
     if o.condor:
         DAG.addGeneration()
-    else:
-        babySit(cmds, o.execute, maxJobs=nWorkers)
+    execute(cmds, o.execute, condor_dag=DAG)        
 
     cmds = []
     
@@ -614,27 +574,16 @@ def subtractTT():
         cmd = "hadd -f"
         for year in ["RunII", "2016", "2017", "2018"]:
             cmd += " " + basePath + "qcd" + year + "/" + histFile
-        if o.condor:
-            thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-            thisJDL.make()
-            DAG.addJob( thisJDL )
-        else:
             cmds.append(cmd)
     elif "2017" in years and "2018" in years:
         mkdir(basePath + "qcd17+18/", o.execute)
         cmd = "hadd -f"
         for year in ["17+18", "2017", "2018"]:
             cmd += " " + basePath + "qcd" + year + "/" + histFile
-        if o.condor:
-            thisJDL = jdl(CMSSW=CMSSW, TARBALL=TARBALL, cmd=cmd)
-            thisJDL.make()
-            DAG.addJob( thisJDL )
-        else:
             cmds.append(cmd)
     if o.condor:
         DAG.addGeneration()
-    else:
-        babySit(cmds, o.execute, maxJobs=nWorkers)
+    execute(cmds, o.execute, condor_dag=DAG)        
 
 
 def doWeights():
@@ -785,8 +734,8 @@ if o.h52root:
 
 # if o.makeJECSyst:
 #     makeJECSyst()
-
-startEventLoopGeneration = copy( DAG.iG )
+if o.doSignal or o.doData or o.doTT:
+    startEventLoopGeneration = copy( DAG.iG )
 if o.doSignal:
     doSignal()
 
@@ -808,12 +757,6 @@ if o.doQCD:
 
 if o.condor:
     DAG.submit(o.execute)
-    if o.execute and DAG.jobLines:
-        print "# wait 10s for DAG jobs to start before starting condor_monitor"
-        time.sleep(10)
-    if DAG.jobLines:
-        cmd = 'python nTupleAnalysis/python/condor_monitor.py'
-        execute(cmd, o.execute)
 
 if o.doAccxEff:
     doAccxEff()

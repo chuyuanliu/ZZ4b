@@ -250,8 +250,17 @@ void eventData::resetEvent(){
     selJetsLoosePt.clear();
     tagJetsLoosePt.clear();
   }
+  selJetsH.clear();
   canJets.clear();
+  notAllTruVQuarks.clear();
+  canHTruVJets.clear();
+  truVJets.clear();
   othJets.clear();
+  allDijets.clear();
+  truVDijets.clear();
+  notTruVDijets.clear();
+  canVDijets.clear();
+  canVTruVDijets.clear();
   allNotCanJets.clear(); nAllNotCanJets = 0;
   topQuarkBJets.clear();
   topQuarkWJets.clear();
@@ -259,7 +268,6 @@ void eventData::resetEvent(){
   views  .clear();
   appliedMDRs = false;
   m4j = -99;
-  mVjj = -99;
   ZZSB = false; ZZCR = false; ZZSR = false;
   ZHSB = false; ZHCR = false; ZHSR = false;
   HHSB = false; HHCR = false; HHSR = false;
@@ -276,9 +284,9 @@ void eventData::resetEvent(){
   selectedViewTruthMatch = false;
   passMDRs = false;
   passXWt = false;
+  passMV = false;
   //passDEtaBB = false;
   p4j.SetPtEtaPhiM(0,0,0,0);
-  pVjj.SetPtEtaPhiM(0,0,0,0);
   canJet1_pt = -99;
   canJet3_pt = -99;
   aveAbsEta = -99; aveAbsEtaOth = -0.1; stNotCan = 0;
@@ -452,11 +460,13 @@ void eventData::buildEvent(){
     selJetsLoosePt = treeJets->getJets(       allJets, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning);
     tagJetsLoosePt = treeJets->getJets(selJetsLoosePt, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
   } 
-  selJets       = treeJets->getJets(     allJets, jetPtMin, 1e6, jetEtaMax, doJetCleaning);
-  looseTagJets  = treeJets->getJets(     selJets, jetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger);
-  tagJets       = treeJets->getJets(looseTagJets, jetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
-  antiTag       = treeJets->getJets(     selJets, jetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger, true); //boolean specifies antiTag=true, inverts tagging criteria
+  selJets       = treeJets->getJets(     allJets,  jetPtMin, 1e6, jetEtaMax, doJetCleaning);
+  selJetsH      = treeJets->getJets(     selJets, HJetPtMin, 1e6, jetEtaMax, doJetCleaning);
+  looseTagJets  = treeJets->getJets(    selJetsH, HJetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger);
+  tagJets       = treeJets->getJets(looseTagJets, HJetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
+  antiTag       = treeJets->getJets(    selJetsH, HJetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger, true); //boolean specifies antiTag=true, inverts tagging criteria
   nSelJets      =      selJets.size();
+  nSelJetsH     =     selJetsH.size();
   nLooseTagJets = looseTagJets.size();
   nTagJets      =      tagJets.size();
   nAntiTag      =      antiTag.size();
@@ -487,7 +497,7 @@ void eventData::buildEvent(){
   //   tagJets.push_back(new jet(muon->p, 1.0));
   // }  
 
-  threeTag = (nLooseTagJets == 3 && nSelJets >= 4);
+  threeTag = (nLooseTagJets == 3 && nSelJetsH >= 4);
   fourTag  = (nTagJets >= 4);
   //hack to get bTagSF normalization factor
   //fourTag = (nSelJets >= 4); threeTag = false;
@@ -713,7 +723,26 @@ int eventData::makeNewEvent(std::vector<nTupleAnalysis::jetPtr> new_allJets)
   return 0;
 }
 
-
+// truth match
+template<class T1, class T2>
+bool eventData::matchJet(const T1& jet, const std::vector<T2>& jets){
+  for(const auto &j:jets){
+    if(jet->p.DeltaR(j->p)<0.4)
+      return true;
+  }
+  return false;
+}
+bool eventData::matchDijet(const dijetPtr& dijet, const truthData* truth){
+  if(dijet->truthMatch != NULL)
+    return true;
+  for(auto &Vqq: truth->Vqqs){
+    if((Vqq->daughters[0]->p.DeltaR(dijet->p1)<0.4 && Vqq->daughters[1]->p.DeltaR(dijet->p2)<0.4)||(Vqq->daughters[1]->p.DeltaR(dijet->p1)<0.4 && Vqq->daughters[0]->p.DeltaR(dijet->p2)<0.4)){
+      dijet->truthMatch = Vqq;
+      return true;
+    }
+  }
+  return false;
+}
 
 void eventData::chooseCanJets(){
   if(debug) std::cout<<"chooseCanJets()\n";
@@ -724,19 +753,64 @@ void eventData::chooseCanJets(){
 
   // order by decreasing btag score
   std::sort(selJets.begin(), selJets.end(), sortTag);
-  // take the four jets with highest btag score    
-  for(uint i = 0; i < 4;        ++i) canJets.push_back(selJets.at(i));
-  for(uint i = 4; i < nSelJets; ++i) othJets.push_back(selJets.at(i));
+  // take the four jets with highest btag score
+  for(uint i = 0; i < nSelJets; ++i){
+    auto & jet = selJets.at(i);
+    if(canJets.size() < 4 && jet->pt >= HJetPtMin)
+      canJets.push_back(jet);
+    else
+      othJets.push_back(jet);
+  }
   for(uint i = 0; i < 3;        ++i) topQuarkBJets.push_back(selJets.at(i));
   for(uint i = 2; i < nSelJets; ++i) topQuarkWJets.push_back(selJets.at(i));
   nOthJets = othJets.size();
 
-  auto getBTag = +[](const std::shared_ptr<nTupleAnalysis::jet>& jet){return jet->deepB;}; 
+  auto getbTag = +[](const jetPtr& jet){return jet->deepB;}; 
   if(bTagger == "CSVv2")
-    getBTag = +[](const std::shared_ptr<nTupleAnalysis::jet>& jet){return jet->CSVv2;};
+    getbTag = +[](const jetPtr& jet){return jet->CSVv2;};
   else if(bTagger == "deepFlavB" || bTagger == "deepjet")
-    getBTag = +[](const std::shared_ptr<nTupleAnalysis::jet>& jet){return jet->deepFlavB;};
-  canJet0_btag = getBTag(canJets[0]); canJet1_btag = getBTag(canJets[1]); canJet2_btag = getBTag(canJets[2]); canJet3_btag = getBTag(canJets[3]);
+    getbTag = +[](const jetPtr& jet){return jet->deepFlavB;};
+  canJet0_btag = getbTag(canJets[0]); canJet1_btag = getbTag(canJets[1]); canJet2_btag = getbTag(canJets[2]); canJet3_btag = getbTag(canJets[3]);
+
+  for(uint i = 0; i < nOthJets; ++i){
+    for(uint j = i+1; j < nOthJets; ++j){
+      auto othDijet = std::make_shared<dijet>(othJets.at(i), othJets.at(j));
+      allDijets.push_back(othDijet);
+      if(matchDijet(othDijet, truth))
+        truVDijets.push_back(othDijet);
+      else
+        notTruVDijets.push_back(othDijet);
+    }
+  }
+
+  for(auto& dijet:allDijets){
+    if(dijet->m >= 65 && dijet->m <= 105){
+       passMV = true;
+       canVDijets.push_back(dijet);
+       if(dijet->truthMatch!=NULL)
+        canVTruVDijets.push_back(dijet);
+    }
+  }
+  for(auto& Vqq:truth->Vqqs){
+    for(auto& jet:canJets){
+      if(matchJet(jet,Vqq->daughters))
+        canHTruVJets.push_back(jet);
+    }
+    for(auto& jet:othJets){
+      if(matchJet(jet,Vqq->daughters))
+        truVJets.push_back(jet);
+    }
+  }
+  std::sort(canHTruVJets.begin(), canHTruVJets.end(), sortPt);
+  std::sort(truVJets.begin(), truVJets.end(), sortPt);
+
+  for(const auto &V:truth->Vqqs){
+    for(const auto &q:V->daughters){
+      if(!matchJet(q,allJets))
+        notAllTruVQuarks.push_back(q);
+    }
+  }
+  
   // order by decreasing pt
   std::sort(selJets.begin(), selJets.end(), sortPt); 
 
@@ -785,10 +859,6 @@ void eventData::chooseCanJets(){
   canJet0_phi = canJets[0]->phi; canJet1_phi = canJets[1]->phi; canJet2_phi = canJets[2]->phi; canJet3_phi = canJets[3]->phi;
   canJet0_m   = canJets[0]->m  ; canJet1_m   = canJets[1]->m  ; canJet2_m   = canJets[2]->m  ; canJet3_m   = canJets[3]->m  ;
   //canJet0_e   = canJets[0]->e  ; canJet1_e   = canJets[1]->e  ; canJet2_e   = canJets[2]->e  ; canJet3_e   = canJets[3]->e  ;
-  if(othJets.size() > 1){
-    pVjj = othJets[0]->p + othJets[1]->p;
-    mVjj = pVjj.M();
-  }
   return;
 }
 
