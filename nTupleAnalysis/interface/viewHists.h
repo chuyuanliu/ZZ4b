@@ -11,6 +11,7 @@
 #include "nTupleAnalysis/baseClasses/interface/fourVectorHists.h"
 #include "nTupleAnalysis/baseClasses/interface/jetHists.h"
 #include "nTupleAnalysis/baseClasses/interface/muonHists.h"
+#include "nTupleAnalysis/baseClasses/interface/elecHists.h"
 #include "nTupleAnalysis/baseClasses/interface/dijetHists.h"
 #include "nTupleAnalysis/baseClasses/interface/trijetHists.h"
 #include "nTupleAnalysis/baseClasses/interface/trigHists.h"
@@ -89,6 +90,14 @@ namespace nTupleAnalysis {
     muonHists* allMuons;
     muonHists* muons_isoMed25;
     muonHists* muons_isoMed40;
+
+    TH1F* nAllElecs;
+    TH1F* nIsoMed25Elecs;
+    TH1F* nIsoMed40Elecs;
+    elecHists* allElecs;
+    elecHists* elecs_isoMed25;
+    elecHists* elecs_isoMed40;
+
 
     dijetHists* lead;
     dijetHists* subl;
@@ -183,8 +192,13 @@ namespace nTupleAnalysis {
     TH1F* SvB_ps_zz_400_inf;
 
     TH1F* FvT_q_score;
+    TH1F* FvT_q_score_dR_min;
+    TH1F* FvT_q_score_SvB_q_score_max;
     TH1F* SvB_q_score;
+    TH1F* SvB_q_score_FvT_q_score_max;
     TH1F* SvB_MA_q_score;
+
+    TH1F* FvT_SvB_q_score_max_same;
 
     TH2F* m4j_vs_nViews;
     
@@ -212,7 +226,7 @@ namespace nTupleAnalysis {
     TH2F* canJet23BTag;
 
     viewHists(std::string, fwlite::TFileService&, bool isMC = false, bool _debug = false, eventData* event = NULL, std::string histDetailLevel="");
-    void Fill(eventData*, std::unique_ptr<eventView>&);
+    void Fill(eventData*, std::shared_ptr<eventView>&);
     ~viewHists(); 
 
   };

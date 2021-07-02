@@ -10,6 +10,7 @@
 #include "nTupleAnalysis/baseClasses/interface/fourVectorHists.h"
 #include "nTupleAnalysis/baseClasses/interface/jetHists.h"
 #include "nTupleAnalysis/baseClasses/interface/muonHists.h"
+#include "nTupleAnalysis/baseClasses/interface/elecHists.h"
 #include "ZZ4b/nTupleAnalysis/interface/massRegionHists.h"
 
 using namespace nTupleAnalysis;
@@ -39,6 +40,13 @@ namespace nTupleAnalysis {
     muonHists* muons_isoMed25;
     muonHists* muons_isoMed40;
 
+    TH1F* nAllElecs;
+    TH1F* nIsoMed25Elecs;
+    TH1F* nIsoMed40Elecs;
+    elecHists* allElecs;
+    elecHists* elecs_isoMed25;
+    elecHists* elecs_isoMed40;
+
     // Event Level
     fourVectorHists* v4j;
     massRegionHists* allViews = NULL;
@@ -46,7 +54,7 @@ namespace nTupleAnalysis {
 
     eventHists(std::string, fwlite::TFileService&, bool _doViews = false, bool isMC = false, bool blind = true, std::string histDetailLevel = "", bool _debug = false, eventData* event=NULL);
     void Fill(eventData*);
-    void Fill(eventData* event, std::vector<std::unique_ptr<eventView>> &views);
+    void Fill(eventData* event, std::vector<std::shared_ptr<eventView>> &views);
     ~eventHists(); 
 
   };

@@ -50,7 +50,11 @@ def PtEtaPhiM(v):
     ysign = py.sign()
     ysign = ysign + (ysign==0.0).float() # if py==0, px==Pt and acos(1)=pi/2 so we need zero protection on py.sign()
     Phi = (px/(Pt+0.00001)).acos() * ysign
-    Eta = (pz/(Pt+0.00001)).asinh()
+    try:
+        Eta = (pz/(Pt+0.00001)).asinh()
+    except:
+        Eta = asinh(pz/(Pt+0.00001))
+
     M   = (e**2 - px**2 - py**2 - pz**2).sqrt()
 
     return torch.cat( (Pt, Eta, Phi, M) , 1 )    
@@ -273,7 +277,7 @@ class GhostBatchNorm1d(nn.Module): #https://arxiv.org/pdf/1705.08741v2.pdf has w
         self.s = x .std(dim=0, keepdim=True).to(self.device)
         # if x.shape[0]>16777216: # too big for quantile???
         self.initialized = True
-        # self.setGhostBatches(0)
+        #self.setGhostBatches(0)
         self.runningStats = False
         self.print()
 
@@ -774,20 +778,18 @@ class MinimalAttention(nn.Module): # https://towardsdatascience.com/how-to-code-
                  layers=None, inputLayers=None,
                  iterations=2,
                  phase_symmetric=True,
-                 res_q_conv = False,
                  device='cuda'):
         super().__init__()
         
         self.debug = False
-        self.res_q_conv = res_q_conv
         self.device = device
         self.d = dim
         self.h = heads
         self.dh = self.d//self.h
         self.iter = iterations
 
-        self.score_GBN = GhostBatchNorm1d(self.h)
-        self.q_conv = GhostBatchNorm1d(self.d, phase_symmetric=phase_symmetric, conv=True, name='query convolution')
+        self.score_GBN  = GhostBatchNorm1d(self.h)
+        self.q_conv     = GhostBatchNorm1d(self.d, phase_symmetric=phase_symmetric, conv=True, name='query convolution')
         self.q_res_conv = GhostBatchNorm1d(self.d, phase_symmetric=phase_symmetric, conv=True, name='q_res convolution')
         self.negativeInfinity = torch.tensor(-1e9, dtype=torch.float).to(device)
 
@@ -874,7 +876,6 @@ class MinimalAttention(nn.Module): # https://towardsdatascience.com/how-to-code-
         #now do q transformations iter number of times
         for i in range(1,self.iter+1):
             q = NonLU(self.q_conv(q))
-            if self.res_q_conv: q = q+q0
             v = v.view(bs, self.h, self.dh, 1, vsl) # extra dim for broadcasting over queries
             q = q.view(bs, self.h, self.dh, qsl, 1) # extra dim for broadcasting over values
 
@@ -1293,8 +1294,8 @@ class HCR(nn.Module):
         self.dijetResNetBlock = ResNetBlock(self.dD, prefix='', nLayers=2, device=self.device, layers=self.layers, inputLayers=[self.inputEmbed.jetConv, self.inputEmbed.dijetConv])
         previousLayer = self.dijetResNetBlock.reinforce[-1]
         if self.useOthJets:
-            self.attention_oo = MinimalAttention(self.dD, heads=2, iterations=1, res_q_conv=False, layers=self.layers, inputLayers=[self.inputEmbed.othJetConv], device=self.device)
-            self.attention_do = MinimalAttention(self.dD, heads=2, iterations=1, res_q_conv=False, layers=self.layers, inputLayers=[self.dijetResNetBlock.reinforce[-1], self.attention_oo.q_res_conv], device=self.device)
+            self.attention_oo = MinimalAttention(self.dD, heads=2, iterations=1, layers=self.layers, inputLayers=[self.inputEmbed.othJetConv], device=self.device)
+            self.attention_do = MinimalAttention(self.dD, heads=2, iterations=1, layers=self.layers, inputLayers=[self.dijetResNetBlock.reinforce[-1], self.attention_oo.q_res_conv], device=self.device)
             previousLayer = self.attention_do.q_res_conv
 
         # embed inputs to quadjetResNetBlock in target feature space
@@ -1335,8 +1336,6 @@ class HCR(nn.Module):
             self.attention_do.setGhostBatches(nGhostBatches)
         self.dijetEmbedInQuadjetSpace.setGhostBatches(nGhostBatches)
         self.quadjetResNetBlock.setGhostBatches(nGhostBatches)
-        # for conv in self.convQ: 
-        #     conv.nGhostBatches = nGhostBatches
         self.select_q.setGhostBatches(nGhostBatches)
         self.out.setGhostBatches(nGhostBatches)
         self.nGhostBatches = nGhostBatches
@@ -1397,9 +1396,10 @@ class HCR(nn.Module):
             self.storeData['quadjets'] = q[0].detach().to('cpu').numpy()
 
         #compute a score for each event view (quadjet) 
-        q_score = self.select_q(q)
+        q_logits = self.select_q(q)
         #convert the score to a 'probability' with softmax. This way the classifier is learning which view is most relevant to the classification task at hand.
-        q_score = F.softmax(q_score, dim=-1)
+        q_score = F.softmax(q_logits, dim=-1)
+        q_logits = q_logits.view(n, 3)
         #add together the quadjets with their corresponding probability weight
         e = torch.matmul(q, q_score.transpose(1,2))
         q_score = q_score.view(n,3)
@@ -1409,15 +1409,15 @@ class HCR(nn.Module):
             self.storeData['event'] = e[0].detach().to('cpu').numpy()
 
         #project the final event-level pixel into the class score space
-        c_score = self.out(e)
-        c_score = c_score.view(n, self.nC)
+        c_logits = self.out(e)
+        c_logits = c_logits.view(n, self.nC)
 
         if self.store or self.onnx:
-            c_score = F.softmax(c_score, dim=1)
+            c_logits = F.softmax(c_logits, dim=1)
         if self.store:
-            self.storeData['c_score'] = c_score[0].detach().to('cpu').numpy()
+            self.storeData['c_logits'] = c_logits[0].detach().to('cpu').numpy()
 
-        return c_score, q_score
+        return c_logits, q_logits
 
 
     def writeStore(self):
@@ -1444,6 +1444,7 @@ class HCREnsemble(nn.Module):
 
         q_score = torch.stack([q_score0, q_score1, q_score2])
         q_score = q_score.mean(dim=0)
+        q_score = F.softmax(q_score, dim=-1)
 
         c_score = torch.stack([c_score0, c_score1, c_score2])
         c_score = c_score.mean(dim=0)

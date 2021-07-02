@@ -70,8 +70,15 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   nIsoMed25Muons = dir.make<TH1F>("nIsoMed25Muons", (name+"/nIsoMed25Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
   nIsoMed40Muons = dir.make<TH1F>("nIsoMed40Muons", (name+"/nIsoMed40Muons; Number of Prompt Muons; Entries").c_str(),  6,-0.5,5.5);
   allMuons        = new muonHists(name+"/allMuons", fs, "All Muons");
-  muons_isoMed25  = new muonHists(name+"/isoMed25", fs, "iso Medium 25 Muons");
-  muons_isoMed40  = new muonHists(name+"/isoMed40", fs, "iso Medium 40 Muons");
+  muons_isoMed25  = new muonHists(name+"/muon_isoMed25", fs, "iso Medium 25 Muons");
+  muons_isoMed40  = new muonHists(name+"/muon_isoMed40", fs, "iso Medium 40 Muons");
+
+  nAllElecs = dir.make<TH1F>("nAllElecs", (name+"/nAllElecs; Number of Elecs (no selection); Entries").c_str(),  16,-0.5,15.5);
+  nIsoMed25Elecs = dir.make<TH1F>("nIsoMed25Elecs", (name+"/nIsoMed25Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
+  nIsoMed40Elecs = dir.make<TH1F>("nIsoMed40Elecs", (name+"/nIsoMed40Elecs; Number of Prompt Elecs; Entries").c_str(),  6,-0.5,5.5);
+  allElecs        = new elecHists(name+"/allElecs", fs, "All Elecs");
+  elecs_isoMed25  = new elecHists(name+"/elec_isoMed25", fs, "iso Medium 25 Elecs");
+  elecs_isoMed40  = new elecHists(name+"/elec_isoMed40", fs, "iso Medium 40 Elecs");
 
 
 
@@ -159,9 +166,14 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   SvB_MA_ps_zh = dir.make<TH1F>("SvB_MA_ps_zh",  (name+"/SvB_MA_ps_zh;  SvB_MA Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ); Entries").c_str(), 100, 0, 1);
   SvB_MA_ps_zz = dir.make<TH1F>("SvB_MA_ps_zz",  (name+"/SvB_MA_ps_zz;  SvB_MA Regressed P(ZZ)+P(ZH), P(ZZ) > P(ZH); Entries").c_str(), 100, 0, 1);
 
-  FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score; Entries").c_str(), 100, 0, 1);
+  FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
+  FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
+  FvT_q_score_SvB_q_score_max = dir.make<TH1F>("FvT_q_score_SvB_q_score_max", (name+"/FvT_q_score; FvT q_score (max SvB q_score pairing); Entries").c_str(), 100, 0, 1);
   SvB_q_score = dir.make<TH1F>("SvB_q_score", (name+"/SvB_q_score; SvB q_score; Entries").c_str(), 100, 0, 1);
+  SvB_q_score_FvT_q_score_max = dir.make<TH1F>("SvB_q_score_FvT_q_score_max", (name+"/SvB_q_score; SvB q_score (max FvT q_score pairing); Entries").c_str(), 100, 0, 1);
   SvB_MA_q_score = dir.make<TH1F>("SvB_MA_q_score", (name+"/SvB_MA_q_score; SvB_MA q_score; Entries").c_str(), 100, 0, 1);
+
+  FvT_SvB_q_score_max_same = dir.make<TH1F>("FvT_SvB_q_score_max_same", (name+"/FvT_SvB_q_score_max_same; FvT max q_score pairing == SvB max q_score pairing").c_str(), 2, -0.5, 1.5);
 
   //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
   SvB_ps_zh_0_75 = dir.make<TH1F>("SvB_ps_zh_0_75",  (name+"/SvB_ps_zh_0_75;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
@@ -219,7 +231,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
 
 } 
 
-void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
+void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   //
   // Object Level
   //
@@ -308,6 +320,14 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   for(auto &muon: event->allMuons) allMuons->Fill(muon, event->weight);
   for(auto &muon: event->muons_isoMed25) muons_isoMed25->Fill(muon, event->weight);
   for(auto &muon: event->muons_isoMed40) muons_isoMed40->Fill(muon, event->weight);
+
+  nAllElecs->Fill(event->allElecs.size(), event->weight);
+  nIsoMed25Elecs->Fill(event->elecs_isoMed25.size(), event->weight);
+  nIsoMed40Elecs->Fill(event->elecs_isoMed40.size(), event->weight);
+  for(auto &elec: event->allElecs)             allElecs->Fill(elec, event->weight);
+  for(auto &elec: event->elecs_isoMed25) elecs_isoMed25->Fill(elec, event->weight);
+  for(auto &elec: event->elecs_isoMed40) elecs_isoMed40->Fill(elec, event->weight);
+
 
 
   lead  ->Fill(view->lead,   event->weight);
@@ -419,8 +439,13 @@ void viewHists::Fill(eventData* event, std::unique_ptr<eventView> &view){
   }
 
   FvT_q_score->Fill(view->FvT_q_score, event->weight);
+  FvT_q_score_dR_min->Fill(event->view_dR_min->FvT_q_score, event->weight);
+  FvT_q_score_SvB_q_score_max->Fill(event->view_max_SvB_q_score->FvT_q_score, event->weight);
   SvB_q_score->Fill(view->SvB_q_score, event->weight);
+  SvB_q_score_FvT_q_score_max->Fill(event->view_max_FvT_q_score->SvB_q_score, event->weight);
   SvB_MA_q_score->Fill(view->SvB_MA_q_score, event->weight);
+
+  FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
 
   m4j_vs_nViews->Fill(view->m4j, event->views.size(), event->weight);
 

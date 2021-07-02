@@ -10,10 +10,15 @@ using TriggerEmulator::hTTurnOn;   using TriggerEmulator::jetTurnOn; using Trigg
 // Sorting functions
 bool sortPt(       std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->pt        > rhs->pt   );     } // put largest  pt    first in list
 bool sortdR(       std::shared_ptr<dijet>     &lhs, std::shared_ptr<dijet>     &rhs){ return (lhs->dR        < rhs->dR   );     } // 
-bool sortDBB(      std::unique_ptr<eventView> &lhs, std::unique_ptr<eventView> &rhs){ return (lhs->dBB       < rhs->dBB  );     } // put smallest dBB   first in list
+bool sortDBB(      std::shared_ptr<eventView> &lhs, std::shared_ptr<eventView> &rhs){ return (lhs->dBB       < rhs->dBB  );     } // put smallest dBB   first in list
 bool sortDeepB(    std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->deepB     > rhs->deepB);     } // put largest  deepB first in list
 bool sortCSVv2(    std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->CSVv2     > rhs->CSVv2);     } // put largest  CSVv2 first in list
 bool sortDeepFlavB(std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->deepFlavB > rhs->deepFlavB); } // put largest  deepB first in list
+
+// std::max/min_element uses "The value returned indicates whether the element passed as first argument is considered less than the second."
+bool comp_FvT_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->FvT_q_score < second->FvT_q_score); }
+bool comp_SvB_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->SvB_q_score < second->SvB_q_score); }
+bool comp_dR_close(   std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->close->dR   < second->close->dR  ); }
 
 eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _is3bMixed, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy){
   std::cout << "eventData::eventData()" << std::endl;
@@ -42,7 +47,6 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   inputBranch(tree, "event",           event);
   inputBranch(tree, "PV_npvs",         nPVs);
   inputBranch(tree, "PV_npvsGood",     nPVsGood);
-
   
   std::cout << "eventData::eventData() using FvT name (\"" << FvTName << "\")" << std::endl;
   std::cout << "\t doReweight = " << doReweight  << std::endl;
@@ -54,25 +58,25 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables[FvTName+"_pm4"] = &FvT_pm4;
   classifierVariables[FvTName+"_pm3"] = &FvT_pm3;
   classifierVariables[FvTName+"_pt" ] = &FvT_pt;
-  classifierVariables[FvTName+"_q_1234"] = &FvT_q_1234;
-  classifierVariables[FvTName+"_q_1324"] = &FvT_q_1324;
-  classifierVariables[FvTName+"_q_1423"] = &FvT_q_1423;
+  classifierVariables[FvTName+"_q_1234"] = &FvT_q_score[0]; //&FvT_q_1234;
+  classifierVariables[FvTName+"_q_1324"] = &FvT_q_score[1]; //&FvT_q_1324;
+  classifierVariables[FvTName+"_q_1423"] = &FvT_q_score[2]; //&FvT_q_1423;
 
   classifierVariables["SvB_ps" ] = &SvB_ps;
   classifierVariables["SvB_pzz"] = &SvB_pzz;
   classifierVariables["SvB_pzh"] = &SvB_pzh;
   classifierVariables["SvB_ptt"] = &SvB_ptt;
-  classifierVariables["SvB_q_1234"] = &SvB_q_1234;
-  classifierVariables["SvB_q_1324"] = &SvB_q_1324;
-  classifierVariables["SvB_q_1423"] = &SvB_q_1423;
+  classifierVariables["SvB_q_1234"] = &SvB_q_score[0]; //&SvB_q_1234;
+  classifierVariables["SvB_q_1324"] = &SvB_q_score[1]; //&SvB_q_1324;
+  classifierVariables["SvB_q_1423"] = &SvB_q_score[2]; //&SvB_q_1423;
 
   classifierVariables["SvB_MA_ps" ] = &SvB_MA_ps;
   classifierVariables["SvB_MA_pzz"] = &SvB_MA_pzz;
   classifierVariables["SvB_MA_pzh"] = &SvB_MA_pzh;
   classifierVariables["SvB_MA_ptt"] = &SvB_MA_ptt;
-  classifierVariables["SvB_MA_q_1234"] = &SvB_MA_q_1234;
-  classifierVariables["SvB_MA_q_1324"] = &SvB_MA_q_1324;
-  classifierVariables["SvB_MA_q_1423"] = &SvB_MA_q_1423;
+  classifierVariables["SvB_MA_q_1234"] = &SvB_MA_q_score[0]; //&SvB_MA_q_1234;
+  classifierVariables["SvB_MA_q_1324"] = &SvB_MA_q_score[1]; //&SvB_MA_q_1324;
+  classifierVariables["SvB_MA_q_1423"] = &SvB_MA_q_score[2]; //&SvB_MA_q_1423;
 
   classifierVariables[reweight4bName    ] = &reweight4b;
   classifierVariables[reweightDvTName   ] = &DvT_raw;
@@ -102,6 +106,9 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
       if(variable.first == reweightDvTName){
 	std::cout << "WARNING reweightDvT " << reweightDvTName << " is not in Tree  " << std::endl;
       }
+      if(variable.first == "SvB_ps"){
+	std::cout << "WARNING SvB_ps is not in Tree  " << std::endl;
+      }
     }
   }
 
@@ -121,75 +128,115 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
 
   //triggers https://twiki.cern.ch/twiki/bin/viewauth/CMS/HLTPathsRunIIList
   if(year==2016){
-    inputBranch(tree, "HLT_QuadJet45_TripleBTagCSV_p087",            HLT_4j45_3b087);//L1_QuadJetC50 L1_HTT300 L1_TripleJet_88_72_56_VBF
-    inputBranch(tree, "L1_QuadJetC50", L1_QuadJetC50);
-    inputBranch(tree, "L1_HTT300", L1_HTT300);
+    L1_triggers["L1_QuadJetC50"] = false;
+    L1_triggers["L1_DoubleJetC100"] = false;
+    L1_triggers["L1_SingleJet170"] = false;
+    L1_triggers["L1_HTT300"] = false;
+    // L1_QuadJetC50 OR L1_QuadJetC60 OR 
+    // L1_HTT280 OR L1_HTT300 OR L1_HTT320 OR 
+    // L1_TripleJet_84_68_48_VBF OR L1_TripleJet_88_72_56_VBF OR L1_TripleJet_92_76_64_VBF"
+    HLT_triggers["HLT_QuadJet45_TripleBTagCSV_p087"] = false; 
+    HLT_L1_seeds["HLT_QuadJet45_TripleBTagCSV_p087"] = {{"L1_QuadJetC50", &L1_triggers["L1_QuadJetC50"]},
+    							{"L1_HTT300",     &L1_triggers["L1_HTT300"]},
+    };
+    // L1_TripleJet_84_68_48_VBF OR L1_TripleJet_88_72_56_VBF OR L1_TripleJet_92_76_64_VBF OR 
+    // L1_HTT280 OR L1_HTT300 OR L1_HTT320 OR 
+    // L1_SingleJet170 OR L1_SingleJet180 OR L1_SingleJet200 OR 
+    // L1_DoubleJetC100 OR L1_DoubleJetC112 OR L1_DoubleJetC120"
+    HLT_triggers["HLT_DoubleJet90_Double30_TripleBTagCSV_p087"] = false;
+    HLT_L1_seeds["HLT_DoubleJet90_Double30_TripleBTagCSV_p087"] = {{"L1_DoubleJetC100", &L1_triggers["L1_DoubleJetC100"]},
+    								   {"L1_SingleJet170",  &L1_triggers["L1_SingleJet170"]},
+    								   {"L1_HTT300",        &L1_triggers["L1_HTT300"]},
+    };
 
-    inputBranch(tree, "HLT_DoubleJet90_Double30_TripleBTagCSV_p087", HLT_2j90_2j30_3b087);//L1_TripleJet_88_72_56_VBF L1_HTT300 L1_SingleJet170 L1_DoubleJetC100
-    inputBranch(tree, "L1_DoubleJetC100", L1_DoubleJetC100);
-    inputBranch(tree, "L1_SingleJet170", L1_SingleJet170);
 
-
-    inputBranch(tree, "HLT_DoubleJetsC100_DoubleBTagCSV_p014_DoublePFJetsC100MaxDeta1p6", HLT_2j100_dEta1p6_2b);
-    inputBranch(tree, "L1_SingleJet200", L1_SingleJet200);
-
-
+    //
+    // For Monitoring
+    //
+    L1_triggers_mon = {{"L1_HTT280", new bool(false)},
+		       //{"", },
+    };
   }
 
   if(year==2017){
-    //https://cmswbm.cern.ch/cmsdb/servlet/TriggerMode?KEY=l1_hlt_collisions2017/v320
-    //https://cmsoms.cern.ch/cms/triggers/l1_rates?cms_run=306459
+    L1_triggers["L1_HTT380er"] = false;
+    HLT_triggers["HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0"] = false;
+    HLT_L1_seeds["HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0"] = {//{"L1_HTT250er_QuadJet_70_55_40_35_er2p5", false}, // not in 2017C
+										 //{"L1_HTT280er_QuadJet_70_55_40_35_er2p5", false}, // not in 2017C
+                                                                                 //{"L1_HTT300er_QuadJet_70_55_40_35_er2p5", false}, // only partial in 2017F
+                                                                                 //{"L1_HTT320er_QuadJet_70_55_40_40_er2p4", false}, // not in 2017C
+                                                                                 //{"L1_HTT320er_QuadJet_70_55_40_40_er2p5", false}, // not in 2017C
+                                                                                 //{"L1_HTT320er_QuadJet_70_55_45_45_er2p5", false}, // not in 2017C
+                                                                                 //{"L1_HTT340er_QuadJet_70_55_40_40_er2p5", false}, // not in 2017C
+                                                                                 //{"L1_HTT340er_QuadJet_70_55_45_45_er2p5", false}, // not in 2017C
+                                                                                 //{"L1_HTT300er", false}, // not in 2017C
+                                                                                 //{"L1_HTT320er", false}, // not in 2017C
+										 //{"L1_HTT340er", false}, // not in 2017C
+										 {"L1_HTT380er", &L1_triggers["L1_HTT380er"]},
+										 //{"L1_QuadJet50er2p7", false}, // not in 2017C
+										 //{"L1_QuadJet60er2p7", false}, // not in 2017C
+    };
 
-    inputBranch(tree, "HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0", HLT_HT300_4j_75_60_45_40_3b);//L1_HTT280er_QuadJet_70_55_40_35_er2p5 L1_HTT300er
-    //inputBranch(tree, "L1_QuadJet60er2p7", L1_QuadJet60er2p7);//periods B,D and F have this
-    //inputBranch(tree, "L1_QuadJet60er3p0", L1_QuadJet60er3p0);//periods C and E have this
-    inputBranch(tree, "L1_HTT280er_QuadJet_70_55_40_35_er2p5", L1_HTT280er_QuadJet_70_55_40_35_er2p5);
-    inputBranch(tree, "L1_HTT380er", L1_HTT380er);
-
-    inputBranch(tree, "HLT_DoublePFJets100MaxDeta1p6_DoubleCaloBTagCSV_p33", HLT_2j100_dEta1p6_2b);
-    inputBranch(tree, "L1_DoubleJet100er2p3_dEta_Max1p6", L1_DoubleJet100er2p3_dEta_Max1p6);
-
-
-    //inputBranch(tree, "HLT_Mu12_DoublePFJets40MaxDeta1p6_DoubleCaloBTagCSV_p33",   HLT_mu12_2j40_dEta1p6_db);//L1_Mu12er2p3_Jet40er2p3_dR_Max0p4_DoubleJet40er2p3_dEta_Max1p6
-    //inputBranch(tree, "L1_Mu12er2p3_Jet40er2p3_dR_Max0p4_DoubleJet40er2p3_dEta_Max1p6", L1_Mu12er2p3_Jet40er2p3_dR_Max0p4_DoubleJet40er2p3_dEta_Max1p6);
-    //inputBranch(tree, "HLT_Mu12_DoublePFJets350_CaloBTagCSV_p33",                  HLT_mu12_2j350_1b);//L1_Mu3_Jet120er2p7_dEta_Max0p4_dPhi_Max0p4
-    //inputBranch(tree, "L1_Mu3_Jet120er2p7_dEta_Max0p4_dPhi_Max0p4", L1_Mu3_Jet120er2p7_dEta_Max0p4_dPhi_Max0p4);//periods B,D and F have this
-    //inputBranch(tree, "L1_Mu3_JetC120_dEta_Max0p4_dPhi_Max0p4",     L1_Mu3_JetC120_dEta_Max0p4_dPhi_Max0p4);//periods C and E have this
-    //inputBranch(tree, "HLT_PFJet500",                                              HLT_j500);//L1_SingleJet170
-    //inputBranch(tree, "L1_SingleJet170", L1_SingleJet170);
-    //inputBranch(tree, "HLT_AK8PFJet400_TrimMass30",                                HLT_J400_m30);//L1_SingleJet180
-    //inputBranch(tree, "L1_SingleJet180", L1_SingleJet180);
+    //
+    // For Monitoring
+    //
+    L1_triggers_mon = {{"L1_HTT250er_QuadJet_70_55_40_35_er2p5", new bool(false)},
+		       {"L1_HTT280er_QuadJet_70_55_40_35_er2p5", new bool(false)},
+		       {"L1_HTT300er_QuadJet_70_55_40_35_er2p5", new bool(false)},
+		       {"L1_HTT320er_QuadJet_70_55_40_40_er2p4", new bool(false)},
+		       {"L1_HTT320er_QuadJet_70_55_40_40_er2p5", new bool(false)},
+		       {"L1_HTT320er_QuadJet_70_55_45_45_er2p5", new bool(false)},
+		       {"L1_HTT340er_QuadJet_70_55_40_40_er2p5", new bool(false)},
+		       {"L1_HTT340er_QuadJet_70_55_45_45_er2p5", new bool(false)},
+		       {"L1_HTT300er", new bool(false)},
+		       {"L1_HTT320er", new bool(false)},
+		       {"L1_HTT340er", new bool(false)},
+		       {"L1_QuadJet50er2p7", new bool(false)},
+		       {"L1_QuadJet60er2p7", new bool(false)},
+    };    
   }
 
   if(year==2018){
-    inputBranch(tree, "HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5", HLT_HT330_4j_75_60_45_40_3b);
+    //L1_triggers["L1_HTT320er_QuadJet_70_55_40_40_er2p4"] = false;// missing in one period!
+    L1_triggers["L1_HTT360er"] = false;
+    L1_triggers["L1_DoubleJet112er2p3_dEta_Max1p6"] = false;
+    //L1_triggers["L1_DoubleJet150er2p5"] = false;
 
-    //L1 seeds
-    inputBranch(tree, "L1_HTT360er", L1_HTT360er);
-    inputBranch(tree, "L1_ETT2000",  L1_ETT2000);
-    inputBranch(tree, "L1_HTT320er_QuadJet_70_55_40_40_er2p4",  L1_HTT320er_QuadJet_70_55_40_40_er2p4);
+    // L1_QuadJet60er2p5 OR 
+    // L1_HTT280er OR L1_HTT320er OR L1_HTT360er OR L1_HTT400er OR L1_HTT450er OR 
+    // L1_HTT280er_QuadJet_70_55_40_35_er2p4 OR L1_HTT320er_QuadJet_70_55_40_40_er2p4 OR L1_HTT320er_QuadJet_80_60_er2p1_45_40_er2p3 OR L1_HTT320er_QuadJet_80_60_er2p1_50_45_er2p3    
+    HLT_triggers["HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5"] = false;
+    HLT_L1_seeds["HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5"] = {//{"L1_HTT320er_QuadJet_70_55_40_40_er2p4", &L1_triggers["L1_HTT320er_QuadJet_70_55_40_40_er2p4"]},
+                                                                                     {"L1_HTT360er",                           &L1_triggers["L1_HTT360er"]},
+    										     //{"", &L1_triggers[""]},
+    };
 
-    inputBranch(tree, "HLT_DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71",       HLT_2j116_dEta1p6_2b);
-    inputBranch(tree, "L1_DoubleJet112er2p3_dEta_Max1p6", L1_DoubleJet112er2p3_dEta_Max1p6);
-    inputBranch(tree, "L1_DoubleJet150er2p5", L1_DoubleJet150er2p5);
+    // L1_DoubleJet112er2p3_dEta_Max1p6
+    HLT_triggers["HLT_DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71"] = false;
+    HLT_L1_seeds["HLT_DoublePFJets116MaxDeta1p6_DoubleCaloBTagDeepCSV_p71"] = {{"L1_DoubleJet112er2p3_dEta_Max1p6", &L1_triggers["L1_DoubleJet112er2p3_dEta_Max1p6"]},
+    									       //{"", &L1_triggers[""]},
+    };
 
-    //inputBranch(tree, "HLT_QuadPFJet103_88_75_15_DoublePFBTagDeepCSV_1p3_7p7_VBF1",    HLT_4j_103_88_75_15_2b_VBF1);
-    ////inputBranch(tree, "HLT_QuadPFJet103_88_75_15_PFBTagDeepCSV_1p3_VBF2",              HLT_4j_103_88_75_15_1b_VBF2);
-    ////L1 seeds
-    //inputBranch(tree, "L1_TripleJet_95_75_65_DoubleJet_75_65_er2p5", L1_TripleJet_95_75_65_DoubleJet_75_65_er2p5);
-    ////L1_SingleJet180
+
     //
+    // For Monitoring
     //
-    ////L1 seeds
-
-    //
-    //inputBranch(tree, "HLT_AK8PFJet330_TrimMass30_PFAK8BoostedDoubleB_p02",            HLT_J330_m30_2b);
-    ////inputBranch(tree, "HLT_PFJet500",                                                  HLT_j500);
-    ////inputBranch(tree, "HLT_DiPFJetAve300_HFJEC",                                       HLT_2j300ave);
-    ////L1 seeds
-    //inputBranch(tree, "L1_SingleJet180", L1_SingleJet180);
+    L1_triggers_mon = {{"L1_HTT280er", new bool(false)},
+		       {"L1_HTT320er", new bool(false)},
+		       {"L1_HTT360er", &L1_triggers["L1_HTT360er"]},
+		       {"L1_HTT280er_QuadJet_70_55_40_35_er2p4", new bool(false)},
+		       {"L1_HTT320er_QuadJet_70_55_40_40_er2p4", new bool(false)},
+		       {"L1_HTT320er_QuadJet_80_60_er2p1_45_40_er2p3", new bool(false)},
+		       {"L1_HTT320er_QuadJet_80_60_er2p1_50_45_er2p3", new bool(false)},
+    };
   }
 
+  for(auto &trigger:  L1_triggers)     inputBranch(tree, trigger.first, trigger.second);
+  for(auto &trigger: HLT_triggers)     inputBranch(tree, trigger.first, trigger.second);
+  for(auto &trigger:  L1_triggers_mon){
+    if(L1_triggers.find(trigger.first)!=L1_triggers.end()) continue; // don't initialize branch again!
+    inputBranch(tree, trigger.first, trigger.second);
+  }
 
   //
   //  Trigger Emulator
@@ -221,6 +268,8 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   treeJets  = new  jetData(    "Jet", tree, true, isMC, "", "", bjetSF, btagVariations, JECSyst);
   std::cout << "eventData::eventData() Initialize muons" << std::endl;
   treeMuons = new muonData(   "Muon", tree, true, isMC);
+  std::cout << "eventData::eventData() Initialize elecs" << std::endl;
+  treeElecs = new elecData(   "Electron", tree, true, isMC);
   std::cout << "eventData::eventData() Initialize TrigObj" << std::endl;
   //treeTrig  = new trigData("TrigObj", tree);
 } 
@@ -266,6 +315,13 @@ void eventData::resetEvent(){
   topQuarkWJets.clear();
   dijets .clear();
   views  .clear();
+  views_passMDRs.clear();
+  view_selected.reset();
+  view_dR_min.reset();
+  view_max_FvT_q_score.reset();
+  view_max_SvB_q_score.reset();
+  close.reset();
+  other.reset();
   appliedMDRs = false;
   m4j = -99;
   ZZSB = false; ZZCR = false; ZZSR = false;
@@ -284,7 +340,12 @@ void eventData::resetEvent(){
   selectedViewTruthMatch = false;
   passMDRs = false;
   passXWt = false;
+<<<<<<< HEAD
   passMV = false;
+=======
+  passL1  = false;
+  passHLT = false;
+>>>>>>> upstream/master
   //passDEtaBB = false;
   p4j.SetPtEtaPhiM(0,0,0,0);
   canJet1_pt = -99;
@@ -373,10 +434,16 @@ void eventData::update(long int e){
 
   if(debug) std::cout << "Get Muons\n";
   allMuons         = treeMuons->getMuons();
-  muons_isoMed25   = treeMuons->getMuons(25, 2.4, 2, true);
-  muons_isoMed40   = treeMuons->getMuons(40, 2.4, 2, true);
-
+  muons_isoMed25   = treeMuons->getMuons(25, 2.4, 4, true);
+  muons_isoMed40   = treeMuons->getMuons(40, 2.4, 4, true);
   nIsoMuons = muons_isoMed40.size();
+
+  allElecs         = treeElecs->getElecs();
+  elecs_isoMed25   = treeElecs->getElecs(25, 2.4, true);
+  elecs_isoMed40   = treeElecs->getElecs(40, 2.4, true);
+  nIsoElecs = elecs_isoMed40.size();
+
+
 
   buildEvent();
 
@@ -392,37 +459,12 @@ void eventData::update(long int e){
     weight *= trigWeight;
 
   }else{
-
-    if(year==2016){
-      passL1 = (L1_QuadJetC50 || L1_HTT300 || L1_SingleJet170 || L1_DoubleJetC100 || L1_SingleJet200);
-
-      passHLT = 
-	(HLT_4j45_3b087       & (L1_QuadJetC50 || L1_HTT300) ) || 
-	(HLT_2j90_2j30_3b087  & (L1_SingleJet170 || L1_DoubleJetC100 || L1_HTT300) ) || 
-	(HLT_2j100_dEta1p6_2b & (L1_SingleJet200 || L1_DoubleJetC100));
+    for(auto &trigger: HLT_triggers){
+      bool pass_seed = boost::accumulate(HLT_L1_seeds[trigger.first] | boost::adaptors::map_values, false, [](bool pass, bool *seed){return pass||*seed;});//std::logical_or<bool>());
+      passL1  = passL1  || pass_seed;
+      passHLT = passHLT || (trigger.second && pass_seed);
     }
 
-    if(year==2017){
-      passL1 = L1_HTT280er_QuadJet_70_55_40_35_er2p5 || L1_HTT300er || L1_DoubleJet100er2p3_dEta_Max1p6;
-
-      passHLT = 
-	(HLT_HT300_4j_75_60_45_40_3b & (L1_HTT280er_QuadJet_70_55_40_35_er2p5 || L1_HTT300er)) || 
-	(HLT_2j100_dEta1p6_2b & (L1_DoubleJet100er2p3_dEta_Max1p6));
-    }
-
-    if(year==2018){
-      passL1  = L1_HTT360er || L1_ETT2000 || L1_HTT320er_QuadJet_70_55_40_40_er2p4 || L1_DoubleJet112er2p3_dEta_Max1p6 || L1_DoubleJet150er2p5;
-
-
-      passHLT = 
-      	(HLT_HT330_4j_75_60_45_40_3b & (L1_HTT360er || L1_ETT2000 || L1_HTT320er_QuadJet_70_55_40_40_er2p4)) || 
-      	//(HLT_4j_103_88_75_15_2b_VBF1 & (L1_SingleJet180 || L1_TripleJet_95_75_65_DoubleJet_75_65_er2p5)) || 
-      	//(HLT_4j_103_88_75_15_1b_VBF2 & (L1_SingleJet180 || L1_TripleJet_95_75_65_DoubleJet_75_65_er2p5)) || 
-      	(HLT_2j116_dEta1p6_2b        & (L1_DoubleJet112er2p3_dEta_Max1p6 || L1_DoubleJet150er2p5)) ;
-      	//(HLT_J330_m30_2b             & (L1_SingleJet180));// || 
-        //(HLT_j500                    & (L1_SingleJet180)) || 
-        //(HLT_2j300ave                & (L1_SingleJet180));
-    }
   }
 
 
@@ -477,9 +519,10 @@ void eventData::buildEvent(){
       bTagSF = inputBTagSF;
     }else{
       //for(auto &jet: selJets) bTagSF *= treeJets->getSF(jet->eta, jet->pt, jet->deepFlavB, jet->hadronFlavour);
-      for(auto &jet: selJets) treeJets->updateSFs(jet->eta, jet->pt, jet->deepFlavB, jet->hadronFlavour);
+      treeJets->updateSFs(selJets, debug);
       bTagSF = treeJets->m_btagSFs["central"];
     }
+    if(debug) std::cout << "eventData buildEvent bTagSF = " << bTagSF << std::endl;
     weight *= bTagSF;
     weightNoTrigger *= bTagSF;
     for(auto &jet: allJets) nTrueBJets += jet->hadronFlavour == 5 ? 1 : 0;
@@ -632,7 +675,7 @@ void eventData::buildEvent(){
   }
 
 
-  if(debug) std::cout<<"eventData buildEvent\n";
+  if(debug) std::cout<<"eventData buildEvent done\n";
   return;
 }
 
@@ -675,6 +718,13 @@ int eventData::makeNewEvent(std::vector<nTupleAnalysis::jetPtr> new_allJets)
   }
 
   buildEvent();
+
+  for(auto &trigger: HLT_triggers){
+    bool pass_seed = boost::accumulate(HLT_L1_seeds[trigger.first] | boost::adaptors::map_values, false, [](bool pass, bool *seed){return pass||*seed;});//std::logical_or<bool>());
+    passL1  = passL1  || pass_seed;
+    passHLT = passHLT || (trigger.second && pass_seed);
+  }
+
 
   bool threeTag_new = (nLooseTagJets == 3 && nSelJets >= 4);
   bool fourTag_new = (nTagJets >= 4);
@@ -1008,9 +1058,12 @@ void eventData::run_SvB_ONNX(){
   this->SvB_ptt = SvB_ONNX->c_score[2];
   this->SvB_ps  = SvB_ONNX->c_score[0] + SvB_ONNX->c_score[1];
 
-  this->SvB_q_1234 = SvB_ONNX->q_score[0];
-  this->SvB_q_1324 = SvB_ONNX->q_score[1];
-  this->SvB_q_1423 = SvB_ONNX->q_score[2];
+  this->SvB_q_score[0] = SvB_ONNX->q_score[0];
+  this->SvB_q_score[1] = SvB_ONNX->q_score[1];
+  this->SvB_q_score[2] = SvB_ONNX->q_score[2];
+  // this->SvB_q_1234 = SvB_ONNX->q_score[0];
+  // this->SvB_q_1324 = SvB_ONNX->q_score[1];
+  // this->SvB_q_1423 = SvB_ONNX->q_score[2];
   
 }
 #endif
@@ -1033,25 +1086,34 @@ void eventData::buildViews(){
   d03TruthMatch = dijets[4]->truthMatch ? dijets[4]->truthMatch->pdgId : 0;
   d12TruthMatch = dijets[5]->truthMatch ? dijets[5]->truthMatch->pdgId : 0;
 
-  //Find dijet with smallest dR and other dijet
-  close = *std::min_element(dijets.begin(), dijets.end(), sortdR);
-  int closeIdx = std::distance(dijets.begin(), std::find(dijets.begin(), dijets.end(), close));
-  //Index of the dijet made from the other two jets is either the one before or one after because of how we constructed the dijets vector
-  //if closeIdx is even, add one, if closeIdx is odd, subtract one.
-  int otherIdx = (closeIdx%2)==0 ? closeIdx + 1 : closeIdx - 1; 
-  other = dijets[otherIdx];
+  // //Find dijet with smallest dR and other dijet
+  // close = *std::min_element(dijets.begin(), dijets.end(), sortdR);
+  // int closeIdx = std::distance(dijets.begin(), std::find(dijets.begin(), dijets.end(), close));
+  // //Index of the dijet made from the other two jets is either the one before or one after because of how we constructed the dijets vector
+  // //if closeIdx is even, add one, if closeIdx is odd, subtract one.
+  // int otherIdx = (closeIdx%2)==0 ? closeIdx + 1 : closeIdx - 1; 
+  // other = dijets[otherIdx];
 
-  //flat nTuple variables for neural network inputs
-  dRjjClose = close->dR;
-  dRjjOther = other->dR;
+  // //flat nTuple variables for neural network inputs
+  // dRjjClose = close->dR;
+  // dRjjOther = other->dR;
 
-  views.push_back(std::make_unique<eventView>(eventView(dijets[0], dijets[1], FvT_q_1234, SvB_q_1234, SvB_MA_q_1234)));
-  views.push_back(std::make_unique<eventView>(eventView(dijets[2], dijets[3], FvT_q_1324, SvB_q_1324, SvB_MA_q_1324)));
-  views.push_back(std::make_unique<eventView>(eventView(dijets[4], dijets[5], FvT_q_1423, SvB_q_1423, SvB_MA_q_1423)));
+  views.push_back(std::make_shared<eventView>(eventView(dijets[0], dijets[1], FvT_q_score[0], SvB_q_score[0], SvB_MA_q_score[0])));
+  views.push_back(std::make_shared<eventView>(eventView(dijets[2], dijets[3], FvT_q_score[1], SvB_q_score[1], SvB_MA_q_score[1])));
+  views.push_back(std::make_shared<eventView>(eventView(dijets[4], dijets[5], FvT_q_score[2], SvB_q_score[2], SvB_MA_q_score[2])));
 
   dR0123 = views[0]->dRBB;
   dR0213 = views[1]->dRBB;
   dR0312 = views[2]->dRBB;
+
+  view_max_FvT_q_score = *std::max_element(views.begin(), views.end(), comp_FvT_q_score);
+  view_max_SvB_q_score = *std::max_element(views.begin(), views.end(), comp_SvB_q_score);
+  view_dR_min = *std::min_element(views.begin(), views.end(), comp_dR_close);
+  close = view_dR_min->close;
+  other = view_dR_min->other;
+  //flat nTuple variables for neural network inputs
+  dRjjClose = close->dR;
+  dRjjOther = other->dR;
 
   //Check that at least one view has two dijets above mass thresholds
   for(auto &view: views){
@@ -1064,13 +1126,18 @@ void eventData::buildViews(){
 }
 
 
-bool failMDRs(std::unique_ptr<eventView> &view){ return !view->passMDRs; }
+bool failMDRs(std::shared_ptr<eventView> &view){ return !view->passMDRs; }
 
 void eventData::applyMDRs(){
   appliedMDRs = true;
-  views.erase(std::remove_if(views.begin(), views.end(), failMDRs), views.end());
-  passMDRs = (views.size() > 0);
+  //views.erase(std::remove_if(views.begin(), views.end(), failMDRs), views.end());
+  for(auto &view: views){
+    if(view->passMDRs) views_passMDRs.push_back(view);
+  }
+  passMDRs = views_passMDRs.size() > 0;
+
   if(passMDRs){
+<<<<<<< HEAD
     HHSB = views[0]->HHSB; HHCR = views[0]->HHCR; HHSR = views[0]->HHSR;
     ZHSB = views[0]->ZHSB; ZHCR = views[0]->ZHCR; ZHSR = views[0]->ZHSR;
     ZZSB = views[0]->ZZSB; ZZCR = views[0]->ZZCR; ZZSR = views[0]->ZZSR;
@@ -1079,6 +1146,16 @@ void eventData::applyMDRs(){
     leadStM = views[0]->leadSt->m; sublStM = views[0]->sublSt->m;
     //passDEtaBB = views[0]->passDEtaBB;
     selectedViewTruthMatch = views[0]->truthMatch;
+=======
+    view_selected = views_passMDRs[0];
+    HHSB = view_selected->HHSB; HHCR = view_selected->HHCR; HHSR = view_selected->HHSR;
+    ZHSB = view_selected->ZHSB; ZHCR = view_selected->ZHCR; ZHSR = view_selected->ZHSR;
+    ZZSB = view_selected->ZZSB; ZZCR = view_selected->ZZCR; ZZSR = view_selected->ZZSR;
+    SB = view_selected->SB; CR = view_selected->CR; SR = view_selected->SR;
+    leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
+    //passDEtaBB = view_selected->passDEtaBB;
+    selectedViewTruthMatch = view_selected->truthMatch;
+>>>>>>> upstream/master
   // }else{
   //   ZHSB = false; ZHCR = false; ZHSR=false;
   //   ZZSB = false; ZZCR = false; ZZSR=false;
