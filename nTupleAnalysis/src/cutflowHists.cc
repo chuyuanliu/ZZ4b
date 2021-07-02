@@ -113,13 +113,13 @@ void cutflowHists::Fill(const std::string& cut, eventData* event){
     BasicFill(cut+"_HHSR", event);
     //Cut+HHSR+Trigger
     if(event->passL1)                      BasicFill(cut+"_HHSR_L1", event);
-    if(event->HLT_HT330_4j_75_60_45_40_3b) BasicFill(cut+"_HHSR_HLT_HT330_4j_75_60_45_40_3b", event);
-    if(event->HLT_4j_103_88_75_15_2b_VBF1) BasicFill(cut+"_HHSR_HLT_4j_103_88_75_15_2b_VBF1", event);
-    if(event->HLT_4j_103_88_75_15_1b_VBF2) BasicFill(cut+"_HHSR_HLT_4j_103_88_75_15_1b_VBF2", event);
-    if(event->HLT_2j116_dEta1p6_2b)        BasicFill(cut+"_HHSR_HLT_2j116_dEta1p6_2b", event);
-    if(event->HLT_J330_m30_2b)             BasicFill(cut+"_HHSR_HLT_J330_m30_2b", event);
-    if(event->HLT_j500)                    BasicFill(cut+"_HHSR_HLT_j500", event);
-    if(event->HLT_2j300ave)                BasicFill(cut+"_HHSR_HLT_2j300ave", event);
+    // if(event->HLT_HT330_4j_75_60_45_40_3b) BasicFill(cut+"_HHSR_HLT_HT330_4j_75_60_45_40_3b", event);
+    // if(event->HLT_4j_103_88_75_15_2b_VBF1) BasicFill(cut+"_HHSR_HLT_4j_103_88_75_15_2b_VBF1", event);
+    // if(event->HLT_4j_103_88_75_15_1b_VBF2) BasicFill(cut+"_HHSR_HLT_4j_103_88_75_15_1b_VBF2", event);
+    // if(event->HLT_2j116_dEta1p6_2b)        BasicFill(cut+"_HHSR_HLT_2j116_dEta1p6_2b", event);
+    // if(event->HLT_J330_m30_2b)             BasicFill(cut+"_HHSR_HLT_J330_m30_2b", event);
+    // if(event->HLT_j500)                    BasicFill(cut+"_HHSR_HLT_j500", event);
+    // if(event->HLT_2j300ave)                BasicFill(cut+"_HHSR_HLT_2j300ave", event);
     if(event->passHLT)                     BasicFill(cut+"_HHSR_HLT", event);
         }
     }
