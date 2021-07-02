@@ -340,12 +340,9 @@ void eventData::resetEvent(){
   selectedViewTruthMatch = false;
   passMDRs = false;
   passXWt = false;
-<<<<<<< HEAD
   passMV = false;
-=======
   passL1  = false;
   passHLT = false;
->>>>>>> upstream/master
   //passDEtaBB = false;
   p4j.SetPtEtaPhiM(0,0,0,0);
   canJet1_pt = -99;
@@ -1137,16 +1134,6 @@ void eventData::applyMDRs(){
   passMDRs = views_passMDRs.size() > 0;
 
   if(passMDRs){
-<<<<<<< HEAD
-    HHSB = views[0]->HHSB; HHCR = views[0]->HHCR; HHSR = views[0]->HHSR;
-    ZHSB = views[0]->ZHSB; ZHCR = views[0]->ZHCR; ZHSR = views[0]->ZHSR;
-    ZZSB = views[0]->ZZSB; ZZCR = views[0]->ZZCR; ZZSR = views[0]->ZZSR;
-    HHSB = views[0]->HHSB; HHCR = views[0]->HHCR; HHSR = views[0]->HHSR;
-    SB = views[0]->SB; CR = views[0]->CR; SR = views[0]->SR;
-    leadStM = views[0]->leadSt->m; sublStM = views[0]->sublSt->m;
-    //passDEtaBB = views[0]->passDEtaBB;
-    selectedViewTruthMatch = views[0]->truthMatch;
-=======
     view_selected = views_passMDRs[0];
     HHSB = view_selected->HHSB; HHCR = view_selected->HHCR; HHSR = view_selected->HHSR;
     ZHSB = view_selected->ZHSB; ZHCR = view_selected->ZHCR; ZHSR = view_selected->ZHSR;
@@ -1155,7 +1142,6 @@ void eventData::applyMDRs(){
     leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
     //passDEtaBB = view_selected->passDEtaBB;
     selectedViewTruthMatch = view_selected->truthMatch;
->>>>>>> upstream/master
   // }else{
   //   ZHSB = false; ZHCR = false; ZHSR=false;
   //   ZZSB = false; ZZCR = false; ZZSR=false;
