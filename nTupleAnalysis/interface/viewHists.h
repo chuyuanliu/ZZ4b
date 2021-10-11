@@ -30,6 +30,7 @@ namespace nTupleAnalysis {
     TH1F*     nAllJets;
     TH1F*     nAllNotCanJets;
     TH1F*     st;
+    TH1F*     nSelJetsV;
     TH1F*     nSelJets;
     TH1F*     nSelJets_noBTagSF;
     TH1F*     nSelJets_lowSt;
@@ -48,6 +49,7 @@ namespace nTupleAnalysis {
     TH1F*     nPSTJetsUnweighted;
     TH1F*     nCanJets;
     //jetHists*  allJets;
+    jetHists*  selJetsV;
     jetHists*  selJets;
     jetHists*  tagJets;
     jetHists*  canJets;
@@ -81,7 +83,12 @@ namespace nTupleAnalysis {
     TH1F* nCanVTruVDijets;
     dijetHists* canVDijets;
     dijetHists* canVTruVDijets;
-
+    TH1F* bdtScore; //TEMP
+    TH1F* bdtScore_corrected; //TEMP
+    TH1F* SvB_MA_ps_c3; //TEMP
+    TH1F* SvB_MA_ps_c2V; //TEMP
+    TH2F* SvB_MA_ps_vs_BDT; //TEMP
+    //
     trigHists*  allTrigJets = NULL;
 
     TH1F* nAllMuons;
@@ -164,32 +171,32 @@ namespace nTupleAnalysis {
     TH1F* FvT_pm3;
     TH1F* FvT_pt;
     TH1F* SvB_ps;
-    TH1F* SvB_pzz;
-    TH1F* SvB_pzh;
+    TH1F* SvB_pwhh;
+    TH1F* SvB_pzhh;
     TH1F* SvB_ptt;
-    TH1F* SvB_ps_zh;
-    TH1F* SvB_ps_zz;
+    TH1F* SvB_ps_zhh;
+    TH1F* SvB_ps_whh;
     systHists* SvB_ps_bTagSysts = NULL;
     TH1F* SvB_MA_ps;
-    TH1F* SvB_MA_pzz;
-    TH1F* SvB_MA_pzh;
+    TH1F* SvB_MA_pwhh;
+    TH1F* SvB_MA_pzhh;
     TH1F* SvB_MA_ptt;
-    TH1F* SvB_MA_ps_zh;
-    TH1F* SvB_MA_ps_zz;
+    TH1F* SvB_MA_ps_zhh;
+    TH1F* SvB_MA_ps_whh;
     systHists* SvB_MA_ps_bTagSysts = NULL;
 
     //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-    TH1F* SvB_ps_zh_0_75;
-    TH1F* SvB_ps_zh_75_150;
-    TH1F* SvB_ps_zh_150_250;
-    TH1F* SvB_ps_zh_250_400;
-    TH1F* SvB_ps_zh_400_inf;
+    TH1F* SvB_ps_zhh_0_75;
+    TH1F* SvB_ps_zhh_75_150;
+    TH1F* SvB_ps_zhh_150_250;
+    TH1F* SvB_ps_zhh_250_400;
+    TH1F* SvB_ps_zhh_400_inf;
 
-    TH1F* SvB_ps_zz_0_75;
-    TH1F* SvB_ps_zz_75_150;
-    TH1F* SvB_ps_zz_150_250;
-    TH1F* SvB_ps_zz_250_400;
-    TH1F* SvB_ps_zz_400_inf;
+    TH1F* SvB_ps_whh_0_75;
+    TH1F* SvB_ps_whh_75_150;
+    TH1F* SvB_ps_whh_150_250;
+    TH1F* SvB_ps_whh_250_400;
+    TH1F* SvB_ps_whh_400_inf;
 
     TH1F* FvT_q_score;
     TH1F* FvT_q_score_dR_min;

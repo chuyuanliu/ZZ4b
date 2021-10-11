@@ -30,7 +30,7 @@ void weightStudyHists::hists::Fill(eventData* event, std::shared_ptr<eventView> 
   dFvT_vs_SvB    ->Fill(event->SvB_ps, dFvT,     event->weight);
   dFvTFrac_vs_SvB->Fill(event->SvB_ps, dFvTFrac, event->weight);
 
-  if(event->SvB_pzz<event->SvB_pzh){
+  if(event->SvB_pwhh<event->SvB_pzhh){
     dFvT_vs_SvB_zh->Fill(event->SvB_ps, dFvT, event->weight);
     dFvTFrac_vs_SvB_zh->Fill(event->SvB_ps, dFvTFrac, event->weight);
   }else{

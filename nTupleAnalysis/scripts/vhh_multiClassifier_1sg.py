@@ -86,7 +86,7 @@ def getFrameSvB(fileName):
     thisFrame = pd.read_hdf(fileName, key='df')
     fourTag = False if "data201" in fileName else True
     #TODO: HH region?
-    thisFrame = thisFrame.loc[ (thisFrame['nSelJets']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
+    thisFrame = thisFrame.loc[ (thisFrame['nSelJetsV']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
     #thisFrame = thisFrame.loc[ (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['SR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
     thisFrame['year'] = pd.Series(year*np.ones(thisFrame.shape[0], dtype=np.float32), index=thisFrame.index)
     if "HHTo4B" in fileName: 

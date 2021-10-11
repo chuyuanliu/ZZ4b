@@ -74,6 +74,8 @@ int main(int argc, char * argv[]){
   std::vector<std::string> inputWeightFiles = parameters.getParameter<std::vector<std::string> >("inputWeightFiles");
   std::vector<std::string> inputWeightFiles4b = parameters.getParameter<std::vector<std::string> >("inputWeightFiles4b");
   std::vector<std::string> inputWeightFilesDvT = parameters.getParameter<std::vector<std::string> >("inputWeightFilesDvT");
+  std::string bdtWeightFile = parameters.getParameter<std::string>("bdtWeightFile");
+  std::string bdtMethods = parameters.getParameter<std::string>("bdtMethods");
 
   float SvBScore = parameters.getParameter<double>("SvBScore");
 
@@ -184,7 +186,7 @@ int main(int argc, char * argv[]){
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
 			looseSkim, FvTName, reweight4bName,reweightDvTName,
-      SvBScore);
+      SvBScore, bdtWeightFile, bdtMethods);
 
   a.event->setTagger(bTagger, bTag);
   a.makePSDataFromMC = makePSDataFromMC;

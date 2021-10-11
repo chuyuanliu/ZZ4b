@@ -17,7 +17,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
 		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
-       float _SvBScore){
+       float _SvBScore, std::string bdtWeightFile, std::string bdtMethods){
 
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
@@ -87,7 +87,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, is3bMixed, FvTName, reweight4bName, reweightDvTName, doWeightStudy);
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, is3bMixed, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods);
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
@@ -469,10 +469,40 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("xbW", &event->xbW);
   picoAODEvents->Branch("xWbW", &event->xWbW);
   picoAODEvents->Branch("nIsoMuons", &event->nIsoMuons);
-  //VHH
-  picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
   picoAODEvents->Branch("nOthJets", &event->nOthJets);
   picoAODEvents->Branch("ttbarWeight", &event->ttbarWeight);
+  //VHH
+  picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
+  picoAODEvents->Branch("nSelJetsV", &event->nSelJetsV);
+
+  picoAODEvents->Branch("FvT"    , &event->FvT);
+  picoAODEvents->Branch("FvT_pd4", &event->FvT_pd4);
+  picoAODEvents->Branch("FvT_pd3", &event->FvT_pd3);
+  picoAODEvents->Branch("FvT_pt4", &event->FvT_pt4);
+  picoAODEvents->Branch("FvT_pt3", &event->FvT_pt3);
+  picoAODEvents->Branch("FvT_pm4", &event->FvT_pm4);
+  picoAODEvents->Branch("FvT_pm3", &event->FvT_pm3);
+  picoAODEvents->Branch("FvT_pt" , &event->FvT_pt);
+  picoAODEvents->Branch("FvT_q_1234", &event->FvT_q_score[0]); //&FvT_q_1234;
+  picoAODEvents->Branch("FvT_q_1324", &event->FvT_q_score[1]); //&FvT_q_1324;
+  picoAODEvents->Branch("FvT_q_1423", &event->FvT_q_score[2]); //&FvT_q_1423;
+
+  picoAODEvents->Branch("SvB_ps" , &event->SvB_ps);
+  picoAODEvents->Branch("SvB_pwhh", &event->SvB_pwhh);
+  picoAODEvents->Branch("SvB_pzhh", &event->SvB_pzhh);
+  picoAODEvents->Branch("SvB_ptt", &event->SvB_ptt);
+  picoAODEvents->Branch("SvB_q_1234", &event->SvB_q_score[0]); //&SvB_q_1234;
+  picoAODEvents->Branch("SvB_q_1324", &event->SvB_q_score[1]); //&SvB_q_1324;
+  picoAODEvents->Branch("SvB_q_1423", &event->SvB_q_score[2]); //&SvB_q_1423;
+
+  picoAODEvents->Branch("SvB_MA_ps" , &event->SvB_MA_ps);
+  picoAODEvents->Branch("SvB_MA_pwhh", &event->SvB_MA_pwhh);
+  picoAODEvents->Branch("SvB_MA_pzhh", &event->SvB_MA_pzhh);
+  picoAODEvents->Branch("SvB_MA_ptt", &event->SvB_MA_ptt);
+  picoAODEvents->Branch("SvB_MA_q_1234", &event->SvB_MA_q_score[0]); //&SvB_MA_q_1234;
+  picoAODEvents->Branch("SvB_MA_q_1324", &event->SvB_MA_q_score[1]); //&SvB_MA_q_1324;
+  picoAODEvents->Branch("SvB_MA_q_1423", &event->SvB_MA_q_score[2]); //&SvB_MA_q_1423;
+
   cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
   return;
 }
@@ -542,7 +572,7 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
     alreadyFilled = false;
     //m4jPrevious = event->m4j;
 
-    event->update(e);    
+    event->update(e);
 
     if(writeOutEventNumbers){
       passed_runs  .push_back(event->run);
@@ -891,7 +921,7 @@ int analysis::processEvent(){
 
 
   // Require at least 6 jets
-  if(event->othJets.size() < 2){
+  if(event->nSelJetsV < 6){
     if(debug) cout << "Fail Njet" << endl;
     return 0;
   }

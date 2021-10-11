@@ -209,7 +209,7 @@ namespace nTupleAnalysis {
 	     std::string bjetSF = "", std::string btagVariations = "central",
 	     std::string JECSyst = "", std::string friendFile = "",
 	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "",std::string reweightDvTName = "",
-       float _SvBScore = 0.0);
+       float _SvBScore = 0.0, std::string bdtWeightFile = "", std::string bdtMethods = "");
 
 
     void createPicoAOD(std::string fileName, bool copyInputPicoAOD = true);

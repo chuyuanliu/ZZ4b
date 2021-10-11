@@ -12,7 +12,8 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   //
   nAllJets = dir.make<TH1F>("nAllJets", (name+"/nAllJets; Number of Jets (pt>20); Entries").c_str(),  16,-0.5,15.5);
   nAllNotCanJets = dir.make<TH1F>("nAllNotCanJets", (name+"/nAllNotCanJets; Number of Jets excluding boson candidate jets (pt>20); Entries").c_str(),  16,-0.5,15.5);
-  nSelJets = dir.make<TH1F>("nSelJets", (name+"/nSelJets; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
+  nSelJetsV = dir.make<TH1F>("nSelJetsV", (name+"/nSelJetsV; Number of Selected Jets for Vector Boson; Entries").c_str(),  16,-0.5,15.5);
+  nSelJets = dir.make<TH1F>("nSelJets", (name+"/nSelJets; Number of Selected Jets for Higgs Boson; Entries").c_str(),  16,-0.5,15.5);
   nSelJets_noBTagSF = dir.make<TH1F>("nSelJets_noBTagSF", (name+"/nSelJets_noBTagSF; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
   nSelJets_lowSt = dir.make<TH1F>("nSelJets_lowSt", (name+"/nSelJets_lowSt; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
   nSelJets_midSt = dir.make<TH1F>("nSelJets_midSt", (name+"/nSelJets_midSt; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
@@ -31,7 +32,8 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   nCanJets = dir.make<TH1F>("nCanJets", (name+"/nCanJets; Number of Boson Candidate Jets; Entries").c_str(),  16,-0.5,15.5);
   //allJets = new jetHists(name+"/allJets", fs, "All Jets");
   allNotCanJets = new jetHists(name+"/allNotCanJets", fs, "All Jets Excluding Boson Candidate Jets");
-  selJets = new jetHists(name+"/selJets", fs, "Selected Jets", "", debug);
+  selJetsV = new jetHists(name+"/selJetsV", fs, "Selected Jets for Vector Boson", "", debug);
+  selJets = new jetHists(name+"/selJets", fs, "Selected Jets for Higgs Boson", "", debug);
   tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
   canJets = new jetHists(name+"/canJets", fs, "Boson Candidate Jets");
   canJet0 = new jetHists(name+"/canJet0", fs, "Boson Candidate Jet_{0}");
@@ -60,7 +62,12 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   nCanVTruVDijets =dir.make<TH1F>("nCanVTruVDijets", (name+"/nCanVTruVDijets; Number of Truth Matched Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
   canVDijets   = new dijetHists(name+"/canVDijets",   fs,    "Vector Boson Candidate Dijets");
   canVTruVDijets   = new dijetHists(name+"/canVTruVDijets",   fs,    "Truth Matched Vector Boson Candidate Dijets");
-
+  bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; c_{2V} vs c_{3} BDT Output; Entries").c_str(), 32, -1 , 1); //TEMP
+  bdtScore_corrected = dir.make<TH1F>("bdtScore_corrected", (name+"/bdtScore_corrected; c_{2V} vs c_{3} BDT Output (Mass Corrected p^{\\mu}); Entries").c_str(), 32, -1 , 1); //TEMP
+  SvB_MA_ps_c3 = dir.make<TH1F>("SvB_MA_ps_c3", (name+"/SvB_MA_ps_c3; SvB_MA Regressed P(WHH)+P(ZHH), BDT < -0.4; Entries").c_str(), 100, 0 , 1); //TEMP
+  SvB_MA_ps_c2V = dir.make<TH1F>("SvB_MA_ps_c2V", (name+"/SvB_MA_ps_c2V; SvB_MA Regressed P(WHH)+P(ZHH), BDT >= -0.4; Entries").c_str(), 100, 0 , 1); //TEMP
+  SvB_MA_ps_vs_BDT = dir.make<TH2F>("SvB_MA_ps_vs_BDT", (name+"/SvB_MA_ps_vs_BDT; SvB_MA_ps; BDT").c_str(), 32, 0 , 1, 32, -1, 1); //TEMP
+  //
   aveAbsEta = dir.make<TH1F>("aveAbsEta", (name+"/aveAbsEta; <|#eta|>; Entries").c_str(), 25, 0 , 2.5);
   aveAbsEtaOth = dir.make<TH1F>("aveAbsEtaOth", (name+"/aveAbsEtaOth; Other Jets <|#eta|>; Entries").c_str(), 27, -0.2, 2.5);
   //allTrigJets = new trigHists(name+"/allTrigJets", fs, "All Trig Jets");
@@ -146,25 +153,25 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   FvT_pm4 = dir.make<TH1F>("FvT_pm4", (name+"/FvT_pm4; FvT Regressed P(Four-tag Multijet) ; Entries").c_str(), 100, 0, 1);
   FvT_pm3 = dir.make<TH1F>("FvT_pm3", (name+"/FvT_pm3; FvT Regressed P(Three-tag Multijet) ; Entries").c_str(), 100, 0, 1);
   FvT_pt  = dir.make<TH1F>("FvT_pt",  (name+"/FvT_pt;  FvT Regressed P(t#bar{t}) ; Entries").c_str(), 100, 0, 1);
-  SvB_ps  = dir.make<TH1F>("SvB_ps",  (name+"/SvB_ps;  SvB Regressed P(ZZ)+P(ZH); Entries").c_str(), 100, 0, 1);
+  SvB_ps  = dir.make<TH1F>("SvB_ps",  (name+"/SvB_ps;  SvB Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   if(event){
     SvB_ps_bTagSysts = new systHists(SvB_ps, event->treeJets->m_btagVariations);
   }
-  SvB_pzz = dir.make<TH1F>("SvB_pzz", (name+"/SvB_pzz; SvB Regressed P(ZZ); Entries").c_str(), 100, 0, 1);
-  SvB_pzh = dir.make<TH1F>("SvB_pzh", (name+"/SvB_pzh; SvB Regressed P(ZH); Entries").c_str(), 100, 0, 1);
+  SvB_pwhh = dir.make<TH1F>("SvB_pwhh", (name+"/SvB_pwhh; SvB Regressed P(WHH); Entries").c_str(), 100, 0, 1);
+  SvB_pzhh = dir.make<TH1F>("SvB_pzhh", (name+"/SvB_pzhh; SvB Regressed P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_ptt = dir.make<TH1F>("SvB_ptt", (name+"/SvB_ptt; SvB Regressed P(t#bar{t}); Entries").c_str(), 100, 0, 1);
-  SvB_ps_zh = dir.make<TH1F>("SvB_ps_zh",  (name+"/SvB_ps_zh;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ); Entries").c_str(), 100, 0, 1);
-  SvB_ps_zz = dir.make<TH1F>("SvB_ps_zz",  (name+"/SvB_ps_zz;  SvB Regressed P(ZZ)+P(ZH), P(ZZ) > P(ZH); Entries").c_str(), 100, 0, 1);
+  SvB_ps_zhh = dir.make<TH1F>("SvB_ps_zhh",  (name+"/SvB_ps_zhh;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
+  SvB_ps_whh = dir.make<TH1F>("SvB_ps_whh",  (name+"/SvB_ps_whh;  SvB Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
-  SvB_MA_ps  = dir.make<TH1F>("SvB_MA_ps",  (name+"/SvB_MA_ps;  SvB_MA Regressed P(ZZ)+P(ZH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_ps  = dir.make<TH1F>("SvB_MA_ps",  (name+"/SvB_MA_ps;  SvB_MA Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   if(event){
     SvB_MA_ps_bTagSysts = new systHists(SvB_MA_ps, event->treeJets->m_btagVariations);
   }
-  SvB_MA_pzz = dir.make<TH1F>("SvB_MA_pzz", (name+"/SvB_MA_pzz; SvB_MA Regressed P(ZZ); Entries").c_str(), 100, 0, 1);
-  SvB_MA_pzh = dir.make<TH1F>("SvB_MA_pzh", (name+"/SvB_MA_pzh; SvB_MA Regressed P(ZH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_pwhh = dir.make<TH1F>("SvB_MA_pwhh", (name+"/SvB_MA_pwhh; SvB_MA Regressed P(WHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_pzhh = dir.make<TH1F>("SvB_MA_pzhh", (name+"/SvB_MA_pzhh; SvB_MA Regressed P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_ptt = dir.make<TH1F>("SvB_MA_ptt", (name+"/SvB_MA_ptt; SvB_MA Regressed P(t#bar{t}); Entries").c_str(), 100, 0, 1);
-  SvB_MA_ps_zh = dir.make<TH1F>("SvB_MA_ps_zh",  (name+"/SvB_MA_ps_zh;  SvB_MA Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ); Entries").c_str(), 100, 0, 1);
-  SvB_MA_ps_zz = dir.make<TH1F>("SvB_MA_ps_zz",  (name+"/SvB_MA_ps_zz;  SvB_MA Regressed P(ZZ)+P(ZH), P(ZZ) > P(ZH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_ps_zhh = dir.make<TH1F>("SvB_MA_ps_zhh",  (name+"/SvB_MA_ps_zhh;  SvB_MA Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
@@ -176,17 +183,17 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   FvT_SvB_q_score_max_same = dir.make<TH1F>("FvT_SvB_q_score_max_same", (name+"/FvT_SvB_q_score_max_same; FvT max q_score pairing == SvB max q_score pairing").c_str(), 2, -0.5, 1.5);
 
   //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-  SvB_ps_zh_0_75 = dir.make<TH1F>("SvB_ps_zh_0_75",  (name+"/SvB_ps_zh_0_75;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zh_75_150 = dir.make<TH1F>("SvB_ps_zh_75_150",  (name+"/SvB_ps_zh_75_150;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zh_150_250 = dir.make<TH1F>("SvB_ps_zh_150_250",  (name+"/SvB_ps_zh_150_250;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zh_250_400 = dir.make<TH1F>("SvB_ps_zh_250_400",  (name+"/SvB_ps_zh_250_400;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zh_400_inf = dir.make<TH1F>("SvB_ps_zh_400_inf",  (name+"/SvB_ps_zh_400_inf;  SvB Regressed P(ZZ)+P(ZH), P(ZH)$ #geq P(ZZ), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
+  SvB_ps_zhh_0_75 = dir.make<TH1F>("SvB_ps_zhh_0_75",  (name+"/SvB_ps_zhh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
+  SvB_ps_zhh_75_150 = dir.make<TH1F>("SvB_ps_zhh_75_150",  (name+"/SvB_ps_zhh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
+  SvB_ps_zhh_150_250 = dir.make<TH1F>("SvB_ps_zhh_150_250",  (name+"/SvB_ps_zhh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
+  SvB_ps_zhh_250_400 = dir.make<TH1F>("SvB_ps_zhh_250_400",  (name+"/SvB_ps_zhh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
+  SvB_ps_zhh_400_inf = dir.make<TH1F>("SvB_ps_zhh_400_inf",  (name+"/SvB_ps_zhh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
 
-  SvB_ps_zz_0_75 = dir.make<TH1F>("SvB_ps_zz_0_75",  (name+"/SvB_ps_zz_0_75;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zz_75_150 = dir.make<TH1F>("SvB_ps_zz_75_150",  (name+"/SvB_ps_zz_75_150;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zz_150_250 = dir.make<TH1F>("SvB_ps_zz_150_250",  (name+"/SvB_ps_zz_150_250;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zz_250_400 = dir.make<TH1F>("SvB_ps_zz_250_400",  (name+"/SvB_ps_zz_250_400;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zz_400_inf = dir.make<TH1F>("SvB_ps_zz_400_inf",  (name+"/SvB_ps_zz_400_inf;  SvB Regressed P(ZZ)+P(ZH), P(ZZ)$ > P(ZH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
+  SvB_ps_whh_0_75 = dir.make<TH1F>("SvB_ps_whh_0_75",  (name+"/SvB_ps_whh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
+  SvB_ps_whh_75_150 = dir.make<TH1F>("SvB_ps_whh_75_150",  (name+"/SvB_ps_whh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
+  SvB_ps_whh_150_250 = dir.make<TH1F>("SvB_ps_whh_150_250",  (name+"/SvB_ps_whh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
+  SvB_ps_whh_250_400 = dir.make<TH1F>("SvB_ps_whh_250_400",  (name+"/SvB_ps_whh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
+  SvB_ps_whh_400_inf = dir.make<TH1F>("SvB_ps_whh_400_inf",  (name+"/SvB_ps_whh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
 
 
   xHH = dir.make<TH1F>("xHH", (name+"/xHH; X_{HH}; Entries").c_str(), 100, 0, 10);  
@@ -239,6 +246,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   nAllNotCanJets->Fill(event->nAllNotCanJets, event->weight);
   st->Fill(event->st, event->weight);
   stNotCan->Fill(event->stNotCan, event->weight);
+  nSelJetsV->Fill(event->nSelJetsV, event->weight);
   nSelJets->Fill(event->nSelJets, event->weight);
   nSelJets_noBTagSF->Fill(event->nSelJets, event->weight/event->bTagSF);
   if     (event->s4j < 320) nSelJets_lowSt ->Fill(event->nSelJets, event->weight);
@@ -264,6 +272,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   hT30->Fill(event->ht30, event->weight);
 
   if(debug) std::cout << "viewHists::Fill seljets " << std::endl;
+  for(auto &jet: event->selJetsV) selJetsV->Fill(jet, event->weight);
   for(auto &jet: event->selJets) selJets->Fill(jet, event->weight);
   if(debug) std::cout << "viewHists::Fill tagjets " << std::endl;
   for(auto &jet: event->tagJets) tagJets->Fill(jet, event->weight);
@@ -392,36 +401,36 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   if(SvB_ps_bTagSysts){
     SvB_ps_bTagSysts->Fill(event->SvB_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
   }
-  SvB_pzz->Fill(event->SvB_pzz, event->weight);
-  SvB_pzh->Fill(event->SvB_pzh, event->weight);
+  SvB_pwhh->Fill(event->SvB_pwhh, event->weight);
+  SvB_pzhh->Fill(event->SvB_pzhh, event->weight);
   SvB_ptt->Fill(event->SvB_ptt, event->weight);
-  if(event->SvB_pzz<event->SvB_pzh){
-    SvB_ps_zh->Fill(event->SvB_ps, event->weight);
+  if(event->SvB_pwhh<event->SvB_pzhh){
+    SvB_ps_zhh->Fill(event->SvB_ps, event->weight);
     //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
     if      (view->sublM->pt< 75){
-      SvB_ps_zh_0_75   ->Fill(event->SvB_ps, event->weight);
+      SvB_ps_zhh_0_75   ->Fill(event->SvB_ps, event->weight);
     }else if(view->sublM->pt<150){
-      SvB_ps_zh_75_150 ->Fill(event->SvB_ps, event->weight);
+      SvB_ps_zhh_75_150 ->Fill(event->SvB_ps, event->weight);
     }else if(view->sublM->pt<250){
-      SvB_ps_zh_150_250->Fill(event->SvB_ps, event->weight);
+      SvB_ps_zhh_150_250->Fill(event->SvB_ps, event->weight);
     }else if(view->sublM->pt<400){
-      SvB_ps_zh_250_400->Fill(event->SvB_ps, event->weight);
+      SvB_ps_zhh_250_400->Fill(event->SvB_ps, event->weight);
     }else{
-      SvB_ps_zh_400_inf->Fill(event->SvB_ps, event->weight);
+      SvB_ps_zhh_400_inf->Fill(event->SvB_ps, event->weight);
     }
   }else{
-    SvB_ps_zz->Fill(event->SvB_ps, event->weight);
+    SvB_ps_whh->Fill(event->SvB_ps, event->weight);
     //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
     if      (view->sublM->pt< 75){
-      SvB_ps_zz_0_75   ->Fill(event->SvB_ps, event->weight);
+      SvB_ps_whh_0_75   ->Fill(event->SvB_ps, event->weight);
     }else if(view->sublM->pt<150){
-      SvB_ps_zz_75_150 ->Fill(event->SvB_ps, event->weight);
+      SvB_ps_whh_75_150 ->Fill(event->SvB_ps, event->weight);
     }else if(view->sublM->pt<250){
-      SvB_ps_zz_150_250->Fill(event->SvB_ps, event->weight);
+      SvB_ps_whh_150_250->Fill(event->SvB_ps, event->weight);
     }else if(view->sublM->pt<400){
-      SvB_ps_zz_250_400->Fill(event->SvB_ps, event->weight);
+      SvB_ps_whh_250_400->Fill(event->SvB_ps, event->weight);
     }else{
-      SvB_ps_zz_400_inf->Fill(event->SvB_ps, event->weight);
+      SvB_ps_whh_400_inf->Fill(event->SvB_ps, event->weight);
     }
   }
 
@@ -429,13 +438,13 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   if(SvB_MA_ps_bTagSysts){
     SvB_MA_ps_bTagSysts->Fill(event->SvB_MA_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
   }
-  SvB_MA_pzz->Fill(event->SvB_MA_pzz, event->weight);
-  SvB_MA_pzh->Fill(event->SvB_MA_pzh, event->weight);
+  SvB_MA_pwhh->Fill(event->SvB_MA_pwhh, event->weight);
+  SvB_MA_pzhh->Fill(event->SvB_MA_pzhh, event->weight);
   SvB_MA_ptt->Fill(event->SvB_MA_ptt, event->weight);
-  if(event->SvB_MA_pzz<event->SvB_MA_pzh){
-    SvB_MA_ps_zh->Fill(event->SvB_MA_ps, event->weight);
+  if(event->SvB_MA_pwhh<event->SvB_MA_pzhh){
+    SvB_MA_ps_zhh->Fill(event->SvB_MA_ps, event->weight);
   }else{
-    SvB_MA_ps_zz->Fill(event->SvB_MA_ps, event->weight);
+    SvB_MA_ps_whh->Fill(event->SvB_MA_ps, event->weight);
   }
 
   FvT_q_score->Fill(view->FvT_q_score, event->weight);
@@ -447,6 +456,12 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
 
   FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
 
+  bdtScore->Fill(event->bdtScore_mainView, event->weight);//TEMP
+  bdtScore_corrected->Fill(event->bdtScore_mainView_corrected, event->weight);//TEMP
+  if(event->bdtScore_mainView_corrected >= - 0.4) SvB_MA_ps_c2V->Fill(event->SvB_MA_ps, event->weight);//TEMP
+  else SvB_MA_ps_c3->Fill(event->SvB_MA_ps, event->weight);//TEMP
+  SvB_MA_ps_vs_BDT->Fill(event->SvB_MA_ps, event->bdtScore_mainView_corrected, event->weight);//TEMP
+  
   m4j_vs_nViews->Fill(view->m4j, event->views.size(), event->weight);
 
   if(event->truth != NULL){

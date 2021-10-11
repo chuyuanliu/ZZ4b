@@ -17,11 +17,11 @@ cp_labels = ['cv', 'c2v', 'c3']
 
 class coupling:
     point = '.'
-    def __init__(self, scan_cps, basis_cps = [],):
+    def __init__(self, scan_cps, init_basis = []):
         self.scan_diagram_weight = self.get_diagram_weight_batch(scan_cps.shape, scan_cps.cv, scan_cps.c2v, scan_cps.c3)
         self.basis = []
         self.transmat = None
-        for basis in basis_cps:
+        for basis in init_basis:
             self.add_basis(**basis)
         cps_whh = [{'cv':0.5},{'cv':1.5},{'c2v':2.0},{'c2v':0.0},{'c3':2.0},{'c3':0.0}]
         xsecs_whh = [2.870e-04, 8.902e-04, 1.115e-03, 1.491e-04, 6.880e-04, 2.371e-04]
@@ -253,7 +253,7 @@ def sum_negative2_relative(weight):
     return np.sqrt(np.sum(negative * negative, axis=2))/np.sqrt(np.sum(weight * weight, axis=2))
 
 
-# show all weights
+# show all weight
 # coupling_study(raw)
 
 # sum(negative^2)/sum(weight^2)

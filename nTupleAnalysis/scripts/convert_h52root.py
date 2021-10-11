@@ -32,7 +32,7 @@ def convert(inFile):
     print 'convert(%s)'%inFile
     h5File = inFile
     removeLocalH5File = False
-    outFile = args.outFile if args.outFile else inFile.replace("_f.h5",".root")
+    outFile = args.outFile if args.outFile else inFile.replace(".h5",".root")
     outFile = outFile.split('/')
     outDir, outFile  = '/'.join(outFile[:-1])+'/', outFile[-1]
     #tempDir = outDir

@@ -151,7 +151,7 @@ for key in xsDictionary.keys():
 # elif "bothZH" in o.input: sample = "bothZH4b"
 # elif "ZH" in o.input: sample =   "ZH4b"
 # elif "ZZ" in o.input: sample =   "ZZ4b" #make sure this is last, ZZ in path name...
-    
+
 xs = 1
 if o.isMC: 
     xs = xsDictionary[sample] if sample in xsDictionary else 1.0
@@ -397,6 +397,8 @@ process.nTupleAnalysis = cms.PSet(
     inputWeightFiles = cms.vstring(weightFileNames),
     inputWeightFiles4b = cms.vstring(weightFileNames4b),
     inputWeightFilesDvT = cms.vstring(weightFileNamesDvT),
+    bdtWeightFile = cms.string("bdtWeight/TMVA_13TeV_VHH_c2v_/*method*/.weights.xml"),
+    bdtMethods = cms.string("BDTG")
     )
 
 print("nTupleAnalysis_cfg.py done")

@@ -19,6 +19,7 @@
 #include "nTupleAnalysis/baseClasses/interface/trigData.h"
 #include "ZZ4b/nTupleAnalysis/interface/eventView.h"
 #include "TriggerEmulator/nTupleAnalysis/interface/TrigEmulatorTool.h"
+#include "ZZ4b/nTupleAnalysis/interface/bdtInference.h"
 #if SLC6 == 0 //Defined in ZZ4b/nTupleAnalysis/BuildFile.xml 
 #include "ZZ4b/nTupleAnalysis/interface/multiClassifierONNX.h"
 #endif
@@ -61,16 +62,16 @@ namespace nTupleAnalysis {
     Float_t   FvT_q_1423 = -99.0;
     Float_t   FvT_q_score[3] = {-99.0};
     Float_t   SvB_ps  = -99.0;
-    Float_t   SvB_pzz = -99.0;
-    Float_t   SvB_pzh = -99.0;
+    Float_t   SvB_pwhh = -99.0;
+    Float_t   SvB_pzhh = -99.0;
     Float_t   SvB_ptt = -99.0;
     Float_t   SvB_q_1234 = -99.0;
     Float_t   SvB_q_1324 = -99.0;
     Float_t   SvB_q_1423 = -99.0;
     Float_t   SvB_q_score[3] = {-99.0};
     Float_t   SvB_MA_ps  = -99.0;
-    Float_t   SvB_MA_pzz = -99.0;
-    Float_t   SvB_MA_pzh = -99.0;
+    Float_t   SvB_MA_pwhh = -99.0;
+    Float_t   SvB_MA_pzhh = -99.0;
     Float_t   SvB_MA_ptt = -99.0;
     Float_t   SvB_MA_q_1234 = -99.0;
     Float_t   SvB_MA_q_1324 = -99.0;
@@ -149,8 +150,8 @@ namespace nTupleAnalysis {
     bool L1_HTT360er = false;
     bool L1_ETT2000 = false;
 
-    const float jetPtMin = 20;
-    const float HJetPtMin = 40;
+    const float jetPtMinV = 20;
+    const float jetPtMinH = 40;
     const float jetEtaMax= 2.4;
     const int puIdMin = 0b110;//7=tight, 6=medium, 4=loose working point
     const bool doJetCleaning=false;
@@ -159,8 +160,8 @@ namespace nTupleAnalysis {
     std::vector<jetPtr> allJets;//all jets in nTuple
     std::vector<jetPtr> selJetsLoosePt;//jets passing loose pt/eta requirements
     std::vector<jetPtr> tagJetsLoosePt;//tagged jets passing loose pt/eta requirements
-    std::vector<jetPtr> selJets;//jets passing pt/eta requirements
-    std::vector<jetPtr> selJetsH;//jets passing H boson jet pt/eta requirements
+    std::vector<jetPtr> selJetsV;//jets passing V boson jet pt/eta requirements
+    std::vector<jetPtr> selJets;//jets passing H boson jet pt/eta requirements
     std::vector<jetPtr> looseTagJets;//jets passing pt/eta and loose bTagging requirements
     std::vector<jetPtr> tagJets;//jets passing pt/eta and bTagging requirements
     std::vector<jetPtr> antiTag;//jets passing pt/eta and failing bTagging requirements
@@ -190,8 +191,14 @@ namespace nTupleAnalysis {
 
     bool passMV;
 
+    uint nSelJetsV;
+
+    std::unique_ptr<bdtInference> bdtModel;
+    float bdtScore_mainView;// TEMP
+    float bdtScore_mainView_corrected;// TEMP
+    //
+
     uint nSelJets;
-    uint nSelJetsH;
     uint nLooseTagJets;
     uint nTagJets;
     uint nAntiTag;
@@ -266,7 +273,8 @@ namespace nTupleAnalysis {
 
     // Constructors and member functions
     eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
-	      std::string JECSyst = "", bool _looseSkim = false, bool is3bMixed = false, std::string FvTName="FvT", std::string reweight4bName="MixedToUnmixed", std::string reweightDvTName="weight_DvT3_3b_pt3", bool doWeightStudy = false); 
+	      std::string JECSyst = "", bool _looseSkim = false, bool is3bMixed = false, std::string FvTName="FvT", std::string reweight4bName="MixedToUnmixed", std::string reweightDvTName="weight_DvT3_3b_pt3", bool doWeightStudy = false,
+        std::string bdtWeightFile = "", std::string bdtMethods = ""); 
     void setTagger(std::string, float);
     void update(long int);
     void buildEvent();

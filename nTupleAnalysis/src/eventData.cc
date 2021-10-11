@@ -9,6 +9,7 @@ using TriggerEmulator::hTTurnOn;   using TriggerEmulator::jetTurnOn; using Trigg
 
 // Sorting functions
 bool sortPt(       std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->pt        > rhs->pt   );     } // put largest  pt    first in list
+bool sortDijetPt(  std::shared_ptr<dijet>     &lhs, std::shared_ptr<dijet>     &rhs){ return (lhs->pt        > rhs->pt   );     } // put largest  pt    first in list
 bool sortdR(       std::shared_ptr<dijet>     &lhs, std::shared_ptr<dijet>     &rhs){ return (lhs->dR        < rhs->dR   );     } // 
 bool sortDBB(      std::shared_ptr<eventView> &lhs, std::shared_ptr<eventView> &rhs){ return (lhs->dBB       < rhs->dBB  );     } // put smallest dBB   first in list
 bool sortDeepB(    std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->deepB     > rhs->deepB);     } // put largest  deepB first in list
@@ -20,7 +21,7 @@ bool comp_FvT_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventVi
 bool comp_SvB_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->SvB_q_score < second->SvB_q_score); }
 bool comp_dR_close(   std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->close->dR   < second->close->dR  ); }
 
-eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _is3bMixed, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy){
+eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _is3bMixed, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, std::string bdtWeightFile, std::string bdtMethods){
   std::cout << "eventData::eventData()" << std::endl;
   tree  = t;
   isMC  = mc;
@@ -32,6 +33,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   isDataMCMix = _isDataMCMix;
   is3bMixed = _is3bMixed;
   looseSkim = _looseSkim;
+  bdtModel = std::make_unique<bdtInference>(bdtWeightFile, bdtMethods, debug);
   // if(looseSkim) {
   //   std::cout << "Using loose pt cut. Needed to produce picoAODs for JEC uncertainties which can change jet pt by a few percent." << std::endl;
   //   jetPtMin = 35;
@@ -63,16 +65,16 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables[FvTName+"_q_1423"] = &FvT_q_score[2]; //&FvT_q_1423;
 
   classifierVariables["SvB_ps" ] = &SvB_ps;
-  classifierVariables["SvB_pzz"] = &SvB_pzz;
-  classifierVariables["SvB_pzh"] = &SvB_pzh;
+  classifierVariables["SvB_pwhh"] = &SvB_pwhh;
+  classifierVariables["SvB_pzhh"] = &SvB_pzhh;
   classifierVariables["SvB_ptt"] = &SvB_ptt;
   classifierVariables["SvB_q_1234"] = &SvB_q_score[0]; //&SvB_q_1234;
   classifierVariables["SvB_q_1324"] = &SvB_q_score[1]; //&SvB_q_1324;
   classifierVariables["SvB_q_1423"] = &SvB_q_score[2]; //&SvB_q_1423;
 
   classifierVariables["SvB_MA_ps" ] = &SvB_MA_ps;
-  classifierVariables["SvB_MA_pzz"] = &SvB_MA_pzz;
-  classifierVariables["SvB_MA_pzh"] = &SvB_MA_pzh;
+  classifierVariables["SvB_MA_pwhh"] = &SvB_MA_pwhh;
+  classifierVariables["SvB_MA_pzhh"] = &SvB_MA_pzhh;
   classifierVariables["SvB_MA_ptt"] = &SvB_MA_ptt;
   classifierVariables["SvB_MA_q_1234"] = &SvB_MA_q_score[0]; //&SvB_MA_q_1234;
   classifierVariables["SvB_MA_q_1324"] = &SvB_MA_q_score[1]; //&SvB_MA_q_1324;
@@ -299,7 +301,7 @@ void eventData::resetEvent(){
     selJetsLoosePt.clear();
     tagJetsLoosePt.clear();
   }
-  selJetsH.clear();
+  selJetsV.clear();
   canJets.clear();
   notAllTruVQuarks.clear();
   canHTruVJets.clear();
@@ -371,7 +373,8 @@ void eventData::resetEvent(){
     pseudoTagWeightMap[jcmName]= 1.0;
     mcPseudoTagWeightMap[jcmName] = 1.0;;
   }
-
+  bdtScore_mainView = -99;//TEMP
+  bdtScore_mainView_corrected = -99;//TEMP
   
 }
 
@@ -496,16 +499,16 @@ void eventData::buildEvent(){
   // Select Jets
   //
   if(looseSkim){
-    selJetsLoosePt = treeJets->getJets(       allJets, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning);
-    tagJetsLoosePt = treeJets->getJets(selJetsLoosePt, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
+    selJetsLoosePt = treeJets->getJets(       allJets, jetPtMinV-5, 1e6, jetEtaMax, doJetCleaning);
+    tagJetsLoosePt = treeJets->getJets(selJetsLoosePt, jetPtMinV-5, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
   } 
-  selJets       = treeJets->getJets(     allJets,  jetPtMin, 1e6, jetEtaMax, doJetCleaning);
-  selJetsH      = treeJets->getJets(     selJets, HJetPtMin, 1e6, jetEtaMax, doJetCleaning);
-  looseTagJets  = treeJets->getJets(    selJetsH, HJetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger);
-  tagJets       = treeJets->getJets(looseTagJets, HJetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
-  antiTag       = treeJets->getJets(    selJetsH, HJetPtMin, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger, true); //boolean specifies antiTag=true, inverts tagging criteria
+  selJetsV      = treeJets->getJets(     allJets,  jetPtMinV, 1e6, jetEtaMax, doJetCleaning);
+  selJets       = treeJets->getJets(     selJetsV, jetPtMinH, 1e6, jetEtaMax, doJetCleaning);
+  looseTagJets  = treeJets->getJets(    selJets, jetPtMinH, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger);
+  tagJets       = treeJets->getJets(looseTagJets, jetPtMinH, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
+  antiTag       = treeJets->getJets(    selJets, jetPtMinH, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger, true); //boolean specifies antiTag=true, inverts tagging criteria
+  nSelJetsV     =     selJetsV.size();
   nSelJets      =      selJets.size();
-  nSelJetsH     =     selJetsH.size();
   nLooseTagJets = looseTagJets.size();
   nTagJets      =      tagJets.size();
   nAntiTag      =      antiTag.size();
@@ -537,7 +540,7 @@ void eventData::buildEvent(){
   //   tagJets.push_back(new jet(muon->p, 1.0));
   // }  
 
-  threeTag = (nLooseTagJets == 3 && nSelJetsH >= 4);
+  threeTag = (nLooseTagJets == 3 && nSelJets >= 4);
   fourTag  = (nTagJets >= 4);
   //hack to get bTagSF normalization factor
   //fourTag = (nSelJets >= 4); threeTag = false;
@@ -553,6 +556,8 @@ void eventData::buildEvent(){
     //((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/2.5,2)) > 1)&(xW<0.5)) || ((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/4.0,2)) > 1)&(xW>=0.5)); //(t->xWbW > 2); //(t->xWt > 2) & !( (t->m>173)&(t->m<207) & (t->W->m>90)&(t->W->m<105) );
     passXWt = t->rWbW > 3;
   }
+  if(passMV) bdtScore_mainView = bdtModel->getBDTScore(this, true)[0]["BDTG"]; //TEMP
+  if(passMV) bdtScore_mainView_corrected = bdtModel->getBDTScore(this, true, true)[0]["BDTG"];//TEMP
   //nPSTJets = nLooseTagJets + nPseudoTags;
   nPSTJets = nTagJets; // if threeTag use nLooseTagJets + nPseudoTags
   if(threeTag && useJetCombinatoricModel) computePseudoTagWeight();
@@ -799,17 +804,17 @@ void eventData::chooseCanJets(){
   //else        preCanJets = &selJets;
 
   // order by decreasing btag score
-  std::sort(selJets.begin(), selJets.end(), sortTag);
+  std::sort(selJetsV.begin(), selJetsV.end(), sortTag);
   // take the four jets with highest btag score
-  for(uint i = 0; i < nSelJets; ++i){
-    auto & jet = selJets.at(i);
-    if(canJets.size() < 4 && jet->pt >= HJetPtMin)
+  for(uint i = 0; i < nSelJetsV; ++i){
+    auto & jet = selJetsV.at(i);
+    if(canJets.size() < 4 && jet->pt >= jetPtMinH)
       canJets.push_back(jet);
     else
       othJets.push_back(jet);
   }
-  for(uint i = 0; i < 3;        ++i) topQuarkBJets.push_back(selJets.at(i));
-  for(uint i = 2; i < nSelJets; ++i) topQuarkWJets.push_back(selJets.at(i));
+  for(uint i = 0; i < 3;        ++i) topQuarkBJets.push_back(selJetsV.at(i));
+  for(uint i = 2; i < nSelJetsV; ++i) topQuarkWJets.push_back(selJetsV.at(i));
   nOthJets = othJets.size();
 
   auto getbTag = +[](const jetPtr& jet){return jet->deepB;}; 
@@ -823,10 +828,14 @@ void eventData::chooseCanJets(){
     for(uint j = i+1; j < nOthJets; ++j){
       auto othDijet = std::make_shared<dijet>(othJets.at(i), othJets.at(j));
       allDijets.push_back(othDijet);
-      if(matchDijet(othDijet, truth))
-        truVDijets.push_back(othDijet);
-      else
-        notTruVDijets.push_back(othDijet);
+      if(truth)
+      {
+        if(matchDijet(othDijet, truth))
+          truVDijets.push_back(othDijet);
+        else
+          notTruVDijets.push_back(othDijet);
+      }
+
     }
   }
 
@@ -838,26 +847,29 @@ void eventData::chooseCanJets(){
         canVTruVDijets.push_back(dijet);
     }
   }
-  for(auto& Vqq:truth->Vqqs){
-    for(auto& jet:canJets){
-      if(matchJet(jet,Vqq->daughters))
-        canHTruVJets.push_back(jet);
+  std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
+  if(truth)
+  {
+    for(auto& Vqq:truth->Vqqs){
+      for(auto& jet:canJets){
+        if(matchJet(jet,Vqq->daughters))
+          canHTruVJets.push_back(jet);
+      }
+      for(auto& jet:othJets){
+        if(matchJet(jet,Vqq->daughters))
+          truVJets.push_back(jet);
+      }
     }
-    for(auto& jet:othJets){
-      if(matchJet(jet,Vqq->daughters))
-        truVJets.push_back(jet);
+    for(const auto &V:truth->Vqqs){
+      for(const auto &q:V->daughters){
+        if(!matchJet(q,allJets))
+          notAllTruVQuarks.push_back(q);
+      }
     }
   }
   std::sort(canHTruVJets.begin(), canHTruVJets.end(), sortPt);
   std::sort(truVJets.begin(), truVJets.end(), sortPt);
 
-  for(const auto &V:truth->Vqqs){
-    for(const auto &q:V->daughters){
-      if(!matchJet(q,allJets))
-        notAllTruVQuarks.push_back(q);
-    }
-  }
-  
   // order by decreasing pt
   std::sort(selJets.begin(), selJets.end(), sortPt); 
 
@@ -1050,8 +1062,8 @@ void eventData::run_SvB_ONNX(){
   if(!SvB_ONNX) return;
   SvB_ONNX->run(this);
   if(debug) SvB_ONNX->dump();  
-  this->SvB_pzz = SvB_ONNX->c_score[0];
-  this->SvB_pzh = SvB_ONNX->c_score[1];
+  this->SvB_pwhh = SvB_ONNX->c_score[0];
+  this->SvB_pzhh = SvB_ONNX->c_score[1];
   this->SvB_ptt = SvB_ONNX->c_score[2];
   this->SvB_ps  = SvB_ONNX->c_score[0] + SvB_ONNX->c_score[1];
 

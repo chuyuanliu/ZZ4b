@@ -80,7 +80,7 @@ dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
 
 # for skimming
 ttbarSamplesByYear = {}
-ttbarSamplesByYear["2018"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+ttbarSamplesByYear["2018"] = ["TTToSemiLeptonic"]#["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
 ttbarSamplesByYear["2017"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
 ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
 # ttbarSamplesByYear["2018"] = []
@@ -157,7 +157,7 @@ if o.makeSkims:
     for y in years:
         
 
-        histConfig = "--histFile histsFromNanoAOD.root"
+        histConfig = " --histDetailLevel allEvents.threeTag.fourTag --histFile histsFromNanoAOD.root "
         picoOut = " -p picoAOD_"+tagID+".root "
         EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/skims/"
 
@@ -199,7 +199,7 @@ if o.makeVHHSkims:
     dag_config = []
     condor_jobs = []
 
-    histConfig = "--histFile histsFromNanoAOD.root"
+    histConfig = " --histDetailLevel allEvents.threeTag.fourTag --histFile histsFromNanoAOD.root "
     picoOut = " -p picoAOD_"+tagID+".root "
     EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/VHHSkims/"
 

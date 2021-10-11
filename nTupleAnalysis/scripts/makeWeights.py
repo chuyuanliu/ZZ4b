@@ -154,6 +154,7 @@ print "Input file:",o.data
 
 regionNames={"SB": "Sideband",
              "CR": "Control Region",
+             "HHSB": "di-Higgs Sideband"
              }
 
 if o.data4b:
@@ -360,13 +361,14 @@ def getHists(cut,region,var,plot=False):#allow for different cut for mu calculat
 cut=o.cut
 cutTitleDict = {"passPreSel": "Pass Pre-Selection",
                 "passMDRs": "Pass #DeltaR(j,j)",
-                "passXWt": "rWbW > 3"}
+                "passXWt": "rWbW > 3",
+                "passNjOth":"#geq 6 jets"}
 cutTitle=cutTitleDict[cut]
 
 
-getHists(cut,o.weightRegion,"FvT", plot=True)
-getHists(cut,o.weightRegion,"FvTUnweighted", plot=True)
-getHists(cut,o.weightRegion,"nPSTJets", plot=True)
+# getHists(cut,o.weightRegion,"FvT", plot=True)
+# getHists(cut,o.weightRegion,"FvTUnweighted", plot=True)
+# getHists(cut,o.weightRegion,"nPSTJets", plot=True)
 
 if ttFile:
     (muData4b, muTT4b, _, muData3b, muTT3b, _) = getHists(cut,o.weightRegion,"nIsoMed25Muons", plot=True)
