@@ -400,7 +400,7 @@ process.nTupleAnalysis = cms.PSet(
     inputWeightFiles = cms.vstring(weightFileNames),
     inputWeightFiles4b = cms.vstring(weightFileNames4b),
     inputWeightFilesDvT = cms.vstring(weightFileNamesDvT),
-    bdtWeightFile = cms.string("bdtWeight/TMVA_13TeV_VHH_c2v_/*method*/.weights.xml"),
+    bdtWeightFile = cms.string("ZZ4b/nTupleAnalysis/bdtModels/TMVA_13TeV_VHH_c2v_/*method*/.weights.xml"),
     bdtMethods = cms.string("BDTG")
     )
 
