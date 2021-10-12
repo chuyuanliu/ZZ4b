@@ -1,6 +1,5 @@
 <Flags CPPDEFINES="SLC6=0"/>
 <use   name="root"/>
-<use   name="roottmva"/>
 <use   name="boost"/>
 <use   name="FWCore/FWLite"/>
 <use   name="DataFormats/FWLite"/>        
