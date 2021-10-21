@@ -1,4 +1,4 @@
-import time, os, sys
+import time, os, sys, gc
 os.environ['CUDA_LAUNCH_BLOCKING']='1'
 from pathlib import Path
 #import multiprocessing
@@ -30,6 +30,8 @@ from networks import *
 np.random.seed(0)#always pick the same training sample
 torch.manual_seed(1)#make training results repeatable 
 from functools import partial
+SIGMA=u'\u03C3'
+
 
 import pathlib
 import argparse
@@ -54,12 +56,13 @@ parser.add_argument('--cuda', default=0, type=int, help='Which gpuid to use.')
 parser.add_argument('-m', '--model', default='', type=str, help='Load this model')
 parser.add_argument(      '--onnx', dest="onnx",  default=False, action="store_true", help='Export model to onnx')
 parser.add_argument(      '--train',  dest="train",  action="store_true", default=False, help="Train the model(s)")
+parser.add_argument(      '--finetune', dest="finetune",  action="store_true", default=False, help="Finetune the model(s)")
 parser.add_argument('-u', '--update', dest="update", action="store_true", default=False, help="Update the hdf5 file with the DNN output values for each event")
 parser.add_argument(      '--storeEvent',     dest="storeEvent",     default="0", help="store the network response in a numpy file for the specified event")
 parser.add_argument(      '--storeEventFile', dest="storeEventFile", default=None, help="store the network response in this file for the specified event")
 parser.add_argument('--weightName', default="mcPseudoTagWeight", help='Which weights to use for JCM.')
 parser.add_argument('--FvTName', default="FvT", help='Which FvT weights to use for SvB Training.')
-parser.add_argument('--trainOffset', default='1', help='training offset. Use comma separated list to train with multiple offsets in parallel.')
+parser.add_argument('--trainOffset', default='0', help='training offset. Use comma separated list to train with multiple offsets in parallel.')
 parser.add_argument('--updatePostFix', default="", help='Change name of the classifier weights stored .')
 parser.add_argument('--strategy', dest="strategy", default="baseline", help='Change training strategy')
 parser.add_argument('--base', dest="base", default="ZZ4b/nTupleAnalysis/pytorchModels/", help='set base path')
@@ -117,39 +120,56 @@ mj = classInfo(abbreviation='mj', name= 'Multijet Model', index=3, color='cyan')
 sg = classInfo(abbreviation='sg', name='Signal',     index=[whh.index, zhh.index], color='blue')
 bg = classInfo(abbreviation='bg', name='Background', index=[tt.index, mj.index], color='brown')
 
+lock = mp.Lock()
 
-def getFrame(fileName, PS=None):
+def getFrame(fileName, PS=None, selection='', weight='weight'):
     yearIndex = fileName.find('201')
     year = float(fileName[yearIndex:yearIndex+4])-2010
     thisFrame = pd.read_hdf(fileName, key='df')
     thisFrame['year'] = pd.Series(year*np.ones(thisFrame.shape[0], dtype=np.float32), index=thisFrame.index)
     n = thisFrame.shape[0]
 
+    if selection:
+        thisFrame = thisFrame.loc[eval(selection.replace('df','thisFrame'))]
+
     if PS:
-        PS = int(PS)
-        print("Cutting on Trigger and HHSB|HHCR|HHSR ...was ",n)
-        thisFrame = thisFrame.loc[ (thisFrame[trigger] == True) & ((thisFrame.HHSB==True)|(thisFrame.HHCR==True)|(thisFrame.HHSR==True)) ]
+        keep_fraction = 1/PS
+        print("Only keep %f of threetag"%keep_fraction)
+        lock.acquire()
+        np.random.seed(n)
+        keep = (thisFrame.fourTag) | (np.random.rand(thisFrame.shape[0]) < keep_fraction) # a random subset of t3 events will be kept set
+        np.random.seed(0)
+        lock.release()
+        keep_fraction = (keep & ~thisFrame.fourTag).sum()/(~thisFrame.fourTag).sum() # update keep_fraction with actual fraction instead of target fraction
+        print("keep fraction",keep_fraction)
+        thisFrame = thisFrame[keep]
+        thisFrame.loc[~thisFrame.fourTag, weight] = thisFrame[~thisFrame.fourTag][weight] / keep_fraction
 
-        print("getFrame::PS is ",PS)
-        PSOffset = 0
-        idx_pass = []
-        n = thisFrame.shape[0]
-        for e in range(n):
-            if (e+PSOffset)%PS < 1: 
-                idx_pass.append(e)
+    # if PS:
+    #     PS = int(PS)
+    #     print("Cutting on Trigger and SB|CR|SR ...was ",n)
+    #     thisFrame = thisFrame.loc[ (thisFrame[trigger] == True) & ((thisFrame.SB==True)|(thisFrame.CR==True)|(thisFrame.SR==True)) ]
 
-        idx_pass = np.array(idx_pass)
-        print("Prescaling by factor of ",PS,"...size was...",n)
-        thisFrame = thisFrame.iloc[idx_pass]
-        thisFrame[args.weightName] = thisFrame[args.weightName] * PS
+    #     print("getFrame::PS is ",PS)
+    #     PSOffset = 0
+    #     idx_pass = []
+    #     n = thisFrame.shape[0]
+    #     for e in range(n):
+    #         if (e+PSOffset)%PS < 1: 
+    #             idx_pass.append(e)
+
+    #     idx_pass = np.array(idx_pass)
+    #     print("Prescaling by factor of ",PS,"...size was...",n)
+    #     thisFrame = thisFrame.iloc[idx_pass]
+    #     thisFrame[args.weightName] = thisFrame[args.weightName] * PS
     
-    n = thisFrame.shape[0]
-    print("Read",fileName,year,n)
+    n_after = thisFrame.shape[0]
+    print("Read",fileName,year,n,'->',n_after, n_after/n)
 
     return thisFrame
 
 
-def getFramesHACK(fileReaders,getFrame,dataFiles,PS=None):
+def getFramesHACK(fileReaders,getFrame,dataFiles,PS=None, selection='', weight='weight'):
     largeFiles = []
     print("dataFiles was:",dataFiles)
     for d in dataFiles:
@@ -159,12 +179,12 @@ def getFramesHACK(fileReaders,getFrame,dataFiles,PS=None):
             # dataFiles.remove(d) this caused problems because it modifies the list being iterated over
     for d in largeFiles:
         dataFiles.remove(d)
-    results = fileReaders.map_async(partial(getFrame, PS=PS), sorted(dataFiles))
+    results = fileReaders.map_async(partial(getFrame, PS=PS, selection=selection, weight=weight), sorted(dataFiles))
     frames = results.get()
 
     for f in largeFiles:
         print("read large file:",f)
-        frames.append(getFrame(f,PS))
+        frames.append(getFrame(f,PS,selection,weight))
 
     return frames
 
@@ -184,7 +204,7 @@ def getFrameSvB(fileName):
     elif 'regionC3' in strategies:
         thisFrame = thisFrame.loc[thisFrame[BDT_NAME]<BDT_CUT]
 
-    thisFrame = thisFrame.loc[ (thisFrame['nSelJetsV']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) & (thisFrame[BDT_NAME]>=-1)]#& (thisFrame.passXWt) ]
+    thisFrame = thisFrame.loc[ (thisFrame['nSelJetsV']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) & (thisFrame[BDT_NAME]>=-1) & thisFrame.passMDRs  ]#& (thisFrame.passXWt) ]
     #thisFrame = thisFrame.loc[ (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
     thisFrame['year'] = pd.Series(year*np.ones(thisFrame.shape[0], dtype=np.float32), index=thisFrame.index)
     if "WHHTo4B" in fileName: 
@@ -245,15 +265,30 @@ def increaseBatchSize(loader, factor=4):
 
 
 queue = mp.Queue()
-def runTraining(offset, df, df_control, modelName=''):
+def runTraining(offset, df, event=None, df_control=None, modelName='', finetune=False):
     model = modelParameters(modelName, offset)
     print("Setup training/validation tensors")
     model.trainSetup(df, df_control)
-    #model initial state
-    #model.makePlots()
+    if event is not None:
+        event.set()
     # Training loop
     for e in range(model.startingEpoch, model.epochs): 
         model.runEpoch()
+
+    if finetune:
+        model.incrementTrainLoader(newBatchSize=16384)
+        model.trainEvaluate()
+        model.validate()
+        model.makePlots(suffix='_finetune00')        
+        model.finetunerScheduler.step(model.training.r_chi2)
+        model.logprint('\nRun Finetuning')
+        for i in range(1,11):
+            model.fineTune()
+            model.trainEvaluate()
+            model.validate()
+            model.logprint('')
+            model.finetunerScheduler.step(model.training.r_chi2)
+            model.makePlots(suffix='_finetune%02d'%i)        
 
     print()
     print(offset,">> DONE <<")
@@ -265,7 +300,7 @@ def runTraining(offset, df, df_control, modelName=''):
 def averageModels(models, results):
     for model in models: model.net.eval()
 
-    y_pred, y_true, w_ordered = np.ndarray((results.n, models[0].nClasses), dtype=np.float), np.zeros(results.n, dtype=np.float), np.zeros(results.n, dtype=np.float)
+    y_pred, y_true, w_ordered, R_ordered = np.ndarray((results.n, models[0].nClasses), dtype=np.float), np.zeros(results.n, dtype=np.float), np.zeros(results.n, dtype=np.float), np.zeros(results.n, dtype=np.float)
     cross_entropy = np.zeros(results.n, dtype=np.float)
     q_score = np.ndarray((results.n, 3), dtype=np.float)
     print_step = len(results.evalLoader)//200+1
@@ -300,6 +335,7 @@ def averageModels(models, results):
         y_true        [nProcessed:nProcessed+nBatch] = y.cpu()
         q_score       [nProcessed:nProcessed+nBatch] = F.softmax(q_logits, dim=-1).cpu().numpy() #q_scores.cpu().numpy()
         w_ordered     [nProcessed:nProcessed+nBatch] = w.cpu()
+        R_ordered     [nProcessed:nProcessed+nBatch] = R.cpu()
         nProcessed+=nBatch
 
         if int(i+1) % print_step == 0:
@@ -309,9 +345,10 @@ def averageModels(models, results):
 
     loss = (w_ordered * cross_entropy).sum()/w_ordered.sum()
 
-    results.update(y_pred, y_true, q_score, w_ordered, cross_entropy, loss, doROC=False)
+    results.update(y_pred, y_true, R_ordered, q_score, w_ordered, cross_entropy, loss, doROC=False)
     if r_std is not None:
         results.r_std = r_std
+
 
 
 
@@ -323,20 +360,26 @@ n_queue = 4
 eval_batch_size = 2**15
 
 # https://arxiv.org/pdf/1711.00489.pdf much larger training batches and learning rate inspired by this paper
-train_batch_size = 2**10#9#10#11
+train_batch_size = 2**10#10#11
 max_train_batch_size = train_batch_size*64
 lrInit = 1.0e-2#4e-3
 max_patience = 1
 fixedSchedule = True
 
 bs_scale=2
-lr_scale=0.5
+lr_scale=0.25
 bs_milestones=[1,3,6,10]
-lr_milestones= bs_milestones + [15,16,17,18,19,20,21,22,23,24]
-#lr_milestones=                 [15,16,17,18,19,20,21,22,23,24]
+#lr_milestones= bs_milestones + [15,16,17,18,19,20,21,22,23,24]
+lr_milestones=                 [15,16,17,18,19,20,21,22,23,24]
 
-train_numerator = 2
-train_denominator = 3
+if 'small_batches' in args.architecture:
+    train_batch_size = 128
+    lrInit = 1.0e-3
+    fixedSchedule = False
+    lr_scale = 0.1
+
+train_numerator = 2 # 2
+train_denominator = 3 # 3
 train_fraction = train_numerator/train_denominator
 valid_fraction = 1-train_fraction
 train_offset = [int(offset) for offset in args.trainOffset.split(',')] #int(args.trainOffset)
@@ -439,10 +482,14 @@ if classifier in ['SvB', 'SvB_MA']:
         nzhh, wzhh = dfS.zhh.sum(), dfS[dfS.zhh][weight].sum()
         sum_wS = dfS[weight].sum()
         sum_wB = dfB[weight].sum()
+        sum_wS_HHSR = dfS[dfS.HHSR][weight].sum()
+        sum_wB_HHSR = dfB[dfB.HHSR][weight].sum()
         print("sum_wS",sum_wS)
         print("sum_wB",sum_wB)
         print("nwhh = %7d, wwhh = %6.1f"%(nwhh,wwhh))
         print("nzhh = %7d, wzhh = %6.1f"%(nzhh,wzhh))
+        print("sum_wS_HHSR",sum_wS_HHSR)
+        print("sum_wB_HHSR",sum_wB_HHSR)
 
         # sum_wStoS = np.sum(np.float32(dfS.loc[dfS[ZB+'HHSR']==True ][weight]))
         # sum_wBtoB = np.sum(np.float32(dfB.loc[dfB[ZB+'HHSR']==False][weight]))
@@ -457,6 +504,18 @@ if classifier in ['SvB', 'SvB_MA']:
         dfS.loc[dfS.zhh, weight] = dfS[dfS.zhh][weight]*sum_wB/wzhh
 
         df = pd.concat([dfB, dfS], sort=False)
+
+        wwhh_norm = df[df.whh][weight].sum()
+        wzhh_norm = df[df.zhh][weight].sum()
+        wmj = df[df.mj][weight].sum()
+        wtt = df[df.tt][weight].sum()
+        w = wwhh_norm+wzhh_norm+wmj+wtt
+        fC = torch.FloatTensor([wwhh_norm/w, wzhh_norm/w, wmj/w, wtt/w])
+        # compute the loss you would get if you only used the class fraction to predict class probability (ie a 4 sided die loaded to land with the right fraction on each class)
+        loaded_die_loss = -(fC*fC.log()).sum()
+        print("fC:",fC)
+        print('loaded die loss:',loaded_die_loss)
+        gc.collect()
 
 
 if classifier in ['FvT','DvT3', 'DvT4', 'M1vM2']:

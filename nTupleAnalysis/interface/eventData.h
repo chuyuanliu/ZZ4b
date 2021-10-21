@@ -57,6 +57,7 @@ namespace nTupleAnalysis {
     Float_t   FvT_pm4 = 1.0;
     Float_t   FvT_pm3 = 1.0;
     Float_t   FvT_pt  = 1.0;
+    Float_t   FvT_std  = 1.0;
     Float_t   FvT_q_1234 = -99.0;
     Float_t   FvT_q_1324 = -99.0;
     Float_t   FvT_q_1423 = -99.0;
@@ -82,6 +83,7 @@ namespace nTupleAnalysis {
     Float_t   DvT_pt = 0.0;
     Float_t   DvT_pm = 1.0;
     Float_t   DvT_pd = 1.0;
+    Float_t   weight_dRjjClose  = 1.0;
 
     std::map<std::string, Float_t*> classifierVariables;
 
@@ -256,6 +258,8 @@ namespace nTupleAnalysis {
     std::shared_ptr<eventView> view_max_FvT_q_score;
     std::shared_ptr<eventView> view_max_SvB_q_score;
 
+    std::vector<std::shared_ptr<nTupleAnalysis::dijet>> canVDijets; // Vector boson candidate dijets
+
     bool passDijetMass;
     bool passMDRs;
     bool passXWt;
@@ -336,6 +340,10 @@ namespace nTupleAnalysis {
     void load_SvB_ONNX(std::string);
     void run_SvB_ONNX();
     #endif
+
+    std::unique_ptr<bdtInference> bdtModel;
+    float bdtScore_mainView;
+    float bdtScore_mainView_corrected;
 
     void chooseCanJets();
     void buildViews();

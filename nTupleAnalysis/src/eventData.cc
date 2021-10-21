@@ -33,7 +33,8 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   isDataMCMix = _isDataMCMix;
   usePreCalcBTagSFs = _usePreCalcBTagSFs;
   looseSkim = _looseSkim;
-  bdtModel = std::make_unique<bdtInference>(bdtWeightFile, bdtMethods, debug);
+  if (bdtWeightFile != "" && bdtMethods != "")
+    bdtModel = std::make_unique<bdtInference>(bdtWeightFile, bdtMethods, debug);
   // if(looseSkim) {
   //   std::cout << "Using loose pt cut. Needed to produce picoAODs for JEC uncertainties which can change jet pt by a few percent." << std::endl;
   //   jetPtMin = 35;
@@ -60,9 +61,11 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables[FvTName+"_pm4"] = &FvT_pm4;
   classifierVariables[FvTName+"_pm3"] = &FvT_pm3;
   classifierVariables[FvTName+"_pt" ] = &FvT_pt;
+  classifierVariables[FvTName+"_std" ] = &FvT_std;
   classifierVariables[FvTName+"_q_1234"] = &FvT_q_score[0]; //&FvT_q_1234;
   classifierVariables[FvTName+"_q_1324"] = &FvT_q_score[1]; //&FvT_q_1324;
   classifierVariables[FvTName+"_q_1423"] = &FvT_q_score[2]; //&FvT_q_1423;
+  classifierVariables["weight_dRjjClose"] = &weight_dRjjClose;
 
   classifierVariables["SvB_ps" ] = &SvB_ps;
   classifierVariables["SvB_pwhh"] = &SvB_pwhh;
@@ -94,6 +97,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
     classifierVariables["weight_FvT_3bMix4b_rWbW2_v0_e25"] = new Float_t(-1);
   }
 
+  
   for(auto& variable: classifierVariables){
     if(tree->FindBranch(variable.first.c_str())){
       std::cout << "Tree has " << variable.first << std::endl;
@@ -111,6 +115,11 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
       if(variable.first == "SvB_ps"){
 	std::cout << "WARNING SvB_ps is not in Tree  " << std::endl;
       }
+
+      if(variable.first == "weight_dRjjClose"){
+	std::cout << "WARNING weight_dRjjClose is not in Tree  " << std::endl;
+      }
+
     }
   }
 
@@ -322,6 +331,7 @@ void eventData::resetEvent(){
   view_dR_min.reset();
   view_max_FvT_q_score.reset();
   view_max_SvB_q_score.reset();
+  canVDijets.clear();
   close.reset();
   other.reset();
   appliedMDRs = false;
@@ -368,6 +378,8 @@ void eventData::resetEvent(){
   xWbW0 = 1e6; xWbW1 = 1e6; xWbW = 1e6; //xWt2=1e6;  
   xW = 1e6; xt=1e6; xbW=1e6;
   dRbW = 1e6;
+  BDT_c2v_c3 = -99;
+  BDT_c2v_c3_corrected = -99;
 
   for(const std::string& jcmName : jcmNames){
     pseudoTagWeightMap[jcmName]= 1.0;
@@ -911,6 +923,19 @@ void eventData::chooseCanJets(){
     jet->bRegression();
   }
 
+  //choose vector boson candidate dijets when BDT model is loaded
+  if(bdtModel){
+    for(uint i = 0; i < nOthJets; ++ i){
+      for(uint j = i + 1; j < nOthJets; ++j){
+        auto othDijet = std::make_shared<dijet>(othJets.at(i), othJets.at(j));
+        if (othDijet->m >= 65 && othDijet->m <= 105){ // vector boson mass window
+          canVDijets.push_back(othDijet);
+        }
+      }
+    }
+    std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
+  }
+
   std::sort(canJets.begin(), canJets.end(), sortPt); // order by decreasing pt
   std::sort(othJets.begin(), othJets.end(), sortPt); // order by decreasing pt
   p4j = canJets[0]->p + canJets[1]->p + canJets[2]->p + canJets[3]->p;
@@ -1133,6 +1158,9 @@ void eventData::buildViews(){
   //flat nTuple variables for neural network inputs
   dRjjClose = close->dR;
   dRjjOther = other->dR;
+
+  //if( fabs(dRjjClose - weight_dRjjClose) > 0.001)
+  //  cout << "dRjjClose vs weight_dRjjClose " << dRjjClose << " vs " << weight_dRjjClose << " diff " << dRjjClose - weight_dRjjClose << "  passHLT " << passHLT << endl;
 
   //Check that at least one view has two dijets above mass thresholds
   for(auto &view: views){

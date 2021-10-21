@@ -154,6 +154,8 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   FvT_pm3 = dir.make<TH1F>("FvT_pm3", (name+"/FvT_pm3; FvT Regressed P(Three-tag Multijet) ; Entries").c_str(), 100, 0, 1);
   FvT_pt  = dir.make<TH1F>("FvT_pt",  (name+"/FvT_pt;  FvT Regressed P(t#bar{t}) ; Entries").c_str(), 100, 0, 1);
   SvB_ps  = dir.make<TH1F>("SvB_ps",  (name+"/SvB_ps;  SvB Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  FvT_std = dir.make<TH1F>("FvT_std",  (name+"/FvT_pt;  FvT Standard Deviation ; Entries").c_str(), 100, 0, 5);
+  FvT_ferr = dir.make<TH1F>("FvT_ferr",  (name+"/FvT_ferr;  FvT std/FvT ; Entries").c_str(), 100, 0, 5);
   if(event){
     SvB_ps_bTagSysts = new systHists(SvB_ps, event->treeJets->m_btagVariations);
   }
@@ -235,6 +237,13 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   DvT_pm   = dir.make<TH1F>("DvT_pm",   (name+"/DvT_pm; Multijet Prob; Entries").c_str(),   100, -2, 2);
   DvT_pm_l = dir.make<TH1F>("DvT_pm_l", (name+"/DvT_pm_l; Multijet Prob; Entries").c_str(), 100, -10, 10);
   DvT_raw = dir.make<TH1F>("DvT_raw", (name+"/DvT_raw; TTbar Prob raw; Entries").c_str(), 100, -0.1, 2);
+
+  if(event->bdtModel){
+    bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; c_{2V} vs c_{3} BDT Output; Entries").c_str(), 32, -1 , 1); 
+    bdtScore_corrected = dir.make<TH1F>("bdtScore_corrected", (name+"/bdtScore_corrected; c_{2V} vs c_{3} BDT Output (Mass Corrected p^{\\mu}); Entries").c_str(), 32, -1 , 1);
+    SvB_MA_ps_c3 = dir.make<TH1F>("SvB_MA_ps_c3", (name+"/SvB_MA_ps_c3; SvB_MA Regressed P(WHH)+P(ZHH), BDT < -0.4; Entries").c_str(), 100, 0 , 1);
+    SvB_MA_ps_c2V = dir.make<TH1F>("SvB_MA_ps_c2V", (name+"/SvB_MA_ps_c2V; SvB_MA Regressed P(WHH)+P(ZHH), BDT >= -0.4; Entries").c_str(), 100, 0 , 1);
+  }
 
 } 
 
@@ -397,6 +406,8 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   FvT_pm4->Fill(event->FvT_pm4, event->weight);
   FvT_pm3->Fill(event->FvT_pm3, event->weight);
   FvT_pt ->Fill(event->FvT_pt,  event->weight);
+  FvT_std->Fill(event->FvT_std, event->weight);
+  if(event->FvT) FvT_ferr->Fill(event->FvT_std/event->FvT, event->weight);
   SvB_ps ->Fill(event->SvB_ps , event->weight);
   if(SvB_ps_bTagSysts){
     SvB_ps_bTagSysts->Fill(event->SvB_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
