@@ -373,9 +373,6 @@ void eventData::resetEvent(){
     pseudoTagWeightMap[jcmName]= 1.0;
     mcPseudoTagWeightMap[jcmName] = 1.0;;
   }
-  bdtScore_mainView = -99;//TEMP
-  bdtScore_mainView_corrected = -99;//TEMP
-  
 }
 
 
@@ -557,8 +554,20 @@ void eventData::buildEvent(){
     //((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/2.5,2)) > 1)&(xW<0.5)) || ((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/4.0,2)) > 1)&(xW>=0.5)); //(t->xWbW > 2); //(t->xWt > 2) & !( (t->m>173)&(t->m<207) & (t->W->m>90)&(t->W->m<105) );
     passXWt = t->rWbW > 3;
   }
-  if(passMV) bdtScore_mainView = bdtModel->getBDTScore(this, true)[0]["BDTG"]; //TEMP
-  if(passMV) bdtScore_mainView_corrected = bdtModel->getBDTScore(this, true, true)[0]["BDTG"];//TEMP
+  if(bdtModel && passMV){
+    bool mainViewOnly = true;
+    auto score = bdtModel->getBDTScore(this, mainViewOnly);
+    auto score_corrected = bdtModel->getBDTScore(this, mainViewOnly, true);
+    for(size_t i = 0; i < score.size(); ++i){
+      views[i]->BDT_c2v_c3 = score[i]["BDTG"];
+      views[i]->BDT_c2v_c3_corrected = score_corrected[i]["BDTG"];
+    }
+  }
+  if(views.size() > 0){
+    BDT_c2v_c3 = views[0]->BDT_c2v_c3;
+    BDT_c2v_c3_corrected = views[0]->BDT_c2v_c3_corrected;
+  }
+
   //nPSTJets = nLooseTagJets + nPseudoTags;
   nPSTJets = nTagJets; // if threeTag use nLooseTagJets + nPseudoTags
   if(threeTag && useJetCombinatoricModel) computePseudoTagWeight();
@@ -860,7 +869,7 @@ void eventData::chooseCanJets(){
         if(matchJet(jet,Vqq->daughters))
           truVJets.push_back(jet);
       }
-    }
+    } 
     for(const auto &V:truth->Vqqs){
       for(const auto &q:V->daughters){
         if(!matchJet(q,allJets))

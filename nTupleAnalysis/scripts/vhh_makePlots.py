@@ -16,7 +16,7 @@ ROOT.gStyle.SetPalette(ROOT.kRainBow)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['17+18']
+years = ['17+18', 'RunII']
 signals = ['VHH']
 
 if not os.path.isdir(out_path):
@@ -283,8 +283,12 @@ class plots:
             self.ttbar_files[year] = ROOT.TFile(self.input + 'TT' + year + '_4b/hists' + self.hists_tag + '.root')
             for signal in self.signals:
                 for coupling in self.couplings.get_all_filenames():
-                    self.signal_files[year][signal].append(ROOT.TFile(self.input + signal + 'To4B' + coupling + year + '/hists.root'))
-        self.root_dir = self.signal_files[self.years[0]][signals[0]][0].GetDirectory('')
+                    root_path = self.input + signal + 'To4B' + coupling + year + '/hists.root'
+                    if os.path.isfile(root_path):
+                        self.signal_files[year][signal].append(ROOT.TFile(root_path))
+                    else:
+                        self.signal_files[year][signal].append(None)
+        self.root_dir = self.data_files_4b[self.years[0]].GetDirectory('')
         self.modify_plot_hists_list_recursive('', self.initialize_hist)
 
         # TODO add intelligent color
@@ -294,6 +298,7 @@ class plots:
         # TODO add ratio
         # TODO add label path mapping
         # TODO add rebinning            
+        # TODO add {regex1, regex2, ...} add or wildcard
 
     def __enter__(self):
         return self
@@ -308,8 +313,9 @@ class plots:
             self.ttbar_files[year].Close()
             for signal in self.signals:
                 for file in self.signal_files[year][signal]:
-                    if self.debug: print('Close'.ljust(self.cmd_length) + file.GetName())
-                    file.Close()
+                    if file is not None:
+                        if self.debug: print('Close'.ljust(self.cmd_length) + file.GetName())
+                        file.Close()
 
             
     
@@ -330,9 +336,12 @@ class plots:
     def load_signal_mc_hists(self, year, signal, hist, rebin = 1):
         hists = []
         for file in self.signal_files[year][signal]:
-            signal = file.Get(hist).Clone()
-            signal.Rebin(rebin) #rebin
-            hists.append(signal)
+            if file is None:
+                return None
+            else:
+                signal = file.Get(hist).Clone()
+                signal.Rebin(rebin) #rebin
+                hists.append(signal)
         return hists
 
     def load_ttbar_mc_hists(self, year, hist, rebin = 1):
@@ -444,9 +453,10 @@ class plots:
                     ploter.add_hist(self.load_data_hists(year, hist, rebin), 'Data ' + self.lumi[year] + ' ' + year)
                     ploter.add_hist(self.load_multijet_hists(year, hist, rebin), 'Multijet Model')
                     ploter.add_hist(self.load_ttbar_mc_hists(year, hist, rebin), 't#bar{t}')
-                    for coupling in self.plot_couplings:
-                        weights = self.couplings.generate_weight(**coupling)
-                        ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), 2000)
+                    if signal_mc is not None:
+                        for coupling in self.plot_couplings:
+                            weights = self.couplings.generate_weight(**coupling)
+                            ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), 2000)
                     ploter.plot()
                     if self.debug: print('Plot'.ljust(self.cmd_length) + hist) 
         os.system('tar -C ' + self.input + ' -cvf ' + self.input + 'plots.tar.gz plots/')
@@ -491,9 +501,10 @@ class plots:
             output_file.Close()        
 
 
-    def optimize(self, hist):
+    def optimize(self, hist, steps = None, bound = None, step_to_x = None):
             for year in self.years:
                 for signal in self.signals:
+                    # input histograms
                     path = copy(self.all_hists[hist])
                     path[1] = 'fourTag'
                     path[3] = 'HHCR'
@@ -507,45 +518,67 @@ class plots:
                     for coupling in self.plot_couplings:
                         weights = self.couplings.generate_weight(**coupling)
                         signal_4b_SR[self.couplings.get_caption(**coupling)] = self.sum_hists(signal_mc, weights)
+
+                    # plot variables
                     x_axis = data_4b_CR.GetXaxis()
                     n_bins = data_4b_CR.GetNbinsX()
                     x_max = x_axis.GetXmax()
                     x_min = x_axis.GetXmin()
                     x_label = 'Cut on ' + x_axis.GetTitle()
 
+                    # derived variables
                     hists_S_B = {}
                     hists_S_sqrtB = {}
                     multijet_4b_CR = data_4b_CR.Integral(0, n_bins) - tt_4b_CR.Integral(0, n_bins)
                     multijet_3b_SR = multijet_3b_SR_hist.Integral(0, n_bins)
+
+                    # optimize range
+                    # step = [0, steps - 1]
+                    if steps is None:
+                        steps = n_bins
+                    def getBound(step):
+                        return step + 1, steps
+                    if bound is None:
+                        bound = getBound
+                    def getX(step):
+                        return (x_max - x_min)/steps * step + x_min
+                    if step_to_x is None:
+                        step_to_x = getX
+
+                        
+                    # output histograms
                     signal_yield = {}
                     for coupling in signal_4b_SR.keys():
-                        hists_S_B[coupling] = ROOT.TH1F(coupling, '', n_bins, x_min, x_max)
+                        hists_S_B[coupling] = ROOT.TH1F(coupling, '', steps, step_to_x(0), step_to_x(steps))
                         hists_S_B[coupling].SetXTitle(x_label)
                         hists_S_B[coupling].SetYTitle('S/B')
-                        hists_S_sqrtB[coupling] = ROOT.TH1F(coupling, '', n_bins, x_min, x_max)
+                        hists_S_sqrtB[coupling] = ROOT.TH1F(coupling, '', steps, step_to_x(0), step_to_x(steps))
                         hists_S_sqrtB[coupling].SetXTitle(x_label)
                         hists_S_sqrtB[coupling].SetYTitle('S/#sqrt{B}')
-                        signal_yield[coupling] = ROOT.TH1F(coupling, '', n_bins, x_min, x_max)
+                        signal_yield[coupling] = ROOT.TH1F(coupling, '', steps, step_to_x(0), step_to_x(steps))
                         signal_yield[coupling].SetXTitle(x_label)
                         signal_yield[coupling].SetYTitle('Events')
-                    tt_yield = ROOT.TH1F('ttbar', '', n_bins, x_min, x_max)
+                    tt_yield = ROOT.TH1F('ttbar', '', steps, step_to_x(0), step_to_x(steps))
                     tt_yield.SetXTitle(x_label)
                     tt_yield.SetYTitle('Events')
-                    multijet_yield = ROOT.TH1F('multijet', '', n_bins, x_min, x_max)
+                    multijet_yield = ROOT.TH1F('multijet', '', steps, step_to_x(0), step_to_x(steps))
                     multijet_yield.SetXTitle(x_label)
                     multijet_yield.SetYTitle('Events')
-                    for i in range(n_bins):
-                        bin = i + 1
-                        tt = tt_4b_SR.Integral(bin, n_bins)
-                        multijet = multijet_3b_SR * (data_4b_CR.Integral(bin, n_bins) - tt_4b_CR.Integral(bin, n_bins))/ multijet_4b_CR
+
+                    for step in range(steps):
+                        bin = step + 1
+                        lower, upper = bound(step)
+                        tt = tt_4b_SR.Integral(lower, upper)
+                        multijet = multijet_3b_SR * (data_4b_CR.Integral(lower, upper) - tt_4b_CR.Integral(lower, upper))/ multijet_4b_CR
                         b = tt + multijet
                         tt_yield.SetBinContent(bin, tt)
                         multijet_yield.SetBinContent(bin, multijet)
                         for coupling in signal_4b_SR.keys():
-                            s = signal_4b_SR[coupling].Integral(bin, n_bins)
+                            s = signal_4b_SR[coupling].Integral(lower, upper)
                             hists_S_B[coupling].SetBinContent(bin, s/b)
                             hists_S_sqrtB[coupling].SetBinContent(bin, s/sqrt(b))
                             signal_yield[coupling].SetBinContent(bin, s)
+
                     output_path = self.path[year][signal].mkdir(self.all_hists[hist][:-1])
                     output_path += self.all_hists[hist][-1]
                     ploter_S_B = histogram_1d_collection(output_path, title=hist, tag='_S_B')
@@ -565,13 +598,17 @@ class plots:
 if __name__ == '__main__':
     with plots() as producer:
         producer.debug_mode(True)
-        producer.add_dir(['pass*/fourTag/mainview/HH*/SvB_MA*',
-        'pass*/fourTag/mainview/HHSR/bdt*',
-        ], normalize = True)
-        producer.add_dir(['pass*/fourTag/mainview/*SB/bdt*','pass*/fourTag/mainview/HHCR/bdt*'
+        # producer.add_dir(['pass*/fourTag/mainview/HH*/SvB_MA*',
+        # 'pass*/fourTag/mainview/HHSR/bdt*',
+        # ], normalize = True)
+        producer.add_dir(['pass*/fourTag/mainview/*SB/bdt*','pass*/fourTag/mainview/*CR/bdt*',
+        'pass*/fourTag/mainview/*SB/can*','pass*/fourTag/mainview/*CR/can*',
+        'pass*/fourTag/mainview/*SB/nsel*','pass*/fourTag/mainview/*CR/nsel*',
+        'pass*/fourTag/mainview/*SB/allnotcan*','pass*/fourTag/mainview/*CR/allnotcan*'
         ])
-        producer.add_dir(['pass*/fourTag/mainview/HHSR/truVDijets/*', 'pass*/fourTag/mainview/HHSR/canVDijets/*', 'passNjOth/fourTag/mainview/HHSR/allDijets/*'
-        ], normalize = True)
+
+        # producer.add_dir(['pass*/fourTag/mainview/HHSR/truVDijets/*', 'pass*/fourTag/mainview/HHSR/canVDijets/*', 'passNjOth/fourTag/mainview/HHSR/allDijets/*'
+        # ], normalize = True)
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
@@ -585,10 +622,9 @@ if __name__ == '__main__':
         # producer.add_couplings(cv=1.5,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=0.5,c2v=1.0, c3=1.0)
 
-        producer.compare(['passMV/fourTag/mainView/HHSR/bdtScore', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected'],rebin=2, normalize=True)
         # producer.optimize('passNjOth/fourTag/mainView/HHSR/canJet3BTag')
         # producer.optimize('passMV/fourTag/mainView/HHSR/canJet3BTag')
-        producer.plot_all(4)
+        producer.plot_all(1)
         # producer.save('VhadHH_combine', 'passNjOth/fourTag/mainView/HHSR/SvB_MA_ps', 5)
         # producer.save('VhadHH_combine_mV', 'passMV/fourTag/mainView/HHSR/SvB_MA_ps', 5)
 

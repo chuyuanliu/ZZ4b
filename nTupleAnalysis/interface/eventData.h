@@ -195,8 +195,8 @@ namespace nTupleAnalysis {
     uint nSelJetsV;
 
     std::unique_ptr<bdtInference> bdtModel;
-    float bdtScore_mainView;// TEMP
-    float bdtScore_mainView_corrected;// TEMP
+    Float_t BDT_c2v_c3;
+    Float_t BDT_c2v_c3_corrected;
     //
 
     uint nSelJets;

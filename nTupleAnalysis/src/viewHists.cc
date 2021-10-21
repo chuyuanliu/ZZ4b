@@ -456,11 +456,11 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
 
   FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
 
-  bdtScore->Fill(event->bdtScore_mainView, event->weight);//TEMP
-  bdtScore_corrected->Fill(event->bdtScore_mainView_corrected, event->weight);//TEMP
-  if(event->bdtScore_mainView_corrected >= - 0.4) SvB_MA_ps_c2V->Fill(event->SvB_MA_ps, event->weight);//TEMP
+  bdtScore->Fill(view->BDT_c2v_c3, event->weight);//TEMP
+  bdtScore_corrected->Fill(view->BDT_c2v_c3_corrected, event->weight);//TEMP
+  if(view->BDT_c2v_c3_corrected >= - 0.4) SvB_MA_ps_c2V->Fill(event->SvB_MA_ps, event->weight);//TEMP
   else SvB_MA_ps_c3->Fill(event->SvB_MA_ps, event->weight);//TEMP
-  SvB_MA_ps_vs_BDT->Fill(event->SvB_MA_ps, event->bdtScore_mainView_corrected, event->weight);//TEMP
+  SvB_MA_ps_vs_BDT->Fill(event->SvB_MA_ps, view->BDT_c2v_c3_corrected, event->weight);//TEMP
   
   m4j_vs_nViews->Fill(view->m4j, event->views.size(), event->weight);
 

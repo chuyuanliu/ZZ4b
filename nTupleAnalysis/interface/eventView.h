@@ -160,6 +160,8 @@ namespace nTupleAnalysis {
     float FvT_q_score;
     float SvB_q_score;
     float SvB_MA_q_score;
+    float BDT_c2v_c3 = -99;
+    float BDT_c2v_c3_corrected = -99;
 
     eventView(std::shared_ptr<nTupleAnalysis::dijet>&, std::shared_ptr<nTupleAnalysis::dijet>&, float FvT_q_score_ = -99, float SvB_q_score_ = -99, float SvB_MA_q_score_ = -99); 
     ~eventView(); 

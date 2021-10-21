@@ -88,6 +88,8 @@ variables = [variable("FvT"),
              variable("selectedViewTruthMatch", dtype=np.bool_),
              variable("nOthJets", dtype=np.int32),
              variable("ttbarWeight"),
+             variable("BDT_c2v_c3"),
+             variable("BDT_c2v_c3_corrected")
              ]
 
 if args.jcmNameList:

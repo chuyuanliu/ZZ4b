@@ -477,6 +477,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
   picoAODEvents->Branch("nSelJetsV", &event->nSelJetsV);
 
+  //classifier variables
   picoAODEvents->Branch("FvT"    , &event->FvT);
   picoAODEvents->Branch("FvT_pd4", &event->FvT_pd4);
   picoAODEvents->Branch("FvT_pd3", &event->FvT_pd3);
@@ -504,6 +505,9 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("SvB_MA_q_1234", &event->SvB_MA_q_score[0]); //&SvB_MA_q_1234;
   picoAODEvents->Branch("SvB_MA_q_1324", &event->SvB_MA_q_score[1]); //&SvB_MA_q_1324;
   picoAODEvents->Branch("SvB_MA_q_1423", &event->SvB_MA_q_score[2]); //&SvB_MA_q_1423;
+
+  picoAODEvents->Branch("BDT_c2v_c3", &event->BDT_c2v_c3);
+  picoAODEvents->Branch("BDT_c2v_c3_corrected", &event->BDT_c2v_c3_corrected);
 
   cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
   return;

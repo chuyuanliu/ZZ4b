@@ -17,14 +17,18 @@ parser.add_option('--lpc', action="store_true", dest = 'lpc', default =  False, 
 parser.add_option('--eos', action="store_true", dest = 'eos', default =  False, help = 'operate on eos')
 parser.add_option('--hadd', action="store_true", dest = 'hadd', default =  False, help = 'hadd hists')
 parser.add_option('-y', '--year', dest = 'years', default =  '2017,2018', help = 'set years')
-parser.add_option('--tag', dest = 'tag', default ='', help = 'set tag of skim picoAOD')
+parser.add_option('--tag', dest = 'tag', default ='', help = 'set tag of picoAOD')
+parser.add_option('--oldTag', dest = 'oldTag', default ='', help = 'set old tag of picoAOD')
+parser.add_option('--newTag', dest = 'newTag', default ='', help = 'set new tag of picoAOD')
 parser.add_option('-j', action="store_true", dest = 'jcm', default = False, help = 'use JCM')
 parser.add_option('-r', action="store_true", dest = 'reweight', default = False, help = 'use reweight')
 parser.add_option('--debug', action="store_true", dest = 'debug', default = False, help = 'enable debug mode')
 parser.add_option('--picoAOD', action="store_true", dest = 'picoAOD', default = False, help = 'operate on picoAOD')
 parser.add_option('--hists', action="store_true", dest = 'hists', default = False, help = 'operate on hists')
+parser.add_option('--hdf5', action="store_true", dest = 'hdf5', default = False, help = 'operate on hdf5')
 parser.add_option('--cp', action="store_true", dest = 'cp', default = False, help = 'copy files')
 parser.add_option('--init', action="store_true", dest = 'init', default = False, help = 'initialize dirs and files')
+parser.add_option('--merge', action="store_true", dest = 'merge', default = False, help = 'merge weight into root files')
 
 o, a = parser.parse_args()
 
@@ -33,7 +37,11 @@ def histFile(isSignal = False):
   return '/hists' + ('_j' if not isSignal and o.jcm else '') + ('_r' if not isSignal and o.reweight else '') + '.root'
 
 def picoAOD(isSignal = False):
-    return '/picoAOD_f.root'
+    return '/picoAOD'+o.tag+'.root'
+
+def hdf5(isSignal = False):
+    return '/picoAOD'+o.tag+'.h5'
+
 
 signals = []
 if o.signal:
@@ -56,6 +64,8 @@ if o.ttbar:
     tts = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
 
 years = o.years.split(',')
+if '2016' in years:
+    years += ['2016_preVFP', '2016_postVFP']
 
 def eos(dir, user = USER):
     return '/store/user/' + user + '/condor/' + dir
@@ -108,16 +118,21 @@ def load_skims():
         #     eoscp('skims/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
 
 def move_eos():
-    oldAOD = '/picoAOD' + o.tag + '.root'
-    newAOD = '/picoAOD.root'
+    if o.oldTag == '' and o.newTag == '':
+        return
+    oldAOD = '/picoAOD' + o.oldTag + '.root'
+    newAOD = '/picoAOD' + o.newTag + '.root'
     for year in years:
-        for cps in signals:
-            for cp in cps[0:2]:
-                eosmv('VHH/'+cp+year+oldAOD,'VHH/'+cp+year+newAOD)
-        for tt in tts:
-            eosmv('VHH/'+tt+year+'_4b'+oldAOD,'VHH/'+tt+year+'_4b'+newAOD)
-        for data in datas:
-            eosmv('VHH/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
+        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+            for cps in signals:
+                for cp in cps[0:2]:
+                    eosmv('VHH/'+cp+year+oldAOD,'VHH/'+cp+year+newAOD)
+        if year not in ['2016_preVFP', '2016_postVFP']:
+            for data in datas:
+                eosmv('VHH/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
+        if year not in ['2016']:
+            for tt in tts:
+                eosmv('VHH/'+tt+year+'_4b'+oldAOD,'VHH/'+tt+year+'_4b'+newAOD)
 
 def cp():
     if o.lpc: 
@@ -130,36 +145,37 @@ def cp():
 
     if o.hists: cp_files = histFile
     elif o.picoAOD: cp_files = picoAOD
+    elif o.hdf5: cp_files = hdf5
+    else: return
 
     base = 'VHH/'
-    cpYears = copy(years)
-    if '2017' in cpYears and '2018' in cpYears and o.hists:
-        cpYears.append('17+18')
-    for year in cpYears:
-        for cps in signals:
-            for cp in cps[0:(3 if o.hists else 2)]:
-                file = base + cp+year+cp_files(True)
+    for year in years:
+        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+            for cps in signals:
+                for cp in cps[0:(3 if o.hists else 2)]:
+                    file = base + cp+year+cp_files(True)
+                    print(file)
+                    xrdcp(full_path(file, from_area), full_path(file, to_area))
+        if year not in ['2016_preVFP', '2016_postVFP']:
+            for data in datas:
+                file = base + 'data' + year + data + cp_files()
                 print(file)
                 xrdcp(full_path(file, from_area), full_path(file, to_area))
-        for data in datas:
-            file = base + 'data' + year + data + cp_files()
-            print(file)
-            xrdcp(full_path(file, from_area), full_path(file, to_area))
-        tempTTs = []
-        if o.ttbar:
-            tempTTs = tts + (['TT'] if o.hists else [])
-        for tt in tempTTs:
-            file = base + tt + year + '_4b' + cp_files()
-            print(file)
-            xrdcp(full_path(file, from_area), full_path(file, to_area))
+        if year not in ['2016']:
+            for tt in tts:
+                file = base + tt + year + '_4b' + cp_files()
+                print(file)
+                xrdcp(full_path(file, from_area), full_path(file, to_area))
 
 def hadd_lpc():
     for year in years:
-        for cps in signals:
-            lpcmkdir('VHH/'+cps[2]+year)
-            hadd(['VHH/'+cp+year+histFile(True) for cp in cps[0:2]], 'VHH/'+cps[2]+year+histFile(True))
-        lpcmkdir('VHH/TT'+year +'_4b')
-        hadd(['VHH/'+tt+year +'_4b'+histFile() for tt in tts], 'VHH/TT'+year +'_4b'+histFile())
+        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+            for cps in signals:
+                lpcmkdir('VHH/'+cps[2]+year)
+                hadd(['VHH/'+cp+year+histFile(True) for cp in cps[0:2]], 'VHH/'+cps[2]+year+histFile(True))
+        if year not in ['2016']:
+            lpcmkdir('VHH/TT'+year +'_4b')
+            hadd(['VHH/'+tt+year +'_4b'+histFile() for tt in tts], 'VHH/TT'+year +'_4b'+histFile())
     if '2017' in years and '2018' in years:
         haddYears = ['2017','2018']
         for cps in signals:
@@ -172,39 +188,49 @@ def hadd_lpc():
         for data in datas:
             lpcmkdir('VHH/data17+18'+data)
             hadd(['VHH/data'+year+data+histFile() for year in haddYears], 'VHH/data17+18'+data+histFile())
+    if '2016_preVFP' in years and '2016_postVFP' in years:
+        haddYears = ['2016_preVFP', '2016_postVFP']
+        if o.ttbar:
+            lpcmkdir('VHH/TT2016_4b')
+            hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TT2016_4b'+histFile())
+    if '2016' in years and '2017' in years and '2018' in years:
+        haddYears = ['2016','2017','2018']
+        if o.ttbar:
+            lpcmkdir('VHH/TTRunII_4b')
+            hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TTRunII_4b'+histFile())
+        for data in datas:
+            lpcmkdir('VHH/dataRunII'+data)
+            hadd(['VHH/data'+year+data+histFile() for year in haddYears], 'VHH/dataRunII'+data+histFile())
 
 def initialize():
     load_skims()
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests')
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests/UL')
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists')
-    for year in years:
+    initYears = copy(years)
+    for year in initYears:
         lpcmkdir('VHH/TT'+year+'_4b')
         eosmkdir('VHH/TT'+year+'_4b')
-        for tt in tts:
-            lpcmkdir('VHH/'+tt+year+'_4b')
-            eosmkdir('VHH/'+tt+year+'_4b')
-            for tag in ['_4b_wJCM', '_4b_wJCM_SvB_FvT']:
-                file = '/picoAOD'+tag+'.root'
-                xrdcp(full_path('ZH4b/UL/'+tt+year+'_4b'+file, eos, 'jda102'),full_path('VHH/'+tt+year+'_4b'+file, eos, 'chuyuanl'))
-                filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/'+tt+year+tag.replace('_wJCM','')+'.txt', lpc, 'chuyuanl'),'w')
-                filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/'+tt+year+'_4b'+file, eos, 'chuyuanl'))
-                filelist.close()
-            filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/'+tt+year+'_4b.txt', lpc, 'chuyuanl'),'w')
-            filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/'+tt+year+'_4b/picoAOD.root', eos, 'chuyuanl'))
-            filelist.close()
-        for n_tag in ['_3b','_4b']:
-            lpcmkdir('VHH/data'+year+n_tag)
-            eosmkdir('VHH/data'+year+n_tag)
-            for tag in ['_wJCM', '_wJCM_SvB_FvT']:
-                file = '/picoAOD'+n_tag+tag+'.root'
-                xrdcp(full_path('ZH4b/UL/data'+year+n_tag+file, eos, 'jda102'),full_path('VHH/data'+year+n_tag+file, eos, 'chuyuanl'))
-                filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/data'+year+n_tag+tag.replace('_wJCM','')+'.txt', lpc, 'chuyuanl'),'w')
-                filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+n_tag+file, eos, 'chuyuanl'))
-                filelist.close() 
-            filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/data'+year+n_tag + '.txt', lpc, 'chuyuanl'),'w')
-            filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+n_tag+'/picoAOD.root', eos, 'chuyuanl'))
-            filelist.close()        
+        if year not in ['2016']:
+            for tt in tts:
+                lpcmkdir('VHH/'+tt+year+'_4b')
+                eosmkdir('VHH/'+tt+year+'_4b')
+                for tag in ['_4b_wJCM', '_4b_wJCM_SvB_FvT']:
+                    file = '/picoAOD'+tag+'.root'
+                    xrdcp(full_path('ZH4b/UL/'+tt+year+'_4b'+file, eos, 'jda102'),full_path('VHH/'+tt+year+'_4b'+file, eos, 'chuyuanl'))
+                    filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/'+tt+year+tag.replace('_wJCM','')+'.txt', lpc, 'chuyuanl'),'w')
+                    filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/'+tt+year+'_4b'+('/picoAOD.root' if o.merge else file), eos, 'chuyuanl'))
+                    filelist.close()
+        if year not in ['2016_preVFP', '2016_postVFP']:
+            for n_tag in datas:
+                lpcmkdir('VHH/data'+year+n_tag)
+                eosmkdir('VHH/data'+year+n_tag)
+                for tag in ['_wJCM', '_wJCM_SvB_FvT']:
+                    file = '/picoAOD'+n_tag+tag+'.root'
+                    xrdcp(full_path('ZH4b/UL/data'+year+n_tag+file, eos, 'jda102'),full_path('VHH/data'+year+n_tag+file, eos, 'chuyuanl'))
+                    filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/data'+year+n_tag+tag.replace('_wJCM','')+'.txt', lpc, 'chuyuanl'),'w')
+                    filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+n_tag+('/picoAOD.root' if o.merge else file), eos, 'chuyuanl'))
+                    filelist.close()        
     
 if o.move and o.eos:
     move_eos()

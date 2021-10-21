@@ -53,7 +53,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passNjOth.passMV.HHRegions.fourTag.threeTag", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="passMDRs.passNjOth.passMV.HHRegions.fourTag.threeTag", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -187,9 +187,7 @@ def dataFiles(year):
         for period in periods[year]:
             files += glob('ZZ4b/fileLists/data%s%s_chunk*.txt'%(year,period))
         return files
-    elif o.separate:
-        return ["closureTests/UL/fileLists/data" + year + "_" + tag + ".txt " for tag in ["3b", "4b"]]
-    elif o.separate3b4b:
+    elif o.separate or o.separate3b4b:
         return ["closureTests/UL/fileLists/data" + year + "_" + tag + ".txt " for tag in ["3b", "4b"]]
     else:
         return ["ZZ4b/fileLists/data" + year + period + ".txt" for period in periods[year]]
@@ -214,10 +212,14 @@ def ttbarFiles(year):
         for process in ttbarProcesses:
             files+= glob('ZZ4b/fileLists/%s%s*_chunk*.txt'%(process, year))
         return files
-    elif o.separate:
-        return ["closureTests/UL/fileLists/" + process + year + "_4b.txt" for process in ttbarProcesses]
-    elif o.separate3b4b:
-        return ["closureTests/UL/fileLists/" + process + year + "_4b.txt" for process in ttbarProcesses]
+    elif o.separate or o.separate3b4b:
+        if year == '2016':
+            files = []
+            for ttYear in ['2016_preVFP', '2016_postVFP']:
+                files += ["closureTests/UL/fileLists/" + process + ttYear + "_4b.txt" for process in ttbarProcesses]
+            return files
+        else:
+            return ["closureTests/UL/fileLists/" + process + year + "_4b.txt" for process in ttbarProcesses]
     else:
         return ["ZZ4b/fileLists/" + process + year + ".txt" for process in ttbarProcesses]
 
@@ -520,23 +522,24 @@ def root2h5():
     basePath = EOSOUTDIR if o.condor else outputBase
     cmds = []
     for year in years:
-        picoAODs = ['picoAOD']
-        
-        for picoAOD in picoAODs:
-            for period in periods[year]:
-                subdir = 'data'+year+period
+        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+            for cps in fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0'):
+                for cp in cps[0:2]:
+                    subdir = cp+year
+                    cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py'
+                    cmd += ' -i '+basePath+subdir+'/picoAOD.root'
+                    cmds.append( cmd )     
+        if year not in ['2016_preVFP', '2016_postVFP']:
+            for data in ['_4b', '_3b']:
+                subdir = 'data'+year+data
                 cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py'
-                cmd += ' -i '+basePath+subdir+'/%s.root'%picoAOD
-                #cmd += " -o picoAOD.h5"
-                cmds.append( cmd )                
-
-            processes = ['TTToHadronic'+year, 'TTToSemiLeptonic'+year, 'TTTo2L2Nu'+year]
-            if year == '2016': 
-                processes = [p+'_preVFP' for p in processes] + [p+'_postVFP' for p in processes]
-            for process in processes:
+                cmd += ' -i '+basePath+subdir+'/picoAOD.root'
+                cmds.append( cmd )
+        if year not in ['2016']:
+            for tt in ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']:
+                subdir = tt+year+'_4b'
                 cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py'
-                cmd += ' -i '+basePath+process+'/%s.root'%picoAOD
-                #cmd += " -o picoAOD.h5"
+                cmd += ' -i '+basePath+subdir+'/picoAOD.root'
                 cmds.append( cmd )
 
     if o.condor:
@@ -568,23 +571,25 @@ def h52root():
     basePath = EOSOUTDIR if o.condor else outputBase
     cmds = []
     for year in years:
-        # for process in ['ZZ4b', 'ggZH4b', 'ZH4b']:
-        #     subdir = process+year
-        #     cmd = "python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py"
-        #     cmd += " -i "+basePath+subdir+'/picoAOD.h5'
-        #     cmds.append( cmd )
-
-        for period in periods[year]:
-            subdir = 'data'+year+period
-            cmd = "python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py"
-            cmd += " -i "+basePath+subdir+'/picoAOD.h5'
-            cmds.append( cmd )                
-
-        for process in ['TTToHadronic', 'TTToSemiLeptonic', 'TTTo2L2Nu']:
-            subdir = process+year
-            cmd = "python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py"
-            cmd += " -i "+basePath+subdir+'/picoAOD.h5'
-            cmds.append( cmd )
+        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+            for cps in fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0'):
+                for cp in cps[0:2]:
+                    subdir = cp+year
+                    cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py'
+                    cmd += ' -i '+basePath+subdir+'/picoAOD.h5'
+                    cmds.append( cmd )     
+        if year not in ['2016_preVFP', '2016_postVFP']:
+            for data in ['_4b', '_3b']:
+                subdir = 'data'+year+data
+                cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py'
+                cmd += ' -i '+basePath+subdir+'/picoAOD.h5'
+                cmds.append( cmd )
+        if year not in ['2016']:
+            for tt in ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']:
+                subdir = tt+year+'_4b'
+                cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py'
+                cmd += ' -i '+basePath+subdir+'/picoAOD.h5'
+                cmds.append( cmd )
 
     if o.condor:
         DAG.addGeneration()
@@ -775,13 +780,14 @@ if o.h52root:
 
 # if o.makeJECSyst:
 #     makeJECSyst()
-if o.doSignal or o.doData or o.doTT:
+if (o.doSignal or o.doData or o.doTT) and o.condor:
     startEventLoopGeneration = copy( DAG.iG )
 if o.doSignal:
     doSignal()
 
 if o.doData or o.doTT:
-    DAG.setGeneration( startEventLoopGeneration )
+    if o.condor:
+        DAG.setGeneration( startEventLoopGeneration )
     doDataTT()
 
 if o.doWeights:

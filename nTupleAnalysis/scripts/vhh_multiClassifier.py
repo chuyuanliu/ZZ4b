@@ -31,8 +31,71 @@ np.random.seed(0)#always pick the same training sample
 torch.manual_seed(1)#make training results repeatable 
 from functools import partial
 
-
+import pathlib
 import argparse
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('-d', '--data', default='/uscms/home/chuyuan/nobackup/ZZ4b/data2018/picoAOD.h5',    type=str, help='Input dataset file in hdf5 format')
+parser.add_argument('--data4b',     default='', help="Take 4b from this file if given, otherwise use --data for both 3-tag and 4-tag")
+parser.add_argument('--data3bWeightSF',     default=None, help="Take 4b from this file if given, otherwise use --data for both 3-tag and 4-tag")
+parser.add_argument('-t', '--ttbar',      default='',    type=str, help='Input MC ttbar file in hdf5 format')
+parser.add_argument('--ttbar4b',          default=None, help="Take 4b ttbar from this file if given, otherwise use --ttbar for both 3-tag and 4-tag")
+parser.add_argument('--ttbarPS',          default=None, help="")
+parser.add_argument('-s', '--signal',     default='', type=str, help='Input dataset file in hdf5 format')
+parser.add_argument('-c', '--classifier', default='', type=str, help='Which classifier to train: FvT, ZHHvB, WHHvB, M1vM2.')
+parser.add_argument(      '--architecture', default='ResNet', type=str, help='classifier architecture to use')
+parser.add_argument('-e', '--epochs', default=20, type=int, help='N of training epochs.')
+parser.add_argument('-o', '--outputName', default='', type=str, help='Prefix to output files.')
+#parser.add_argument('-l', '--lrInit', default=4e-3, type=float, help='Initial learning rate.')
+parser.add_argument('-p', '--pDropout', default=0.4, type=float, help='p(drop) for dropout.')
+parser.add_argument(      '--layers', default=3, type=int, help='N of fully-connected layers.')
+parser.add_argument('-n', '--nodes', default=32, type=int, help='N of fully-connected nodes.')
+parser.add_argument('--cuda', default=0, type=int, help='Which gpuid to use.')
+parser.add_argument('-m', '--model', default='', type=str, help='Load this model')
+parser.add_argument(      '--onnx', dest="onnx",  default=False, action="store_true", help='Export model to onnx')
+parser.add_argument(      '--train',  dest="train",  action="store_true", default=False, help="Train the model(s)")
+parser.add_argument('-u', '--update', dest="update", action="store_true", default=False, help="Update the hdf5 file with the DNN output values for each event")
+parser.add_argument(      '--storeEvent',     dest="storeEvent",     default="0", help="store the network response in a numpy file for the specified event")
+parser.add_argument(      '--storeEventFile', dest="storeEventFile", default=None, help="store the network response in this file for the specified event")
+parser.add_argument('--weightName', default="mcPseudoTagWeight", help='Which weights to use for JCM.')
+parser.add_argument('--FvTName', default="FvT", help='Which FvT weights to use for SvB Training.')
+parser.add_argument('--trainOffset', default='1', help='training offset. Use comma separated list to train with multiple offsets in parallel.')
+parser.add_argument('--updatePostFix', default="", help='Change name of the classifier weights stored .')
+parser.add_argument('--strategy', dest="strategy", default="baseline", help='Change training strategy')
+parser.add_argument('--base', dest="base", default="ZZ4b/nTupleAnalysis/pytorchModels/", help='set base path')
+
+#parser.add_argument('--updatePostFix', default="", help='Change name of the classifier weights stored .')
+
+#parser.add_argument('-d', '--debug', dest="debug", action="store_true", default=False, help="debug")
+args = parser.parse_args()
+
+strategies = args.strategy.split(',')
+strategies.sort()
+MODEL_PATH  = args.model.split(',')
+OUTPUT_PATH = args.base
+if 'SvB' in args.classifier:
+    MODEL_PATH  = [args.base + '_'.join(strategies) + '/' + model for model in args.model.split(',')]
+    OUTPUT_PATH = args.base + '_'.join(strategies) + '/'
+    if args.updatePostFix == '':
+        args.updatePostFix = '_' + '_'.join(strategies)
+
+BDT_CUT = -0.4
+BDT_NAME = 'BDT_c2v_c3_corrected'
+
+
+
+# Training Strategies:
+
+# signalSM      / signalAll    signal couplings
+# regionC2V     / regionC3     bdt region
+# ancillaryBDT                 bdt in ancillary feature
+
+# quadjetBDT                   ? bdt in quadjet feature
+# lossCoupling                 ?
+# labelCoupling                ?
+
+
+pathlib.Path(OUTPUT_PATH).mkdir(parents = True, exist_ok = True)
 
 class classInfo:
     def __init__(self, abbreviation='', name='', index=None, color=''):
@@ -115,9 +178,13 @@ def getFrameSvB(fileName):
     fourTag = False if "data201" in fileName else True
 
     FvTName = args.FvTName
+    
+    if 'regionC2V' in strategies:
+        thisFrame = thisFrame.loc[thisFrame[BDT_NAME]>=BDT_CUT]
+    elif 'regionC3' in strategies:
+        thisFrame = thisFrame.loc[thisFrame[BDT_NAME]<BDT_CUT]
 
-
-    thisFrame = thisFrame.loc[ (thisFrame['nSelJetsV']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
+    thisFrame = thisFrame.loc[ (thisFrame['nSelJetsV']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) & (thisFrame[BDT_NAME]>=-1)]#& (thisFrame.passXWt) ]
     #thisFrame = thisFrame.loc[ (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]
     thisFrame['year'] = pd.Series(year*np.ones(thisFrame.shape[0], dtype=np.float32), index=thisFrame.index)
     if "WHHTo4B" in fileName: 
@@ -249,38 +316,6 @@ def averageModels(models, results):
 
 
 
-
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('-d', '--data', default='/uscms/home/chuyuan/nobackup/ZZ4b/data2018/picoAOD.h5',    type=str, help='Input dataset file in hdf5 format')
-parser.add_argument('--data4b',     default='', help="Take 4b from this file if given, otherwise use --data for both 3-tag and 4-tag")
-parser.add_argument('--data3bWeightSF',     default=None, help="Take 4b from this file if given, otherwise use --data for both 3-tag and 4-tag")
-parser.add_argument('-t', '--ttbar',      default='',    type=str, help='Input MC ttbar file in hdf5 format')
-parser.add_argument('--ttbar4b',          default=None, help="Take 4b ttbar from this file if given, otherwise use --ttbar for both 3-tag and 4-tag")
-parser.add_argument('--ttbarPS',          default=None, help="")
-parser.add_argument('-s', '--signal',     default='', type=str, help='Input dataset file in hdf5 format')
-parser.add_argument('-c', '--classifier', default='', type=str, help='Which classifier to train: FvT, ZHHvB, WHHvB, M1vM2.')
-parser.add_argument(      '--architecture', default='ResNet', type=str, help='classifier architecture to use')
-parser.add_argument('-e', '--epochs', default=20, type=int, help='N of training epochs.')
-parser.add_argument('-o', '--outputName', default='', type=str, help='Prefix to output files.')
-#parser.add_argument('-l', '--lrInit', default=4e-3, type=float, help='Initial learning rate.')
-parser.add_argument('-p', '--pDropout', default=0.4, type=float, help='p(drop) for dropout.')
-parser.add_argument(      '--layers', default=3, type=int, help='N of fully-connected layers.')
-parser.add_argument('-n', '--nodes', default=32, type=int, help='N of fully-connected nodes.')
-parser.add_argument('--cuda', default=0, type=int, help='Which gpuid to use.')
-parser.add_argument('-m', '--model', default='', type=str, help='Load this model')
-parser.add_argument(      '--onnx', dest="onnx",  default=False, action="store_true", help='Export model to onnx')
-parser.add_argument(      '--train',  dest="train",  action="store_true", default=False, help="Train the model(s)")
-parser.add_argument('-u', '--update', dest="update", action="store_true", default=False, help="Update the hdf5 file with the DNN output values for each event")
-parser.add_argument(      '--storeEvent',     dest="storeEvent",     default="0", help="store the network response in a numpy file for the specified event")
-parser.add_argument(      '--storeEventFile', dest="storeEventFile", default=None, help="store the network response in this file for the specified event")
-parser.add_argument('--weightName', default="mcPseudoTagWeight", help='Which weights to use for JCM.')
-parser.add_argument('--FvTName', default="FvT", help='Which FvT weights to use for SvB Training.')
-parser.add_argument('--trainOffset', default='1', help='training offset. Use comma separated list to train with multiple offsets in parallel.')
-parser.add_argument('--updatePostFix', default="", help='Change name of the classifier weights stored .')
-#parser.add_argument('--updatePostFix', default="", help='Change name of the classifier weights stored .')
-
-#parser.add_argument('-d', '--debug', dest="debug", action="store_true", default=False, help="debug")
-args = parser.parse_args()
 
 #os.environ["CUDA_VISIBLE_DEVICES"]=str(args.cuda)
 
@@ -926,7 +961,7 @@ class modelParameters:
         self.othJets+= ['notCanJet%s_m'  %i for i in range(self.nOthJets)]
         self.othJets+= ['notCanJet%s_isSelJet'%i for i in range(self.nOthJets)]
 
-        self.ancillaryFeatures = ['nSelJets', 'xW', 'xbW', 'year'] 
+        self.ancillaryFeatures = ['nSelJets', 'xW', 'xbW', 'year'] + ([BDT_NAME] if 'ancillaryBDT' in strategies else []) 
         #self.ancillaryFeatures = ['nSelJets', 'year'] 
         self.nA = len(self.ancillaryFeatures)
 
@@ -1023,7 +1058,7 @@ class modelParameters:
 
         self.nTrainableParameters = sum(p.numel() for p in self.net.parameters() if p.requires_grad)
         self.name = args.outputName+classifier+'_'+self.net.name+'_np%d_lr%s_epochs%d_offset%d'%(self.nTrainableParameters, str(self.lrInit), self.epochs, self.offset)
-        self.logFileName = 'ZZ4b/nTupleAnalysis/pytorchModels/'+self.name+'.log'
+        self.logFileName = OUTPUT_PATH+self.name+'.log'
         print("Set log file:", self.logFileName)
         self.logFile = open(self.logFileName, 'a', 1)
 
@@ -1598,7 +1633,7 @@ class modelParameters:
                        }
             
         if writeFile:
-            self.modelPkl = 'ZZ4b/nTupleAnalysis/pytorchModels/%s_epoch%02d.pkl'%(self.name, self.epoch)
+            self.modelPkl = OUTPUT_PATH + '/%s_epoch%02d.pkl'%(self.name, self.epoch)
             self.logprint('* '+self.modelPkl)
             torch.save(self.model_dict, self.modelPkl)
 
@@ -1610,7 +1645,7 @@ class modelParameters:
 
 
     def makePlots(self, baseName='', suffix=''):
-        self.modelPkl = 'ZZ4b/nTupleAnalysis/pytorchModels/%s_epoch%02d.pkl'%(self.name, self.epoch)
+        self.modelPkl = OUTPUT_PATH + '/%s_epoch%02d.pkl'%(self.name, self.epoch)
         if not baseName: baseName = self.modelPkl.replace('.pkl', '')
         if classifier in ['SvB','SvB_MA']:
             plotROC(self.training.roc1,    self.validation.roc1,    plotName=baseName+suffix+'_ROC_hhsb.pdf')
@@ -1772,7 +1807,7 @@ class modelParameters:
         plt.gca().set_xlim(xlim)
         plt.gca().set_ylim(ylim)
 
-        plotName = 'ZZ4b/nTupleAnalysis/pytorchModels/%s_%s.pdf'%(self.name, suffix)
+        plotName = OUTPUT_PATH + '/%s_%s.pdf'%(self.name, suffix)
         try:
             fig.savefig(plotName)
         except:
@@ -1836,7 +1871,7 @@ class modelParameters:
         y_pred_valid = self.RFC.predict_proba(X_valid)
         self.validation.update(y_pred_valid, y_valid, None, w_valid, None, 0, True)
 
-        self.makePlots(baseName='ZZ4b/nTupleAnalysis/pytorchModels/'+self.classifier+'_random_forest')
+        self.makePlots(baseName=OUTPUT_PATH+self.classifier+'_random_forest')
 
 
 
@@ -2061,7 +2096,7 @@ if __name__ == '__main__':
 
     if args.update:
         if not models:
-            paths = args.model.split(',')
+            paths = MODEL_PATH
             for path in paths:
                 models += glob(path)
         models.sort()
@@ -2119,7 +2154,7 @@ if __name__ == '__main__':
     if args.onnx:
         print("Export models to ONNX Runtime")
         if not models:
-            paths = args.model.split(',')
+            paths = MODEL_PATH
             for path in paths:
                 models += glob(path)
             models.sort()
