@@ -83,6 +83,12 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables["SvB_MA_q_1324"] = &SvB_MA_q_score[1]; //&SvB_MA_q_1324;
   classifierVariables["SvB_MA_q_1423"] = &SvB_MA_q_score[2]; //&SvB_MA_q_1423;
 
+  classifierVariables["SvB_MA_signalSM_ps" ] = &SvB_MA_signalSM_ps;
+  classifierVariables["SvB_MA_signalAll_ps" ] = &SvB_MA_signalAll_ps;
+  classifierVariables["SvB_MA_regionC3_signalAll_ps" ] = &SvB_MA_regionC3_signalAll_ps;
+  classifierVariables["SvB_MA_regionC2V_signalAll_ps" ] = &SvB_MA_regionC2V_signalAll_ps;
+  //classifierVariables["SvB_MA_ancillaryBDT_signalAll_ps" ] = &SvB_MA_ancillaryBDT_signalAll_ps;
+
   classifierVariables[reweight4bName    ] = &reweight4b;
   classifierVariables[reweightDvTName   ] = &DvT_raw;
 
@@ -378,8 +384,15 @@ void eventData::resetEvent(){
   xWbW0 = 1e6; xWbW1 = 1e6; xWbW = 1e6; //xWt2=1e6;  
   xW = 1e6; xt=1e6; xbW=1e6;
   dRbW = 1e6;
+
   BDT_c2v_c3 = -99;
   BDT_c2v_c3_corrected = -99;
+  SvB_MA_signalSM_ps = -99;
+  SvB_MA_signalAll_ps = -99;
+  SvB_MA_regionBDT_signalAll_ps = -99;
+  SvB_MA_regionC3_signalAll_ps = -99;
+  SvB_MA_regionC2V_signalAll_ps = -99;
+  SvB_MA_ancillaryBDT_signalAll_ps = -99;
 
   for(const std::string& jcmName : jcmNames){
     pseudoTagWeightMap[jcmName]= 1.0;
@@ -578,6 +591,8 @@ void eventData::buildEvent(){
   if(views.size() > 0){
     BDT_c2v_c3 = views[0]->BDT_c2v_c3;
     BDT_c2v_c3_corrected = views[0]->BDT_c2v_c3_corrected;
+    if(BDT_c2v_c3_corrected >= bdtCut) SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC2V_signalAll_ps;
+    else SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC3_signalAll_ps;
   }
 
   //nPSTJets = nLooseTagJets + nPseudoTags;

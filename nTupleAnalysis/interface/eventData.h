@@ -199,6 +199,14 @@ namespace nTupleAnalysis {
     std::unique_ptr<bdtInference> bdtModel;
     Float_t BDT_c2v_c3;
     Float_t BDT_c2v_c3_corrected;
+    const float bdtCut = -0.4;
+
+    Float_t SvB_MA_signalSM_ps = -99;
+    Float_t SvB_MA_signalAll_ps = -99;
+    Float_t SvB_MA_regionBDT_signalAll_ps = -99;
+    Float_t SvB_MA_regionC3_signalAll_ps = -99;
+    Float_t SvB_MA_regionC2V_signalAll_ps = -99;
+    Float_t SvB_MA_ancillaryBDT_signalAll_ps = -99;
     //
 
     uint nSelJets;
@@ -257,8 +265,6 @@ namespace nTupleAnalysis {
     std::shared_ptr<eventView> view_dR_min;
     std::shared_ptr<eventView> view_max_FvT_q_score;
     std::shared_ptr<eventView> view_max_SvB_q_score;
-
-    std::vector<std::shared_ptr<nTupleAnalysis::dijet>> canVDijets; // Vector boson candidate dijets
 
     bool passDijetMass;
     bool passMDRs;
@@ -340,10 +346,6 @@ namespace nTupleAnalysis {
     void load_SvB_ONNX(std::string);
     void run_SvB_ONNX();
     #endif
-
-    std::unique_ptr<bdtInference> bdtModel;
-    float bdtScore_mainView;
-    float bdtScore_mainView_corrected;
 
     void chooseCanJets();
     void buildViews();

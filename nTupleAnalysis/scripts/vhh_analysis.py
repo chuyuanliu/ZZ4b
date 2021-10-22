@@ -53,7 +53,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="passMDRs.passNjOth.passMV.HHRegions.fourTag.threeTag", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passNjOth.passMV.HHRegions.fourTag.threeTag", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -128,11 +128,9 @@ if o.fastSkim and fromNANOAOD:
 # data python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -r -j -y 2017,2018 -e -p picoAOD_f.root
 # python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py -i "/uscms/home/chuyuanl/nobackup/VHH/*/picoAOD_f.root"
 
-# singularity run --nv --bind /uscms_data/d3/chuyuanl:/uscms/home/chuyuanl/ml --bind /cvmfs /cvmfs/unpacked.cern.ch/registry.hub.docker.com/fnallpc/fnallpc-docker:pytorch-1.8.1-cuda11.1-cudnn8-runtime-singularity
-
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c FvT -d "/uscms/home/chuyuanl/ml/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/ml/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/ml/VHH/*HHTo4B*/picoAOD_f.h5" -m ZZ4b/nTupleAnalysis/pytorchModels/FvT_ResNet+multijetAttention_8_8_8_np1494_lr0.01_epochs20_offset0_epoch20.pkl -u
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -d "/uscms/home/chuyuanl/ml/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/ml/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/ml/VHH/*HHTo4B_CV_1_0_C2V_1_0_C3_1_0_201*/picoAOD_f.h5" --train
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -d "/uscms/home/chuyuanl/ml/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/ml/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/ml/VHH/*HHTo4B*201*/picoAOD_f.h5" -m ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_ResNet+multijetAttention_8_8_8_np1484_lr0.01_epochs20_offset1_epoch20.pkl -u
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5" -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B*201*/picoAOD.h5" --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ -m SvB_MA_HCR+attention_14_np2714_lr0.01_epochs10_offset0_epoch10.pkl -u --strategy signalSM
 # python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py -i "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD_f.h5 /uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD_f.h5 /uscms/home/chuyuanl/nobackup/VHH/*HHTo4B*201*/picoAOD_f.h5"
 # signal python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2017,2018 -e
 # data python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -r -j -y 2017,2018 -e

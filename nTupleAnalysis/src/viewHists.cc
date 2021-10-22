@@ -62,11 +62,6 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   nCanVTruVDijets =dir.make<TH1F>("nCanVTruVDijets", (name+"/nCanVTruVDijets; Number of Truth Matched Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
   canVDijets   = new dijetHists(name+"/canVDijets",   fs,    "Vector Boson Candidate Dijets");
   canVTruVDijets   = new dijetHists(name+"/canVTruVDijets",   fs,    "Truth Matched Vector Boson Candidate Dijets");
-  bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; c_{2V} vs c_{3} BDT Output; Entries").c_str(), 32, -1 , 1); //TEMP
-  bdtScore_corrected = dir.make<TH1F>("bdtScore_corrected", (name+"/bdtScore_corrected; c_{2V} vs c_{3} BDT Output (Mass Corrected p^{\\mu}); Entries").c_str(), 32, -1 , 1); //TEMP
-  SvB_MA_ps_c3 = dir.make<TH1F>("SvB_MA_ps_c3", (name+"/SvB_MA_ps_c3; SvB_MA Regressed P(WHH)+P(ZHH), BDT < -0.4; Entries").c_str(), 100, 0 , 1); //TEMP
-  SvB_MA_ps_c2V = dir.make<TH1F>("SvB_MA_ps_c2V", (name+"/SvB_MA_ps_c2V; SvB_MA Regressed P(WHH)+P(ZHH), BDT >= -0.4; Entries").c_str(), 100, 0 , 1); //TEMP
-  SvB_MA_ps_vs_BDT = dir.make<TH2F>("SvB_MA_ps_vs_BDT", (name+"/SvB_MA_ps_vs_BDT; SvB_MA_ps; BDT").c_str(), 32, 0 , 1, 32, -1, 1); //TEMP
   //
   aveAbsEta = dir.make<TH1F>("aveAbsEta", (name+"/aveAbsEta; <|#eta|>; Entries").c_str(), 25, 0 , 2.5);
   aveAbsEtaOth = dir.make<TH1F>("aveAbsEtaOth", (name+"/aveAbsEtaOth; Other Jets <|#eta|>; Entries").c_str(), 27, -0.2, 2.5);
@@ -175,6 +170,13 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   SvB_MA_ps_zhh = dir.make<TH1F>("SvB_MA_ps_zhh",  (name+"/SvB_MA_ps_zhh;  SvB_MA Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
+  SvB_MA_signalSM_ps  = dir.make<TH1F>("SvB_MA_signalSM_ps",  (name+"/SvB_MA_signalSM_ps;  SvB_MA (SM) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_signalAll_ps  = dir.make<TH1F>("SvB_MA_signalAll_ps",  (name+"/SvB_MA_signalAll_ps;  SvB_MA (All) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_regionBDT_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionBDT_signalAll_ps",  (name+"/SvB_MA_regionBDT_signalAll_ps;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_regionC3_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionC3_signalAll_ps",  (name+"/SvB_MA_regionC3_signalAll_ps;  SvB_MA (C_{3}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_regionC2V_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionC2V_signalAll_ps",  (name+"/SvB_MA_regionC2V_signalAll_ps;  SvB_MA (C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_ancillaryBDT_signalAll_ps = dir.make<TH1F>("SvB_MA_ancillaryBDT_signalAll_ps",  (name+"/SvB_MA_ancillaryBDT_signalAll_ps;  SvB_MA (BDT var) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_SvB_q_score_max = dir.make<TH1F>("FvT_q_score_SvB_q_score_max", (name+"/FvT_q_score; FvT q_score (max SvB q_score pairing); Entries").c_str(), 100, 0, 1);
@@ -238,13 +240,11 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   DvT_pm_l = dir.make<TH1F>("DvT_pm_l", (name+"/DvT_pm_l; Multijet Prob; Entries").c_str(), 100, -10, 10);
   DvT_raw = dir.make<TH1F>("DvT_raw", (name+"/DvT_raw; TTbar Prob raw; Entries").c_str(), 100, -0.1, 2);
 
-  if(event->bdtModel){
-    bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; c_{2V} vs c_{3} BDT Output; Entries").c_str(), 32, -1 , 1); 
-    bdtScore_corrected = dir.make<TH1F>("bdtScore_corrected", (name+"/bdtScore_corrected; c_{2V} vs c_{3} BDT Output (Mass Corrected p^{\\mu}); Entries").c_str(), 32, -1 , 1);
-    SvB_MA_ps_c3 = dir.make<TH1F>("SvB_MA_ps_c3", (name+"/SvB_MA_ps_c3; SvB_MA Regressed P(WHH)+P(ZHH), BDT < -0.4; Entries").c_str(), 100, 0 , 1);
-    SvB_MA_ps_c2V = dir.make<TH1F>("SvB_MA_ps_c2V", (name+"/SvB_MA_ps_c2V; SvB_MA Regressed P(WHH)+P(ZHH), BDT >= -0.4; Entries").c_str(), 100, 0 , 1);
-  }
-
+  bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; c_{2V} vs c_{3} BDT Output; Entries").c_str(), 32, -1 , 1); 
+  bdtScore_corrected = dir.make<TH1F>("bdtScore_corrected", (name+"/bdtScore_corrected; c_{2V} vs c_{3} BDT Output (Mass Corrected p^{\\mu}); Entries").c_str(), 32, -1 , 1);
+  SvB_MA_ps_c3 = dir.make<TH1F>("SvB_MA_ps_c3", (name+"/SvB_MA_ps_c3; SvB_MA Regressed P(WHH)+P(ZHH), BDT < -0.4; Entries").c_str(), 100, 0 , 1);
+  SvB_MA_ps_c2V = dir.make<TH1F>("SvB_MA_ps_c2V", (name+"/SvB_MA_ps_c2V; SvB_MA Regressed P(WHH)+P(ZHH), BDT >= -0.4; Entries").c_str(), 100, 0 , 1);
+  SvB_MA_ps_vs_BDT = dir.make<TH2F>("SvB_MA_ps_vs_BDT", (name+"/SvB_MA_ps_vs_BDT; SvB_MA_ps; BDT").c_str(), 32, 0 , 1, 32, -1, 1);
 } 
 
 void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
@@ -457,6 +457,12 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   }else{
     SvB_MA_ps_whh->Fill(event->SvB_MA_ps, event->weight);
   }
+  SvB_MA_signalSM_ps ->Fill(event->SvB_MA_signalSM_ps , event->weight);
+  SvB_MA_signalAll_ps ->Fill(event->SvB_MA_signalAll_ps , event->weight);
+  SvB_MA_regionBDT_signalAll_ps ->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
+  SvB_MA_regionC3_signalAll_ps ->Fill(event->SvB_MA_regionC3_signalAll_ps , event->weight);
+  SvB_MA_regionC2V_signalAll_ps ->Fill(event->SvB_MA_regionC2V_signalAll_ps , event->weight);
+  SvB_MA_ancillaryBDT_signalAll_ps ->Fill(event->SvB_MA_ancillaryBDT_signalAll_ps , event->weight);
 
   FvT_q_score->Fill(view->FvT_q_score, event->weight);
   FvT_q_score_dR_min->Fill(event->view_dR_min->FvT_q_score, event->weight);

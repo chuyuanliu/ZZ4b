@@ -124,7 +124,13 @@ def convert(inFile):
                  variable("SvB_MA_ps"),
                  variable("SvB_MA_pwhh"),
                  variable("SvB_MA_pzhh"),
-                 variable("SvB_MA_ptt")
+                 variable("SvB_MA_ptt"),
+
+                 variable("SvB_MA_signalSM_ps"),
+                 # variable("SvB_MA_ancillaryBDT_signalAll_ps"),
+                 variable("SvB_MA_regionC2V_signalAll_ps"),
+                 variable("SvB_MA_regionC3_signalAll_ps"),
+                 variable("SvB_MA_signalAll_ps")
                  ]
 
     if args.fvtNameList:

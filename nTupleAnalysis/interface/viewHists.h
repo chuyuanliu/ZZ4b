@@ -88,6 +88,12 @@ namespace nTupleAnalysis {
     TH1F* SvB_MA_ps_c3; //TEMP
     TH1F* SvB_MA_ps_c2V; //TEMP
     TH2F* SvB_MA_ps_vs_BDT; //TEMP
+    TH1F* SvB_MA_signalSM_ps;
+    TH1F* SvB_MA_signalAll_ps;
+    TH1F* SvB_MA_regionBDT_signalAll_ps;
+    TH1F* SvB_MA_regionC3_signalAll_ps;
+    TH1F* SvB_MA_regionC2V_signalAll_ps;
+    TH1F* SvB_MA_ancillaryBDT_signalAll_ps;
     //
     trigHists*  allTrigJets = NULL;
 
