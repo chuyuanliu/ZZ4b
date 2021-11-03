@@ -322,6 +322,7 @@ void eventData::resetEvent(){
   canHTruVJets.clear();
   truVJets.clear();
   othJets.clear();
+  lowPtJets.clear();
   allDijets.clear();
   truVDijets.clear();
   notTruVDijets.clear();
@@ -387,12 +388,6 @@ void eventData::resetEvent(){
 
   BDT_c2v_c3 = -99;
   BDT_c2v_c3_corrected = -99;
-  SvB_MA_signalSM_ps = -99;
-  SvB_MA_signalAll_ps = -99;
-  SvB_MA_regionBDT_signalAll_ps = -99;
-  SvB_MA_regionC3_signalAll_ps = -99;
-  SvB_MA_regionC2V_signalAll_ps = -99;
-  SvB_MA_ancillaryBDT_signalAll_ps = -99;
 
   for(const std::string& jcmName : jcmNames){
     pseudoTagWeightMap[jcmName]= 1.0;
@@ -849,6 +844,8 @@ void eventData::chooseCanJets(){
       canJets.push_back(jet);
     else
       othJets.push_back(jet);
+    if(jet->pt < jetPtMinH)
+      lowPtJets.push_back(jet);
   }
   for(uint i = 0; i < 3;        ++i) topQuarkBJets.push_back(selJetsV.at(i));
   for(uint i = 2; i < nSelJetsV; ++i) topQuarkWJets.push_back(selJetsV.at(i));
@@ -937,20 +934,6 @@ void eventData::chooseCanJets(){
   for(auto &jet: canJets) {
     jet->bRegression();
   }
-
-  //choose vector boson candidate dijets when BDT model is loaded
-  if(bdtModel){
-    for(uint i = 0; i < nOthJets; ++ i){
-      for(uint j = i + 1; j < nOthJets; ++j){
-        auto othDijet = std::make_shared<dijet>(othJets.at(i), othJets.at(j));
-        if (othDijet->m >= 65 && othDijet->m <= 105){ // vector boson mass window
-          canVDijets.push_back(othDijet);
-        }
-      }
-    }
-    std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
-  }
-
   std::sort(canJets.begin(), canJets.end(), sortPt); // order by decreasing pt
   std::sort(othJets.begin(), othJets.end(), sortPt); // order by decreasing pt
   p4j = canJets[0]->p + canJets[1]->p + canJets[2]->p + canJets[3]->p;

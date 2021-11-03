@@ -182,6 +182,7 @@ namespace nTupleAnalysis {
     // VHH
     std::vector<jetPtr> canHTruVJets; //truth matched jets from V decay, selected as H candidate
     std::vector<jetPtr> truVJets; //truth matched jets from V decay
+    std::vector<jetPtr> lowPtJets; //jets satisfy (jetPtMinV <= pt< jetPtMinH)
     std::vector<particlePtr> notAllTruVQuarks; // truth quarks from V decay, not in all jets
     std::vector<dijetPtr> allDijets; // all dijets formed by othJets
     std::vector<dijetPtr> truVDijets; // truth matched dijets from V decay

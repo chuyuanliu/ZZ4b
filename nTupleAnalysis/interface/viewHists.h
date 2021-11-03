@@ -67,6 +67,7 @@ namespace nTupleAnalysis {
     jetHists* truVJets;
     jetHists* truVJet0;
     jetHists* truVJet1;
+    jetHists* lowPtJets;
     TH1F* nCanHTruVJets;
     jetHists* canHTruVJets;
     TH1F* nSelTruVJets;
@@ -85,14 +86,23 @@ namespace nTupleAnalysis {
     dijetHists* canVTruVDijets;
     TH1F* bdtScore; //TEMP
     TH1F* bdtScore_corrected; //TEMP
-    TH1F* SvB_MA_ps_c3; //TEMP
-    TH1F* SvB_MA_ps_c2V; //TEMP
     TH1F* SvB_MA_signalSM_ps;
     TH1F* SvB_MA_signalAll_ps;
     TH1F* SvB_MA_regionBDT_signalAll_ps;
     TH1F* SvB_MA_regionC3_signalAll_ps;
     TH1F* SvB_MA_regionC2V_signalAll_ps;
     TH1F* SvB_MA_ancillaryBDT_signalAll_ps;
+
+    TH1F* bdtScore_corrected_all_BDT_95;
+    TH1F* bdtScore_corrected_all_BDT_90;
+    TH1F* bdtScore_corrected_all_95;
+    TH1F* bdtScore_corrected_all_90;
+    TH1F* bdtScore_corrected_SM_95;
+    TH1F* bdtScore_corrected_SM_90;
+
+    TH1F* SvB_all_BDT_BDT_bin;
+    TH1F* SvB_all_BDT_bin;
+    TH1F* SvB_SM_BDT_bin;
     //
     trigHists*  allTrigJets = NULL;
 

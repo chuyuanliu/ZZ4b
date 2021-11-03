@@ -46,6 +46,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   truVJets = new jetHists(name+"/truVJets", fs, "Truth Matched Vector Boson Jets in Other Jets");
   truVJet0 = new jetHists(name+"/truVJet0", fs, "Truth Matched Vector Boson Jet_{0} in Other Jets");
   truVJet1 = new jetHists(name+"/truVJet1", fs, "Truth Matched Vector Boson Jet_{1} in Other Jets");
+  lowPtJets = new jetHists(name+"/lowPtJets", fs, "Jets 20 GeV #leq p_{T}<40 GeV");
   nCanHTruVJets = dir.make<TH1F>("nCanHTruVJets", (name+"/nCanHTruVJets; Number of Truth Matched Vector Boson Jets in Higgs Candidate Jets; Entries").c_str(), 16,-0.5,15.5);
   canHTruVJets = new jetHists(name+"/canHTruVJets", fs, "Truth Matched Vector Boson Jets in Higgs Candidate Jets");
   nSelTruVJets =dir.make<TH1F>("nSelTruVJets", (name+"/nSelTruVJets; Number of Truth Matched Vector Boson Jets in Selected Jets; Entries").c_str(), 16,-0.5,15.5);
@@ -176,6 +177,16 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   SvB_MA_regionC3_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionC3_signalAll_ps",  (name+"/SvB_MA_regionC3_signalAll_ps;  SvB_MA (C_{3}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_regionC2V_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionC2V_signalAll_ps",  (name+"/SvB_MA_regionC2V_signalAll_ps;  SvB_MA (C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_ancillaryBDT_signalAll_ps = dir.make<TH1F>("SvB_MA_ancillaryBDT_signalAll_ps",  (name+"/SvB_MA_ancillaryBDT_signalAll_ps;  SvB_MA (BDT var) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  bdtScore_corrected_all_BDT_95= dir.make<TH1F>("bdtScore_corrected_all_BDT_95", (name+"/bdtScore_corrected_all_BDT_95; BDT Output (Corrected) SvB_MA (BDT)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_corrected_all_BDT_90= dir.make<TH1F>("bdtScore_corrected_all_BDT_90", (name+"/bdtScore_corrected_all_BDT_90; BDT Output (Corrected) SvB_MA (BDT)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_corrected_all_95= dir.make<TH1F>("bdtScore_corrected_all_95", (name+"/bdtScore_corrected_all_95; BDT Output (Corrected) SvB_MA (All)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_corrected_all_90= dir.make<TH1F>("bdtScore_corrected_all_90", (name+"/bdtScore_corrected_all_90; BDT Output (Corrected) SvB_MA (All)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_corrected_SM_95= dir.make<TH1F>("bdtScore_corrected_SM_95", (name+"/bdtScore_corrected_SM_95; BDT Output (Corrected) SvB_MA (SM)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_corrected_SM_90= dir.make<TH1F>("bdtScore_corrected_SM_90", (name+"/bdtScore_corrected_SM_90; BDT Output (Corrected) SvB_MA (SM)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
+  
+  SvB_all_BDT_BDT_bin= dir.make<TH1F>("SvB_all_BDT_BDT_bin", (name+"/SvB_all_BDT_BDT_bin; SvB_MA (BDT) vs BDT score(corrected); Entries").c_str(), 40, 0 , 2);
+  SvB_all_BDT_bin= dir.make<TH1F>("SvB_all_BDT_bin", (name+"/SvB_all_BDT_bin; SvB_MA (All) vs BDT score(corrected) ; Entries").c_str(), 40, 0 , 2);
+  SvB_SM_BDT_bin= dir.make<TH1F>("SvB_SM_BDT_bin", (name+"/SvB_SM_BDT_bin; SvB_MA (SM) vs BDT score(corrected) ; Entries").c_str(), 40, 0 , 2);
 
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
@@ -244,8 +255,6 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   if(nTupleAnalysis::findSubStr(histDetailLevel,"bdtStudy")){
     bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; c_{2V} vs c_{3} BDT Output; Entries").c_str(), 32, -1 , 1); 
     bdtScore_corrected = dir.make<TH1F>("bdtScore_corrected", (name+"/bdtScore_corrected; c_{2V} vs c_{3} BDT Output (Mass Corrected p^{\\mu}); Entries").c_str(), 32, -1 , 1);
-    SvB_MA_ps_c3 = dir.make<TH1F>("SvB_MA_ps_c3", (name+"/SvB_MA_ps_c3; SvB_MA Regressed P(WHH)+P(ZHH), BDT < -0.4; Entries").c_str(), 100, 0 , 1);
-    SvB_MA_ps_c2V = dir.make<TH1F>("SvB_MA_ps_c2V", (name+"/SvB_MA_ps_c2V; SvB_MA Regressed P(WHH)+P(ZHH), BDT >= -0.4; Entries").c_str(), 100, 0 , 1);
   }
 } 
 
@@ -301,6 +310,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
     truVJet0->Fill(event->truVJets[0], event->weight);
     truVJet1->Fill(event->truVJets[1], event->weight);
   }
+  for(auto &jet: event->lowPtJets) lowPtJets->Fill(jet, event->weight);
   nCanHTruVJets->Fill(event->canHTruVJets.size(), event->weight);
   for(auto &jet: event->canHTruVJets) canHTruVJets->Fill(jet, event->weight);
   nSelTruVJets->Fill(event->truVJets.size()+event->canHTruVJets.size(), event->weight);
@@ -476,11 +486,23 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
 
   FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
 
-  bdtScore->Fill(view->BDT_c2v_c3, event->weight);//TEMP
-  bdtScore_corrected->Fill(view->BDT_c2v_c3_corrected, event->weight);//TEMP
-  if(view->BDT_c2v_c3_corrected >= - 0.4) SvB_MA_ps_c2V->Fill(event->SvB_MA_ps, event->weight);//TEMP
-  else SvB_MA_ps_c3->Fill(event->SvB_MA_ps, event->weight);//TEMP
-  
+  if(bdtScore && event->canVDijets.size() > 0){
+    bdtScore->Fill(event->BDT_c2v_c3, event->weight);
+    bdtScore_corrected->Fill(event->BDT_c2v_c3_corrected, event->weight);
+  }
+  if(event->SvB_MA_regionBDT_signalAll_ps>0.95) bdtScore_corrected_all_BDT_95->Fill(event->BDT_c2v_c3_corrected, event->weight);
+  if(event->SvB_MA_regionBDT_signalAll_ps>0.90) bdtScore_corrected_all_BDT_90->Fill(event->BDT_c2v_c3_corrected, event->weight);
+  if(event->SvB_MA_signalAll_ps>0.95) bdtScore_corrected_all_95->Fill(event->BDT_c2v_c3_corrected, event->weight);
+  if(event->SvB_MA_signalAll_ps>0.90) bdtScore_corrected_all_90->Fill(event->BDT_c2v_c3_corrected, event->weight);
+  if(event->SvB_MA_signalSM_ps>0.95) bdtScore_corrected_SM_95->Fill(event->BDT_c2v_c3_corrected, event->weight);
+  if(event->SvB_MA_signalSM_ps>0.90) bdtScore_corrected_SM_90->Fill(event->BDT_c2v_c3_corrected, event->weight);
+    
+  float bdt_region = 0.0;
+  if(event->BDT_c2v_c3 >=-0.4) bdt_region = 1.0;
+  SvB_all_BDT_BDT_bin->Fill(event->SvB_MA_regionBDT_signalAll_ps + bdt_region, event->weight);
+  SvB_all_BDT_bin->Fill(event->SvB_MA_signalAll_ps + bdt_region, event->weight);
+  SvB_SM_BDT_bin->Fill(event->SvB_MA_signalSM_ps + bdt_region, event->weight);
+
   m4j_vs_nViews->Fill(view->m4j, event->views.size(), event->weight);
 
   if(event->truth != NULL){

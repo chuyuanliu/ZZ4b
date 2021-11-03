@@ -99,10 +99,9 @@ def lpccp(src, dest):
 def hadd(srcs,dest):
     if len(srcs) > 0:
         print('hadd '+dest)
-        cmd = 'hadd -f ' + lpc(dest)
+        cmd = 'hadd -v 0 -f ' + lpc(dest)
         for src in srcs:
             cmd += ' ' + lpc(src)
-        cmd += ' > hadd.log 2>&1'
         run(cmd)
 
 def load_skims():
@@ -152,7 +151,7 @@ def cp():
     for year in years:
         if year not in ['2016', '2016_preVFP', '2016_postVFP']:
             for cps in signals:
-                for cp in cps[0:(3 if o.hists else 2)]:
+                for cp in cps[0:2]:
                     file = base + cp+year+cp_files(True)
                     print(file)
                     xrdcp(full_path(file, from_area), full_path(file, to_area))
