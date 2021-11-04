@@ -123,6 +123,7 @@ WHHSamples["2018"] = [
     "WHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2018",
     "WHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2018",
     "WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2018",
+    "WHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2018"
 ]
 
 ZHHSamples["2018"] = [
@@ -133,6 +134,7 @@ ZHHSamples["2018"] = [
     "ZHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2018",
     "ZHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2018",
     "ZHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2018",
+    "ZHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2018"
 ]
 
 VHHSamples = [WHHSamples,ZHHSamples]
@@ -191,7 +193,7 @@ if o.makeSkims:
 
 
 #
-# Make skims with out the di-jet Mass cuts
+# Make skims without the di-jet Mass cuts
 #
 if o.makeVHHSkims:
 
@@ -201,14 +203,13 @@ if o.makeVHHSkims:
 
     histConfig = " --histDetailLevel allEvents.threeTag.fourTag --histFile histsFromNanoAOD.root "
     picoOut = " -p picoAOD_"+tagID+".root "
-    EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/VHHSkims/"
+    EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/VHHSkimsUL/"
 
     
     for sample in VHHSamples:
-
-        for y in ["2017","2018"]:
-        
+        for y in years:
             for d in sample[y]:
+                os.system("eosmkdir /store/user/"+USER+"/condor/VHHSkimsUL/"+d)
                 cmd = runCMD+" -i ZZ4b/fileLists/"+d+".txt -o "+EOSOUTDIR+  MCyearOpts[y] + histConfig + picoOut +" --fastSkim " + (" --debug" if o.debug else "")
                 condor_jobs.append(makeCondorFile(cmd, "None", d+"_"+tagID, outputDir=outputDir, filePrefix="skimVHH_"))
 
