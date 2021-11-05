@@ -1,4 +1,4 @@
-### dasgoclient -query="file dataset=/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM" 
+### dasgoclient -query="file dataset=/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM"
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2510000/F9C06DB1-C6D1-034B-B6B1-70E074D12679.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2510000/AE0B6CE5-1608-FF47-952E-521C2955F2CD.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2500000/CD19F508-1209-D748-A07D-F750F138304E.root
@@ -20,6 +20,8 @@ root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2510000/EEEFD86C-3053-1644-9B91-6DE81D5F6F75.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2500000/EDA1B46C-7FFF-544A-9DFB-00D77EA0D4A4.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2510000/EAAB0F20-F4F6-C640-B506-CF32FBE352F1.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2430000/21CD040B-433A-1D4A-B469-853506DCD5BA.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2430000/58AB1679-C580-424C-866A-C2786AF5EA48.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/230000/E2B2B6F5-556D-7D41-A299-17FF0F574241.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2430000/8112C66B-9A14-A84E-BAB8-3F89B682A371.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/230000/E30935F1-FE33-324C-8EF1-9BEAC3016E12.root
@@ -31,5 +33,3 @@ root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2510000/40632CEA-0DBC-A448-85D4-55650CEF1FD4.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2510000/61743D95-B76B-4949-8AE3-725893D005C6.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2500000/9A81B64E-76C5-A449-8C58-56B5179642DB.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2430000/58AB1679-C580-424C-866A-C2786AF5EA48.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/2430000/21CD040B-433A-1D4A-B469-853506DCD5BA.root

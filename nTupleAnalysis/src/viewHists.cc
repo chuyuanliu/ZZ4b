@@ -177,12 +177,12 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   SvB_MA_regionC3_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionC3_signalAll_ps",  (name+"/SvB_MA_regionC3_signalAll_ps;  SvB_MA (C_{3}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_regionC2V_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionC2V_signalAll_ps",  (name+"/SvB_MA_regionC2V_signalAll_ps;  SvB_MA (C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_ancillaryBDT_signalAll_ps = dir.make<TH1F>("SvB_MA_ancillaryBDT_signalAll_ps",  (name+"/SvB_MA_ancillaryBDT_signalAll_ps;  SvB_MA (BDT var) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  bdtScore_corrected_all_BDT_95= dir.make<TH1F>("bdtScore_corrected_all_BDT_95", (name+"/bdtScore_corrected_all_BDT_95; BDT Output (Corrected) SvB_MA (BDT)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
-  bdtScore_corrected_all_BDT_90= dir.make<TH1F>("bdtScore_corrected_all_BDT_90", (name+"/bdtScore_corrected_all_BDT_90; BDT Output (Corrected) SvB_MA (BDT)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
-  bdtScore_corrected_all_95= dir.make<TH1F>("bdtScore_corrected_all_95", (name+"/bdtScore_corrected_all_95; BDT Output (Corrected) SvB_MA (All)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
-  bdtScore_corrected_all_90= dir.make<TH1F>("bdtScore_corrected_all_90", (name+"/bdtScore_corrected_all_90; BDT Output (Corrected) SvB_MA (All)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
-  bdtScore_corrected_SM_95= dir.make<TH1F>("bdtScore_corrected_SM_95", (name+"/bdtScore_corrected_SM_95; BDT Output (Corrected) SvB_MA (SM)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
-  bdtScore_corrected_SM_90= dir.make<TH1F>("bdtScore_corrected_SM_90", (name+"/bdtScore_corrected_SM_90; BDT Output (Corrected) SvB_MA (SM)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_all_BDT_95= dir.make<TH1F>("bdtScore_all_BDT_95", (name+"/bdtScore_all_BDT_95; BDT Output (Corrected) SvB_MA (BDT)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_all_BDT_90= dir.make<TH1F>("bdtScore_all_BDT_90", (name+"/bdtScore_all_BDT_90; BDT Output (Corrected) SvB_MA (BDT)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_all_95= dir.make<TH1F>("bdtScore_all_95", (name+"/bdtScore_all_95; BDT Output (Corrected) SvB_MA (All)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_all_90= dir.make<TH1F>("bdtScore_all_90", (name+"/bdtScore_all_90; BDT Output (Corrected) SvB_MA (All)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_SM_95= dir.make<TH1F>("bdtScore_SM_95", (name+"/bdtScore_SM_95; BDT Output (Corrected) SvB_MA (SM)>0.95; Entries").c_str(), 20, -0.6 , 0.6);
+  bdtScore_SM_90= dir.make<TH1F>("bdtScore_SM_90", (name+"/bdtScore_SM_90; BDT Output (Corrected) SvB_MA (SM)>0.90; Entries").c_str(), 20, -0.6 , 0.6);
   
   SvB_all_BDT_BDT_bin= dir.make<TH1F>("SvB_all_BDT_BDT_bin", (name+"/SvB_all_BDT_BDT_bin; SvB_MA (BDT) vs BDT score(corrected); Entries").c_str(), 40, 0 , 2);
   SvB_all_BDT_bin= dir.make<TH1F>("SvB_all_BDT_bin", (name+"/SvB_all_BDT_bin; SvB_MA (All) vs BDT score(corrected) ; Entries").c_str(), 40, 0 , 2);
@@ -490,12 +490,12 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
     bdtScore->Fill(event->BDT_c2v_c3, event->weight);
     bdtScore_corrected->Fill(event->BDT_c2v_c3_corrected, event->weight);
   }
-  if(event->SvB_MA_regionBDT_signalAll_ps>0.95) bdtScore_corrected_all_BDT_95->Fill(event->BDT_c2v_c3_corrected, event->weight);
-  if(event->SvB_MA_regionBDT_signalAll_ps>0.90) bdtScore_corrected_all_BDT_90->Fill(event->BDT_c2v_c3_corrected, event->weight);
-  if(event->SvB_MA_signalAll_ps>0.95) bdtScore_corrected_all_95->Fill(event->BDT_c2v_c3_corrected, event->weight);
-  if(event->SvB_MA_signalAll_ps>0.90) bdtScore_corrected_all_90->Fill(event->BDT_c2v_c3_corrected, event->weight);
-  if(event->SvB_MA_signalSM_ps>0.95) bdtScore_corrected_SM_95->Fill(event->BDT_c2v_c3_corrected, event->weight);
-  if(event->SvB_MA_signalSM_ps>0.90) bdtScore_corrected_SM_90->Fill(event->BDT_c2v_c3_corrected, event->weight);
+  if(event->SvB_MA_regionBDT_signalAll_ps>0.95) bdtScore_all_BDT_95->Fill(event->BDT_c2v_c3, event->weight);
+  if(event->SvB_MA_regionBDT_signalAll_ps>0.90) bdtScore_all_BDT_90->Fill(event->BDT_c2v_c3, event->weight);
+  if(event->SvB_MA_signalAll_ps>0.95) bdtScore_all_95->Fill(event->BDT_c2v_c3, event->weight);
+  if(event->SvB_MA_signalAll_ps>0.90) bdtScore_all_90->Fill(event->BDT_c2v_c3, event->weight);
+  if(event->SvB_MA_signalSM_ps>0.95) bdtScore_SM_95->Fill(event->BDT_c2v_c3, event->weight);
+  if(event->SvB_MA_signalSM_ps>0.90) bdtScore_SM_90->Fill(event->BDT_c2v_c3, event->weight);
     
   float bdt_region = 0.0;
   if(event->BDT_c2v_c3 >=-0.4) bdt_region = 1.0;

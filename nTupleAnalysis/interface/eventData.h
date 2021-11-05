@@ -200,7 +200,7 @@ namespace nTupleAnalysis {
     std::unique_ptr<bdtInference> bdtModel;
     Float_t BDT_c2v_c3;
     Float_t BDT_c2v_c3_corrected;
-    const float bdtCut = -0.4;
+    const float bdtCut = 0.0;
 
     Float_t SvB_MA_signalSM_ps = -99;
     Float_t SvB_MA_signalAll_ps = -99;

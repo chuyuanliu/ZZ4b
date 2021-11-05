@@ -93,12 +93,12 @@ namespace nTupleAnalysis {
     TH1F* SvB_MA_regionC2V_signalAll_ps;
     TH1F* SvB_MA_ancillaryBDT_signalAll_ps;
 
-    TH1F* bdtScore_corrected_all_BDT_95;
-    TH1F* bdtScore_corrected_all_BDT_90;
-    TH1F* bdtScore_corrected_all_95;
-    TH1F* bdtScore_corrected_all_90;
-    TH1F* bdtScore_corrected_SM_95;
-    TH1F* bdtScore_corrected_SM_90;
+    TH1F* bdtScore_all_BDT_95;
+    TH1F* bdtScore_all_BDT_90;
+    TH1F* bdtScore_all_95;
+    TH1F* bdtScore_all_90;
+    TH1F* bdtScore_SM_95;
+    TH1F* bdtScore_SM_90;
 
     TH1F* SvB_all_BDT_BDT_bin;
     TH1F* SvB_all_BDT_bin;

@@ -579,14 +579,14 @@ void eventData::buildEvent(){
     auto score = bdtModel->getBDTScore(this, mainViewOnly);
     auto score_corrected = bdtModel->getBDTScore(this, mainViewOnly, true);
     for(size_t i = 0; i < score.size(); ++i){
-      views[i]->BDT_c2v_c3 = score[i]["BDTG"];
-      views[i]->BDT_c2v_c3_corrected = score_corrected[i]["BDTG"];
+      views[i]->BDT_c2v_c3 = score[i]["BDT"];
+      views[i]->BDT_c2v_c3_corrected = score_corrected[i]["BDT"];
     }
   }
   if(views.size() > 0){
     BDT_c2v_c3 = views[0]->BDT_c2v_c3;
     BDT_c2v_c3_corrected = views[0]->BDT_c2v_c3_corrected;
-    if(BDT_c2v_c3_corrected >= bdtCut) SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC2V_signalAll_ps;
+    if(BDT_c2v_c3 >= bdtCut) SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC2V_signalAll_ps;
     else SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC3_signalAll_ps;
   }
 

@@ -77,8 +77,8 @@ parser.add_option(      '--reweightDvTName',    dest="reweightDvTName", type="st
 parser.add_option(      '--SvB_ONNX', dest="SvB_ONNX", default="", help="path to ONNX version of SvB model. If none specified, it won't be used.")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="currenty does nothing. Try to keep it that way")
 parser.add_option(   '--SvBScore',   dest='SvBScore', type='float', default='0.0',   help='SvB classifier score cut')
-parser.add_option(      '--bdtWeightFile',    dest="bdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/TMVA_13TeV_VHH_c2v_/*method*/.weights.xml", help="BDT model weight files. /*method*/ will be replaced by BDT method")
-parser.add_option(      '--bdtMethods',    dest="bdtMethods", type="string", default="BDTG", help="Name of BDT methods used in inference. BDTG for VHH c2V BDT")
+parser.add_option(      '--bdtWeightFile',    dest="bdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/BDT_c3_20vs0_out.xml", help="BDT model weight files. /*method*/ will be replaced by BDT method")
+parser.add_option(      '--bdtMethods',    dest="bdtMethods", type="string", default="BDT", help="Name of BDT methods used in inference. BDT for VHH c2V BDT")
 
 o, a = parser.parse_args()
 

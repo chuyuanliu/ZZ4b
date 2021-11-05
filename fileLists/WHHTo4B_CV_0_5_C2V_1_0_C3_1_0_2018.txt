@@ -1,4 +1,4 @@
-### dasgoclient -query="file dataset=/WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM" 
+### dasgoclient -query="file dataset=/WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM"
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/70000/5763833B-989F-BD4A-B98F-BA547F6A1003.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/100000/E1EFCA96-EAF7-B148-9E85-EA19AFA84EEE.root
 root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL18NanoAODv2/WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_upgrade2018_realistic_v15_L1v1-v1/40000/66F2B000-5EE7-EB4A-957E-6351DCE623AD.root

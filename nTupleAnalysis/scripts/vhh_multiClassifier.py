@@ -82,7 +82,7 @@ if 'SvB' in args.classifier:
     if args.updatePostFix == '':
         args.updatePostFix = '_' + '_'.join(strategies)
 
-BDT_CUT = -0.4
+BDT_CUT = 0.0
 BDT_NAME = 'BDT_c2v_c3_corrected'
 
 
@@ -200,9 +200,9 @@ def getFrameSvB(fileName):
     FvTName = args.FvTName
     
     if 'regionC2V' in strategies:
-        thisFrame = thisFrame.loc[thisFrame[BDT_NAME]>=BDT_CUT]
-    elif 'regionC3' in strategies:
         thisFrame = thisFrame.loc[thisFrame[BDT_NAME]<BDT_CUT]
+    elif 'regionC3' in strategies:
+        thisFrame = thisFrame.loc[thisFrame[BDT_NAME]>=BDT_CUT]
 
     thisFrame = thisFrame.loc[ (thisFrame['nSelJetsV']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) & (thisFrame[BDT_NAME]>=-1) & thisFrame.passMDRs  ]#& (thisFrame.passXWt) ]
     #thisFrame = thisFrame.loc[ (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSR']==True)) & (thisFrame.FvT>0) ]#& (thisFrame.passXWt) ]

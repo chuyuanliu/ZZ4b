@@ -678,11 +678,11 @@ if __name__ == '__main__':
         # ],normalize=True)
         # producer.add_dir(['pass*/fourTag/mainview/CR/n*','pass*/fourTag/mainview/CR/can*/pt*'
         # ])
-        # producer.add_dir(['pass*/fourTag/mainview/HH*/SvB_MA*_ps','pass*/fourTag/mainview/HH*/SvB_*BDT*',
-        # 'pass*/fourTag/mainview/HH*/bdt*',
-        # ], normalize = True)
-        producer.add_dir(['pass*/fourTag/mainview/HHSR/v4j/m*'
+        producer.add_dir(['pass*/fourTag/mainview/HH*/SvB_MA*_ps','pass*/fourTag/mainview/HH*/SvB_*BDT*',
+        'pass*/fourTag/mainview/HH*/bdt*',
         ], normalize = True)
+        # producer.add_dir(['pass*/fourTag/mainview/HHSR/v4j/m*'
+        # ], normalize = True)
         # producer.add_dir(['pass*/fourTag/mainview/HHSR/truVDijets/*', 'pass*/fourTag/mainview/HHSR/canVDijets/*', 'passNjOth/fourTag/mainview/HHSR/allDijets/*'
         # ], normalize = True)
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
@@ -699,7 +699,7 @@ if __name__ == '__main__':
         # producer.add_couplings(cv=1.0,c2v=2.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=0.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=2.0)
-        # producer.add_couplings(cv=1.0,c2v=1.0, c3=0.0)
+        producer.add_couplings(cv=1.0,c2v=1.0, c3=0.0)
         # producer.add_couplings(cv=1.5,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=0.5,c2v=1.0, c3=1.0)
 
@@ -708,7 +708,7 @@ if __name__ == '__main__':
 
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('MDRs','#Delta R_{jj}'), ('NjOth','N_{j}#geq 6'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
         # producer.AccxEff(cuts)
-        producer.plot_all(4)
+        producer.plot_all(2)
         # producer.save('VhadHH_combine_bdtscore_95_all_BDT', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_all_BDT_95', 2)
         # producer.save('VhadHH_combine_bdtscore_95_all', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_all_95', 2)
         # producer.save('VhadHH_combine_bdtScore_95_SM', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_SM_95', 2)
@@ -735,4 +735,5 @@ if __name__ == '__main__':
 #ZHH_CV_1_0_C2V_1_0_C3_0_0_13TeV-madgraph.log:     Cross-section :   0.0001539 +- 8.34e-07 pb
 
 # dataset =/*HHTo4B_CV_*_C2V_*_C3_*_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2*v15*/NANOAODSIM 
+# dataset=/*HHTo4B_CV_*_*_C2V_*_0_C3_*_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2*/NANOAODSIM
 # /afs/cern.ch/user/y/yilai/public/for_VHH/resolved_catBDT/BDT_c3_20vs0*

@@ -29,6 +29,7 @@ parser.add_option('--hdf5', action="store_true", dest = 'hdf5', default = False,
 parser.add_option('--cp', action="store_true", dest = 'cp', default = False, help = 'copy files')
 parser.add_option('--init', action="store_true", dest = 'init', default = False, help = 'initialize dirs and files')
 parser.add_option('--merge', action="store_true", dest = 'merge', default = False, help = 'merge weight into root files')
+parser.add_option('--coupling', action="store_true", dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'coupling for signal')
 
 o, a = parser.parse_args()
 
@@ -45,7 +46,7 @@ def hdf5(isSignal = False):
 
 signals = []
 if o.signal:
-    signals = fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0')
+    signals = fh.getCouplingList(o.coupling)
 
 # datas = {'2016': [],
 #          '2017': [],
