@@ -7,6 +7,7 @@ nanoAODs = {
     '2017':'TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM',
     '2018':'TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v1/NANOAODSIM'
     # '2018':'TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v2/NANOAODSIM' # C3:20_0
+    # '2018':'TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2-106X_upgrade2018_realistic_v15_L1v1-v3/NANOAODSIM' # C3:1_0
 }
 outputPath = '/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/fileLists/'
 # outputPath = '/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/fileLists/'
@@ -24,8 +25,12 @@ for year in years:
             cmd = 'dasgoclient -query="file dataset=' + nanoAOD + '"'
             print(cmd)
             files = os.popen(cmd).read()
-            files = files.replace('/store/mc/', 'root://cmsxrootd.fnal.gov//store/mc/')
-            fileList =  open(outputPath + process+year + '.txt', 'w')
-            fileList.write('### ' + cmd + '\n' + files)
+            if len(files) != 0:
+                files = files.replace('/store/mc/', 'root://cmsxrootd.fnal.gov//store/mc/')
+                fileList =  open(outputPath + process+year + '.txt', 'w')
+                fileList.write('### ' + cmd + '\n' + files)
+            else:
+                print('Warning: No file found from query')
+                print(cmd)
             fileList.close()
 
