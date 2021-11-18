@@ -15,6 +15,8 @@ DEFAULT_BASIS = [{'cv':0.5},{'cv':1.5},{'c2v':2.0},{'c2v':0.0},{'c3':2.0},{'c3':
 
 cp_labels = ['cv', 'c2v', 'c3']
 
+max_coupling = 20
+
 class coupling:
     point = '.'
     def __init__(self, scan_cps, init_basis = []):
@@ -111,7 +113,7 @@ def plot_weights(transform, vmax = 1e3, thresh =1e-2, summed = False, nbasis = 6
     fig.subplots_adjust(bottom = 0.1, top = 0.97, hspace = 0.3, right = 0.90)
     color_args = {'norm':colors.SymLogNorm(linthresh=thresh, linscale=thresh, vmin=-vmax, vmax=vmax, base=10), 'cmap':'RdBu_r'}
 
-    scans = scan(-10.0, 10.0, 0.2)
+    scans = scan(-max_coupling, max_coupling, 0.4)
     basis = initbasis
     for i in range(nbasis-len(initbasis)):
         basis.append({})
@@ -125,7 +127,7 @@ def plot_weights(transform, vmax = 1e3, thresh =1e-2, summed = False, nbasis = 6
             sliders[row, col] = {}
             if(n < cp_weights.n_basis()):
                 for i in range(3):
-                    sliders[row, col][cp_labels[i]] = Slider(subaxes(axes[row, col], 0.04 + i * 0.02, 0.8, 0.01), cp_labels[i], -10, 10, valinit = cp_init[n][cp_labels[i]])
+                    sliders[row, col][cp_labels[i]] = Slider(subaxes(axes[row, col], 0.04 + i * 0.02, 0.8, 0.01), cp_labels[i], -max_coupling, max_coupling, valinit = cp_init[n][cp_labels[i]])
     weight = transform(cp_weights.get_weight())
     for row in range(shape[0]):
         for col in range(shape[1]):

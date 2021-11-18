@@ -14,7 +14,8 @@ import Helper.ROOTCanvas as canvas_helper
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 ROOT.gStyle.SetPalette(ROOT.kRainBow)
-ROOT.gStyle.SetErrorX(0.0)
+ROOT.gStyle.SetGridStyle(2)
+ROOT.gStyle.SetHatchesLineWidth(1)
 
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
@@ -22,6 +23,7 @@ out_path = in_path + 'plots/'
 years = ['17+18']#, 'RunII']
 signals = ['VHH']
 no_background = False #temp
+event_count = True
 
 if not os.path.isdir(out_path):
     os.mkdir(out_path)
@@ -36,7 +38,7 @@ class wildcard_match:
         self.match_all_dirs = match_all_dirs
         self.flags = 0 | (re.IGNORECASE if ignore_case else 0)
     def match(self, pattern, string):
-        return re.match('^' + re.escape(pattern).replace('\*', '(.*?)') + '$', string, self.flags) is not None
+        return re.match('^' + re.escape(pattern).replace('\]', ')').replace('\[', '(').replace('\|', '|').replace('\*', '(.*?)') + '$', string, self.flags) is not None
     def match_path(self, pattern, path, match_all_dirs = None):
         if match_all_dirs is None:
             match_all_dirs = self.match_all_dirs
@@ -118,12 +120,6 @@ class coupling_weight_generator:
         self.basis.append({'cv':cv, 'c2v':c2v, 'c3':c3})
         self.get_transmat()
 
-    # def unfold_coupling(self, cv = 1.0, c2v = 1.0, c3 = 1.0):
-    #     return []
-    # def parse_coupling_str(self, strs):
-    #     for str in strs:
-    #         return []
-
 # Plot Rules
 
 class plot_rule:
@@ -145,10 +141,8 @@ class histogram_1d_collection:
         self.multijet = None
         self.background = ROOT.THStack()
 
-        self.legend = ROOT.TLegend(0.0, 0.6, 1.0, 1.0)
-        self.legend.SetTextSize(0.06)
-        self.legend.SetTextFont(42)
-        self.legend.SetBorderSize(0)
+        self.legends = []
+        self.lines = 0
 
         self.x_max = float('-inf')
         self.x_min = float('inf')
@@ -164,7 +158,9 @@ class histogram_1d_collection:
             return
 
         n_bins = hist.GetNbinsX()
-        total = hist.Integral(0, n_bins)
+        error = ROOT.Double()
+        total = hist.IntegralAndError(1, n_bins, error)
+
         if total == 0.0:
             return
         if self.normalize and 't#bar{t}' not in tag and 'Multijet' not in tag:
@@ -195,10 +191,18 @@ class histogram_1d_collection:
         else:
             self.signals[tag] = hist
 
-        self.legend.AddEntry(hist, tag + ('' if scale == 1 or self.normalize else ' (#times' + str(scale) + ')'), option)
+        label, lines = self.set_count(tag + ('' if scale == 1 or self.normalize else ' (#times' + str(scale) + ')'), total, error)
+        self.lines += lines
+        self.legends.append((hist, label, option))
 
     def set_font(self, text, num = 42):
         return '#font[' + str(num) + ']{' + text + '}'
+    
+    def set_count(self, label, count = 0, error = 0):
+        if event_count and count != 0 and error != 0 and not self.smooth:
+            return '#splitline{' + label + '}{' + '{:.2f}'.format(count) + ' #pm ' + '{:.2f}'.format(error) + '}', 2
+        else:
+            return label, 1
 
     def plot(self):
         background_scale = 1.0
@@ -223,7 +227,17 @@ class histogram_1d_collection:
         if self.data is not None:
             self.data.SetMarkerColor(ROOT.kBlack)
             self.data.SetMarkerSize(1)
-            self.data.SetMarkerStyle(8)            
+            self.data.SetMarkerStyle(8)   
+
+        allow_ratio = (self.multijet is not None) and (self.ttbar is not None) and (self.data is not None) # TEMP     
+
+        legend_height = (0.04 if allow_ratio else 0.05) * self.lines * (1.33 if self.smooth else 1.0)
+        self.legend = ROOT.TLegend(0.0, max(0.0, 0.95 - legend_height), 1.0, 0.95)
+        self.legend.SetTextSize(0.06)
+        self.legend.SetTextFont(42)
+        self.legend.SetBorderSize(0)
+        for legend in self.legends:
+            self.legend.AddEntry(legend[0], legend[1], legend[2])
 
         self.y_max = max(self.background.GetMaximum(), self.y_max)
         self.y_min = min(self.background.GetMinimum(), self.y_min)
@@ -234,6 +248,7 @@ class histogram_1d_collection:
         canvas_gen.XLabel.Text = self.set_font(self.x_label)
         canvas_gen.YLabel.Text = self.set_font(self.y_label)
         canvas_gen.AllowLegend = True
+        canvas_gen.AllowRatio  = allow_ratio
         canvas = canvas_gen.GetCanvas(self.title)
         canvas_gen.MainPad.cd()
         self.background.Draw('SAME HIST')
@@ -247,12 +262,43 @@ class histogram_1d_collection:
                 temp[signal] = self.signals[signal].Clone() # TEMP
                 temp[signal].SetMarkerSize(1) # TEMP
                 temp[signal].SetMarkerStyle(8) # TEMP
-                temp[signal].Draw('SAME E1') # TEMP
+                temp[signal].Draw('SAME X0 E1') # TEMP
             else:
                 self.signals[signal].Draw('SAME HIST PLC')
         canvas_gen.Legend.cd()
         self.legend.Draw()
-        canvas.Print(self.path + self.tag + '.pdf')
+        if allow_ratio: # TEMP
+            ratio_range = 0.1
+            ratio = self.data.Clone()
+            bkgd = self.ttbar.Clone()
+            bkgd.Add(self.multijet)
+            bkgd_error = bkgd.Clone()
+            n_bins = bkgd.GetNbinsX()
+            for i in range(1, n_bins):
+                bkgd.SetBinError(i, 0)
+            bkgd_error.Divide(bkgd)
+            ratio.Divide(bkgd)
+            ratio.SetMarkerSize(1)
+            ratio.SetMarkerStyle(8) 
+            canvas_gen.Ratio.cd()
+            frame = canvas_gen.Ratio.DrawFrame(self.x_min, 1.0 - ratio_range, self.x_max, 1.0 + ratio_range)
+            y_axis = frame.GetYaxis()
+            y_axis.SetLabelSize(0.14)
+            y_axis.SetNdivisions(2, 5, 0, False)
+            x_axis = frame.GetXaxis()
+            x_axis.SetLabelSize(0)
+            canvas_gen.Ratio.SetGridy()
+            label=ROOT.TLatex()
+            label.SetTextSize(0.16)
+            label.SetTextAngle(90)
+            label.SetTextAlign(21)
+            label.DrawLatex(canvas_gen.Var.GetX(-0.08), 1.0, self.set_font('Data/Bkgd.'))
+            bkgd_error.SetFillStyle(3125)
+            bkgd_error.SetFillColor(ROOT.kGray)
+            bkgd_error.SetMarkerSize(0)
+            bkgd_error.Draw('SAME E2')
+            ratio.Draw('SAME X0 P E1')
+        canvas.Print(self.path + '_' + self.tag + '.pdf')
        
 
 
@@ -310,13 +356,13 @@ class plots:
         self.modify_plot_hists_list_recursive('', self.initialize_hist)
 
         # TODO add intelligent color
-        # TODO add data, ttbar, multijet
         # TODO add html viewer
         # TODO add plot coupling from string
         # TODO add ratio
-        # TODO add label path mapping
         # TODO add rebinning            
-        # TODO add {regex1, regex2, ...} add or wildcard
+        # TODO rewrite add/remove logic (async)
+        # TODO add plot rules
+        # TODO RAM management
 
     def __enter__(self):
         return self
@@ -441,11 +487,11 @@ class plots:
         self.base_path.debug = debug
         self.match.debug = debug
 
-    def add_dir(self, path, normalize = False):
-        self.modify_plot_hists_list(path, self.add_hist, False, normalize = normalize)
+    def add_dir(self, patterns, normalize = False):
+        self.modify_plot_hists_list(patterns, self.add_hist, False, normalize = normalize)
             
-    def remove_dir(self, path):
-        self.modify_plot_hists_list(path, self.remove_hist, False)
+    def remove_dir(self, patterns):
+        self.modify_plot_hists_list(patterns, self.remove_hist, False)
 
     def add_hists(self, patterns, normalize = False):
         self.modify_plot_hists_list(patterns, self.add_hist, normalize = normalize)
@@ -470,7 +516,7 @@ class plots:
                     path = self.path[year][signal].mkdir(self.all_hists[hist][:-1])
                     path += self.all_hists[hist][-1]
                     signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
-                    ploter = histogram_1d_collection(path, title=hist, normalize = self.plot_hists[hist])
+                    ploter = histogram_1d_collection(path, title=hist, normalize = self.plot_hists[hist],y_label='Events')
                     if not no_background:
                         ploter.add_hist(self.load_data_hists(year, hist, rebin), 'Data ' + self.lumi[year] + ' ' + year)
                         ploter.add_hist(self.load_multijet_hists(year, hist, rebin), 'Multijet Model')
@@ -478,7 +524,7 @@ class plots:
                     if signal_mc is not None:
                         for coupling in self.plot_couplings:
                             weights = self.couplings.generate_weight(**coupling)
-                            ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), 2000)
+                            ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), 100)
                     ploter.plot()
 
     def compare(self, hists, rebin = 1, normalize = False):
@@ -520,7 +566,7 @@ class plots:
             output_file.cd()
             ttbar.Write()
             x_axis = ttbar.GetXaxis()
-            data = ROOT.TH1F('data_obs','data_obs'+year+'; '+x_axis.GetTitle()+'; Entries', ttbar.GetNbinsX(), x_axis.GetXmin(), x_axis.GetXmax() )
+            data = ROOT.TH1F('data_obs','data_obs'+year+'; '+x_axis.GetTitle()+'; Events', ttbar.GetNbinsX(), x_axis.GetXmin(), x_axis.GetXmax() )
             output_file.cd()
             data.Write()
             output_file.Close()        
@@ -623,6 +669,7 @@ class plots:
     def GetAccxEff(self, h2d, cuts): #Temp
         relative = []
         absolute = []
+        count = []
         denominatorZero = None
         for d in range(len(cuts)):
             denominator = cuts[d][0]
@@ -630,21 +677,23 @@ class plots:
             b=h2d.GetYaxis().FindBin(denominator)
             hDenominator=h2d.ProjectionX(denominator, b, b)
             hSignal = hDenominator.Clone()
+            hRatioAbs = hDenominator.Clone()
             if d == 0:
                 denominatorZero = hSignal.Clone()
-            hSignal.Divide(denominatorZero)
-            absolute.append((den_name, hSignal))
+            hRatioAbs.Divide(denominatorZero)
+            count.append((den_name, hSignal))
+            absolute.append((den_name, hRatioAbs))
             if d+1< len(cuts):
                 n = d+1
                 numerator = cuts[n][0]
                 num_name = cuts[n][1]
                 b=h2d.GetYaxis().FindBin(numerator)
                 hNumerator=h2d.ProjectionX(numerator, b, b)
-                hRatio=ROOT.TH1D(hNumerator)
-                hRatio.SetName(numerator+"_over_"+denominator)
-                hRatio.Divide(hDenominator)
-                relative.append((num_name+" / "+den_name,hRatio))
-        return relative, absolute
+                hRatioRel=ROOT.TH1D(hNumerator)
+                hRatioRel.SetName(numerator+"_over_"+denominator)
+                hRatioRel.Divide(hDenominator)
+                relative.append((num_name+" / "+den_name,hRatioRel))
+        return relative, absolute, count
 
     def AccxEff(self, cuts):#Temp
         for year in self.years:
@@ -656,15 +705,19 @@ class plots:
                     hist_path = output_path+title
                     ploter_acc_eff_rela = histogram_1d_collection(hist_path, title='Acc#times Eff ' + title, tag='AccxEff_relative',x_label='Truth m_{4b}', y_label='Relative Acceptance #times Efficiency', y_range=[0,1], smooth= True)
                     ploter_acc_eff = histogram_1d_collection(hist_path, title='Acc#times Eff ' + title, tag='AccxEff',x_label='Truth m_{4b}', y_label='Acceptance #times Efficiency', smooth=True)
+                    ploter_acc_eff_count = histogram_1d_collection(hist_path, title='Acc#times Eff ' + title, tag='Count',x_label='Truth m_{4b}', y_label='Events')
                     weights= self.couplings.generate_weight(**coupling)
                     h2d = self.sum_hists(signal_mc, weights)
-                    relative, absolute = self.GetAccxEff(h2d, cuts)
+                    relative, absolute, count = self.GetAccxEff(h2d, cuts)
                     for i in range(1,len(absolute)):
                         ploter_acc_eff.add_hist(absolute[i][1],absolute[i][0])
                     for i in range(len(relative)):
                         ploter_acc_eff_rela.add_hist(relative[i][1],relative[i][0])
+                    for i in range(len(count)):
+                        ploter_acc_eff_count.add_hist(count[i][1],count[i][0])
                     ploter_acc_eff.plot()
                     ploter_acc_eff_rela.plot()
+                    ploter_acc_eff_count.plot()
                     if self.debug: print('AccEff'.ljust(self.cmd_length) + title) 
 
             
@@ -672,19 +725,13 @@ class plots:
 if __name__ == '__main__':
     with plots() as producer:
         producer.debug_mode(True)
-        # producer.add_dir(['pass*/fourTag/mainview/HH*/n*','pass*/fourTag/mainview/SB/n*','pass*/fourTag/mainview/HH*/can*/pt*','pass*/fourTag/mainview/SB/can*/pt*'
-        # ])
-        # producer.add_dir(['passmdrs/fourTag/mainView/HHSR/tru*/pt*', 'passmdrs/fourTag/mainview/HHSR/nTruVJets', 'passmdrs/fourTag/mainview/HHSR/nCanHTruVjets', 'passmdrs/fourTag/mainview/HHSR/nTruVDijets'
-        # ],normalize=True)
-        # producer.add_dir(['pass*/fourTag/mainview/CR/n*','pass*/fourTag/mainview/CR/can*/pt*'
-        # ])
-        producer.add_dir(['pass*/fourTag/mainview/HH*/SvB_MA*_ps','pass*/fourTag/mainview/HH*/SvB_*BDT*',
-        'pass*/fourTag/mainview/HH*/bdt*',
-        ], normalize = True)
-        # producer.add_dir(['pass*/fourTag/mainview/HHSR/v4j/m*'
-        # ], normalize = True)
-        # producer.add_dir(['pass*/fourTag/mainview/HHSR/truVDijets/*', 'pass*/fourTag/mainview/HHSR/canVDijets/*', 'passNjOth/fourTag/mainview/HHSR/allDijets/*'
-        # ], normalize = True)
+        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR|SB]/n*','pass*/fourTag/mainview/[HHSR|CR|SB]/can*/pt*'])
+        # producer.add_dir(['pass*/fourTag/mainview/[CR|HHSR|SB]/nSel*'])
+        producer.add_dir(['passMV/fourTag/mainview/SB|CR|HHSR/SvB_MA*_ps'],normalize=True)
+        # producer.add_dir(['pass*/fourTag/mainview/HHSR/v4j/m*'], normalize = True)
+        # producer.add_dir(['pass*/fourTag/mainview/HHSR|CR|SB/[truV|canV|all]Dijets/*'], normalize = True)
+        # producer.add_dir(['pass*/fourTag/mainview/HHSR|CR|SB|SR/truvdijets/*'])
+
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
@@ -699,7 +746,7 @@ if __name__ == '__main__':
         # producer.add_couplings(cv=1.0,c2v=2.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=0.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=2.0)
-        producer.add_couplings(cv=1.0,c2v=1.0, c3=0.0)
+        # producer.add_couplings(cv=1.0,c2v=1.0, c3=0.0)
         # producer.add_couplings(cv=1.5,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=0.5,c2v=1.0, c3=1.0)
 
@@ -708,7 +755,7 @@ if __name__ == '__main__':
 
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('MDRs','#Delta R_{jj}'), ('NjOth','N_{j}#geq 6'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
         # producer.AccxEff(cuts)
-        producer.plot_all(2)
+        producer.plot_all(4)
         # producer.save('VhadHH_combine_bdtscore_95_all_BDT', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_all_BDT_95', 2)
         # producer.save('VhadHH_combine_bdtscore_95_all', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_all_95', 2)
         # producer.save('VhadHH_combine_bdtScore_95_SM', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_SM_95', 2)
@@ -737,3 +784,8 @@ if __name__ == '__main__':
 # dataset =/*HHTo4B_CV_*_C2V_*_C3_*_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2*v15*/NANOAODSIM 
 # dataset=/*HHTo4B_CV_*_*_C2V_*_0_C3_*_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2*/NANOAODSIM
 # /afs/cern.ch/user/y/yilai/public/for_VHH/resolved_catBDT/BDT_c3_20vs0*
+
+# 
+# root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/*/picoAOD_wTrigWeights.root
+# root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016B/picoAOD.root
+# root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//TTTo2L2Nu2016_postVFP/picoAOD_wTrigWeights.root

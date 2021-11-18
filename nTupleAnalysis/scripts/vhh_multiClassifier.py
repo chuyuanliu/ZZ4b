@@ -46,7 +46,7 @@ parser.add_argument('--ttbarPS',          default=None, help="")
 parser.add_argument('-s', '--signal',     default='', type=str, help='Input dataset file in hdf5 format')
 parser.add_argument('-c', '--classifier', default='', type=str, help='Which classifier to train: FvT, ZHHvB, WHHvB, M1vM2.')
 parser.add_argument(      '--architecture', default='HCR', type=str, help='classifier architecture to use')
-parser.add_argument('-e', '--epochs', default=10, type=int, help='N of training epochs.')
+parser.add_argument('-e', '--epochs', default=20, type=int, help='N of training epochs.')
 parser.add_argument('-o', '--outputName', default='', type=str, help='Prefix to output files.')
 #parser.add_argument('-l', '--lrInit', default=4e-3, type=float, help='Initial learning rate.')
 parser.add_argument('-p', '--pDropout', default=0.4, type=float, help='p(drop) for dropout.')
@@ -83,7 +83,7 @@ if 'SvB' in args.classifier:
         args.updatePostFix = '_' + '_'.join(strategies)
 
 BDT_CUT = 0.0
-BDT_NAME = 'BDT_c2v_c3_corrected'
+BDT_NAME = 'BDT_c2v_c3'
 
 
 
@@ -199,9 +199,9 @@ def getFrameSvB(fileName):
 
     FvTName = args.FvTName
     
-    if 'regionC2V' in strategies:
+    if 'regionC2V' in strategies and args.train:
         thisFrame = thisFrame.loc[thisFrame[BDT_NAME]<BDT_CUT]
-    elif 'regionC3' in strategies:
+    elif 'regionC3' in strategies and args.train:
         thisFrame = thisFrame.loc[thisFrame[BDT_NAME]>=BDT_CUT]
 
     thisFrame = thisFrame.loc[ (thisFrame['nSelJetsV']>=6) & (thisFrame[trigger]==True) & (thisFrame['fourTag']==fourTag) & ((thisFrame['HHSB']==True)|(thisFrame['HHCR']==True)|(thisFrame['HHSR']==True)) & (thisFrame.FvT>0) & (thisFrame[BDT_NAME]>=-1) & thisFrame.passMDRs  ]#& (thisFrame.passXWt) ]
@@ -380,7 +380,7 @@ fixedSchedule = True
 bs_scale=2
 lr_scale=0.25
 bs_milestones=[1,3,6,10]
-#lr_milestones= bs_milestones + [15,16,17,18,19,20,21,22,23,24]
+# lr_milestones= bs_milestones + [15,16,17,18,19,20,21,22,23,24]
 lr_milestones=                 [15,16,17,18,19,20,21,22,23,24]
 
 if 'small_batches' in args.architecture:
