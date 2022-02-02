@@ -20,7 +20,7 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['17+18']#, 'RunII']
+years = ['2018']
 signals = ['VHH']
 no_background = False #temp
 event_count = True
@@ -29,6 +29,17 @@ if not os.path.isdir(out_path):
     os.mkdir(out_path)
 
 # General
+
+def integral(hist):
+    n_bins = hist.GetNbinsX()
+    total = hist.Integral(0, n_bins + 1)
+    return total
+
+def integral_error(hist):
+    n_bins = hist.GetNbinsX()
+    error = ROOT.Double()
+    total = hist.IntegralAndError(0, n_bins + 1, error)
+    return total, float(error)
 
 class wildcard_match:
     def __init__(self, match_all_dirs = True, ignore_case = False, debug =False, cmd_length = 20):
@@ -157,9 +168,7 @@ class histogram_1d_collection:
         if not isinstance(hist, ROOT.TH1F) and not isinstance(hist, ROOT.TH1D):
             return
 
-        n_bins = hist.GetNbinsX()
-        error = ROOT.Double()
-        total = hist.IntegralAndError(1, n_bins, error)
+        total, error = integral_error(hist)
 
         if total == 0.0:
             return
@@ -210,10 +219,10 @@ class histogram_1d_collection:
             total = 0.0
             if self.ttbar is not None:
                 n_bins = self.ttbar.GetNbinsX()
-                total += self.ttbar.Integral(0, n_bins)
+                total += integral(self.ttbar)
             if self.multijet is not None:
                 n_bins = self.multijet.GetNbinsX()
-                total += self.multijet.Integral(0, n_bins)
+                total += integral(self.multijet)
             if total != 0.0:
                 background_scale = 1.0 / total
         if self.ttbar is not None:
@@ -298,17 +307,22 @@ class histogram_1d_collection:
             bkgd_error.SetMarkerSize(0)
             bkgd_error.Draw('SAME E2')
             ratio.Draw('SAME X0 P E1')
-        canvas.Print(self.path + '_' + self.tag + '.pdf')
+        canvas.Print(self.path + self.tag + '.pdf')
        
-
+class histogram_2d_collection:
+    def __init__(self):
+        pass
 
 class plots:
     def __init__(self, match_all_dirs = True, ignore_case = True, debug = False, cmd_length =20):
-        self.lumi = {'2016':  '35.9/fb',
-                    '2017':  '36.7/fb',
-                    '2018':  '60.0/fb',
-                    '17+18': '96.7/fb',
-                    'RunII': '132.6/fb'}
+        self.lumi = {'2016':  '36.3e3',#35.8791
+                    '2016_preVFP': '19.5e3',
+                    '2016_postVFP': '16.5e3',
+                    '2017':  '36.7e3',#36.7338
+                    '2018':  '59.8e3',#59.9656
+                    '17+18': '96.7e3',
+                    'RunII':'132.8e3',
+                    }
 
         self.debug = debug
         self.cmd_length = cmd_length
@@ -330,7 +344,7 @@ class plots:
         self.ttbar_files = {}
         self.multijet_files = {}
 
-        self.couplings = coupling_weight_generator([{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0}], debug = debug, cmd_length = cmd_length)
+        self.couplings = coupling_weight_generator([{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0},{'c3':20.0}], debug = debug, cmd_length = cmd_length)
         self.match = wildcard_match(match_all_dirs, ignore_case, debug = debug, cmd_length = cmd_length)
         self.base_path = path_extensions(self.output, clean = True, debug = debug, cmd_length = cmd_length)
 
@@ -600,8 +614,8 @@ class plots:
                     # derived variables
                     hists_S_B = {}
                     hists_S_sqrtB = {}
-                    multijet_4b_CR = data_4b_CR.Integral(0, n_bins) - tt_4b_CR.Integral(0, n_bins)
-                    multijet_3b_SR = multijet_3b_SR_hist.Integral(0, n_bins)
+                    multijet_4b_CR = integral(data_4b_CR) - integral(tt_4b_CR)
+                    multijet_3b_SR = integral(multijet_3b_SR_hist)
 
                     # optimize range
                     # step = [0, steps - 1]
@@ -725,22 +739,14 @@ class plots:
 if __name__ == '__main__':
     with plots() as producer:
         producer.debug_mode(True)
-        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR|SB]/n*','pass*/fourTag/mainview/[HHSR|CR|SB]/can*/pt*'])
-        # producer.add_dir(['pass*/fourTag/mainview/[CR|HHSR|SB]/nSel*'])
-        producer.add_dir(['passMV/fourTag/mainview/SB|CR|HHSR/SvB_MA*_ps'],normalize=True)
-        # producer.add_dir(['pass*/fourTag/mainview/HHSR/v4j/m*'], normalize = True)
-        # producer.add_dir(['pass*/fourTag/mainview/HHSR|CR|SB/[truV|canV|all]Dijets/*'], normalize = True)
-        # producer.add_dir(['pass*/fourTag/mainview/HHSR|CR|SB|SR/truvdijets/*'])
+        # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
+        # producer.add_dir(['passMV/fourTag/mainview/HHSR/*[BDT|SvB_MA*_ps]*'], normalize=True)
+        producer.add_dir(['pass*/fourTag/mainview/HHSR/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
 
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
         
-        # producer.add_couplings(cv=1.0,c2v=1.0, c3=[-10,10])
-        # producer.add_couplings(cv=1.0,c2v=1.0, c3=[-5,5])
-        # producer.add_couplings(cv=1.0,c2v=1.0, c3=[-4,4])
-        # producer.add_couplings(cv=1.0,c2v=1.0, c3=[-3,3])
-
         # MC
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=2.0, c3=1.0)
@@ -755,37 +761,18 @@ if __name__ == '__main__':
 
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('MDRs','#Delta R_{jj}'), ('NjOth','N_{j}#geq 6'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
         # producer.AccxEff(cuts)
-        producer.plot_all(4)
-        # producer.save('VhadHH_combine_bdtscore_95_all_BDT', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_all_BDT_95', 2)
-        # producer.save('VhadHH_combine_bdtscore_95_all', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_all_95', 2)
-        # producer.save('VhadHH_combine_bdtScore_95_SM', 'passMV/fourTag/mainView/HHSR/bdtScore_corrected_SM_95', 2)
-        # producer.save('VhadHH_combine_both_all_BDT', 'passMV/fourTag/mainView/HHSR/SvB_all_BDT_BDT_bin', 2)
-        # producer.save('VhadHH_combine_both_all', 'passMV/fourTag/mainView/HHSR/SvB_all_BDT_bin', 2)
-        # producer.save('VhadHH_combine_both_SM', 'passMV/fourTag/mainView/HHSR/SvB_SM_BDT_bin', 2)
+        producer.plot_all(1)
+        # producer.save('VhadHH_combine_2018', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps', 4)
 
-#LO Madgraph xsecs
-#WHH_CV_0_5_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0002864 +- 9.158e-07 pb
-#WHH_CV_1_5_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0008897 +- 3.418e-06 pb 
-#WHH_CV_1_0_C2V_2_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.001114 +- 3.251e-06 pb
-#WHH_CV_1_0_C2V_0_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0001492 +- 6.739e-07 pb
-#WHH_CV_1_0_C2V_1_0_C3_2_0_13TeV-madgraph.log:     Cross-section :   0.0006848 +- 1.987e-06 pb
-#WHH_CV_1_0_C2V_1_0_C3_0_0_13TeV-madgraph.log:     Cross-section :   0.0002366 +- 1.025e-06 pb
 
-#WHH_CV_1_0_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0004157 +- 1.319e-06 pb
 
-#ZHH_CV_1_0_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0002632 +- 1.022e-06 pb
-#ZHH_CV_1_0_C2V_2_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0006739 +- 2.855e-06 pb
-#ZHH_CV_1_0_C2V_1_0_C3_2_0_13TeV-madgraph.log:     Cross-section :   0.0004233 +- 1.411e-06 pb
-#ZHH_CV_1_0_C2V_0_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   9.027e-05 +- 3.358e-07 pb
-#ZHH_CV_0_5_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.0001652 +- 5.321e-07 pb
-#ZHH_CV_1_5_C2V_1_0_C3_1_0_13TeV-madgraph.log:     Cross-section :   0.000573 +- 2.833e-06 pb
-#ZHH_CV_1_0_C2V_1_0_C3_0_0_13TeV-madgraph.log:     Cross-section :   0.0001539 +- 8.34e-07 pb
-
+# UL dataset
 # dataset =/*HHTo4B_CV_*_C2V_*_C3_*_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2*v15*/NANOAODSIM 
 # dataset=/*HHTo4B_CV_*_*_C2V_*_0_C3_*_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2*/NANOAODSIM
-# /afs/cern.ch/user/y/yilai/public/for_VHH/resolved_catBDT/BDT_c3_20vs0*
 
-# 
+# Trigger
 # root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/*/picoAOD_wTrigWeights.root
-# root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//data2016B/picoAOD.root
-# root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig//TTTo2L2Nu2016_postVFP/picoAOD_wTrigWeights.root
+# root://cmseos.fnal.gov//store/user/jda102/condor/ZH4b/ULTrig/data*/picoAOD.root
+
+# NNLO
+# /afs/cern.ch/user/c/chayanit/work/public/forVHH/zhh_nnlovslo.root

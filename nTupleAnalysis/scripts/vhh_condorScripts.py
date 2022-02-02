@@ -29,7 +29,7 @@ parser.add_option('--hdf5', action="store_true", dest = 'hdf5', default = False,
 parser.add_option('--cp', action="store_true", dest = 'cp', default = False, help = 'copy files')
 parser.add_option('--init', action="store_true", dest = 'init', default = False, help = 'initialize dirs and files')
 parser.add_option('--merge', action="store_true", dest = 'merge', default = False, help = 'merge weight into root files')
-parser.add_option('--coupling', action="store_true", dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'coupling for signal')
+parser.add_option('--coupling', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'coupling for signal')
 
 o, a = parser.parse_args()
 
@@ -66,7 +66,10 @@ if o.ttbar:
 
 years = o.years.split(',')
 if '2016' in years:
-    years += ['2016_preVFP', '2016_postVFP']
+    if '2016_preVFP' not in years:
+        years += ['2016_preVFP']
+    if '2016_postVFP' not in years:
+        years += ['2016_postVFP']
 
 def eos(dir, user = USER):
     return '/store/user/' + user + '/condor/' + dir
@@ -123,16 +126,15 @@ def move_eos():
     oldAOD = '/picoAOD' + o.oldTag + '.root'
     newAOD = '/picoAOD' + o.newTag + '.root'
     for year in years:
-        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+        if year not in ['2016']:
             for cps in signals:
                 for cp in cps[0:2]:
                     eosmv('VHH/'+cp+year+oldAOD,'VHH/'+cp+year+newAOD)
+            for tt in tts:
+                eosmv('VHH/'+tt+year+'_4b'+oldAOD,'VHH/'+tt+year+'_4b'+newAOD)
         if year not in ['2016_preVFP', '2016_postVFP']:
             for data in datas:
                 eosmv('VHH/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
-        if year not in ['2016']:
-            for tt in tts:
-                eosmv('VHH/'+tt+year+'_4b'+oldAOD,'VHH/'+tt+year+'_4b'+newAOD)
 
 def cp():
     if o.lpc: 
@@ -150,86 +152,79 @@ def cp():
 
     base = 'VHH/'
     for year in years:
-        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+        if year not in ['2016']:
             for cps in signals:
                 for cp in cps[0:2]:
                     file = base + cp+year+cp_files(True)
                     print(file)
                     xrdcp(full_path(file, from_area), full_path(file, to_area))
+            for tt in tts:
+                file = base + tt + year + '_4b' + cp_files()
+                print(file)
+                xrdcp(full_path(file, from_area), full_path(file, to_area))
         if year not in ['2016_preVFP', '2016_postVFP']:
             for data in datas:
                 file = base + 'data' + year + data + cp_files()
                 print(file)
                 xrdcp(full_path(file, from_area), full_path(file, to_area))
-        if year not in ['2016']:
-            for tt in tts:
-                file = base + tt + year + '_4b' + cp_files()
-                print(file)
-                xrdcp(full_path(file, from_area), full_path(file, to_area))
 
 def hadd_lpc():
     for year in years:
-        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
+        if year not in ['2016']:
+            if o.ttbar:
+                lpcmkdir('VHH/TT'+year +'_4b')
+                hadd(['VHH/'+tt+year +'_4b'+histFile() for tt in tts], 'VHH/TT'+year +'_4b'+histFile())
             for cps in signals:
                 lpcmkdir('VHH/'+cps[2]+year)
                 hadd(['VHH/'+cp+year+histFile(True) for cp in cps[0:2]], 'VHH/'+cps[2]+year+histFile(True))
-        if year not in ['2016']:
-            lpcmkdir('VHH/TT'+year +'_4b')
-            hadd(['VHH/'+tt+year +'_4b'+histFile() for tt in tts], 'VHH/TT'+year +'_4b'+histFile())
-    if '2017' in years and '2018' in years:
-        haddYears = ['2017','2018']
-        for cps in signals:
-            for cp in cps[0:3]:
-                lpcmkdir('VHH/'+cp+'17+18')
-                hadd(['VHH/'+cp+year+histFile(True) for year in haddYears], 'VHH/'+cp+'17+18'+histFile(True))
-        if o.ttbar:
-            lpcmkdir('VHH/TT17+18_4b')
-            hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TT17+18_4b'+histFile())
-        for data in datas:
-            lpcmkdir('VHH/data17+18'+data)
-            hadd(['VHH/data'+year+data+histFile() for year in haddYears], 'VHH/data17+18'+data+histFile())
-    if '2016_preVFP' in years and '2016_postVFP' in years:
-        haddYears = ['2016_preVFP', '2016_postVFP']
-        if o.ttbar:
-            lpcmkdir('VHH/TT2016_4b')
-            hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TT2016_4b'+histFile())
     if '2016' in years and '2017' in years and '2018' in years:
         haddYears = ['2016','2017','2018']
-        if o.ttbar:
-            lpcmkdir('VHH/TTRunII_4b')
-            hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TTRunII_4b'+histFile())
         for data in datas:
             lpcmkdir('VHH/dataRunII'+data)
             hadd(['VHH/data'+year+data+histFile() for year in haddYears], 'VHH/dataRunII'+data+histFile())
-
+        haddYears = ['2016_preVFP','2016_postVFP','2017','2018']
+        if o.ttbar:
+            lpcmkdir('VHH/TTRunII_4b')
+            hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TTRunII_4b'+histFile())
+        for cps in signals:
+            lpcmkdir('VHH/'+cps[2]+'RunII')
+            hadd(['VHH/'+cps[2]+year+histFile(True) for year in haddYears], 'VHH/'+cps[2]+'RunII'+histFile(True))
 def initialize():
-    load_skims()
+    # load_skims()
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests')
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests/UL')
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists')
     initYears = copy(years)
     for year in initYears:
-        lpcmkdir('VHH/TT'+year+'_4b')
-        eosmkdir('VHH/TT'+year+'_4b')
         if year not in ['2016']:
+            if len(tts) > 0:
+                lpcmkdir('VHH/TT'+year+'_4b')
+                eosmkdir('VHH/TT'+year+'_4b')
             for tt in tts:
                 lpcmkdir('VHH/'+tt+year+'_4b')
                 eosmkdir('VHH/'+tt+year+'_4b')
                 for tag in ['_4b_wJCM', '_4b_wJCM_SvB_FvT']:
                     file = '/picoAOD'+tag+'.root'
-                    xrdcp(full_path('ZH4b/UL/'+tt+year+'_4b'+file, eos, 'jda102'),full_path('VHH/'+tt+year+'_4b'+file, eos, 'chuyuanl'))
-                    filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/'+tt+year+tag.replace('_wJCM','')+'.txt', lpc, 'chuyuanl'),'w')
-                    filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/'+tt+year+'_4b'+('/picoAOD.root' if o.merge else file), eos, 'chuyuanl'))
+                    xrdcp(full_path('ZH4b/UL/'+tt+year+'_4b'+file, eos, 'jda102'),full_path('VHH/'+tt+year+'_4b'+file, eos, USER))
+                    filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/'+tt+year+tag.replace('_wJCM','')+'.txt', lpc, USER),'w')
+                    filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/'+tt+year+'_4b'+('/picoAOD.root' if o.merge else file), eos, USER))
                     filelist.close()
+            for signal in signals:
+                for process in signal[0:2]:
+                    lpcmkdir('VHH/'+process+year)
+                    eosmkdir('VHH/'+process+year)
+                    xrdcp(full_path('ZH4b/ULTrig/'+process+year+'/picoAOD_wTrigWeights.root', eos, 'jda102'),full_path('VHH/'+process+year+'/picoAOD.root', eos, USER))
+                lpcmkdir('VHH/'+signal[2]+year)
+                eosmkdir('VHH/'+signal[2]+year) 
         if year not in ['2016_preVFP', '2016_postVFP']:
             for n_tag in datas:
                 lpcmkdir('VHH/data'+year+n_tag)
                 eosmkdir('VHH/data'+year+n_tag)
                 for tag in ['_wJCM', '_wJCM_SvB_FvT']:
                     file = '/picoAOD'+n_tag+tag+'.root'
-                    xrdcp(full_path('ZH4b/UL/data'+year+n_tag+file, eos, 'jda102'),full_path('VHH/data'+year+n_tag+file, eos, 'chuyuanl'))
-                    filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/data'+year+n_tag+tag.replace('_wJCM','')+'.txt', lpc, 'chuyuanl'),'w')
-                    filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+n_tag+('/picoAOD.root' if o.merge else file), eos, 'chuyuanl'))
+                    xrdcp(full_path('ZH4b/UL/data'+year+n_tag+file, eos, 'jda102'),full_path('VHH/data'+year+n_tag+file, eos, USER))
+                    filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists/data'+year+n_tag+tag.replace('_wJCM','')+'.txt', lpc, USER),'w')
+                    filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+n_tag+('/picoAOD.root' if o.merge else file), eos, USER))
                     filelist.close()        
     
 if o.move and o.eos:
@@ -268,3 +263,16 @@ if o.init:
 
 # where:
 #   *TT* is [TTTo2L2Nu2016_postVFP, TTTo2L2Nu2016_preVFP, TTTo2L2Nu2017, TTTo2L2Nu2018,] x (TTToHadronic and TTToSemiLeptonic)
+
+# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/99cuda/
+# unset PYTHONPATH
+# source /cvmfs/sft.cern.ch/lcg/views/LCG_99cuda/x86_64-centos7-gcc8-opt/setup.sh 
+
+# training
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_[0-1]_*_C2V_[0-2]_*_C3_[0-2]_*_201*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy signalAll --train
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_*_201*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy signalAll,regionC3 -u -m "SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset0_epoch20.pkl"
+
+# ZH/ZZ
+# xrdfs root://cmseos.fnal.gov/ ls /store/user/bryantp/condor/ZZ4b2018/ 
+# xrdfs root://cmseos.fnal.gov/ ls /store/user/bryantp/condor/ZH4b2018/ 
+# xrdfs root://cmseos.fnal.gov/ ls /store/user/bryantp/condor/ggZH4b2018/ 

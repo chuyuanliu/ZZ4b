@@ -81,6 +81,9 @@ parser.add_option(   '--condor',   action="store_true", default=False,          
 parser.add_option(   '--SvBScore',   dest='SvBScore', type='float', default='0.0',   help='SvB classifier score cut')
 parser.add_option(      '--bdtWeightFile',    dest="bdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/BDT_c3_20vs0_out.xml", help="BDT model weight files. /*method*/ will be replaced by BDT method")
 parser.add_option(      '--bdtMethods',    dest="bdtMethods", type="string", default="BDT", help="Name of BDT methods used in inference. BDT for VHH c2V BDT")
+parser.add_option(      '--doHigherOrderReweight',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
+parser.add_option(      '--ZPtNNLOWeight',    dest="ZPtNNLOWeight", default="ZZ4b/nTupleAnalysis/weights/ZHH_NNLO_vs_LO.root;h_ratio", help="path of NNLO MC ZHH weight")
+parser.add_option(      '--extraOutput',  dest="extraOutput", type ="string", default="", help="extra information stored in a separate root file")
 
 o, a = parser.parse_args()
 
@@ -135,6 +138,7 @@ xsDictionary = {#"ggZH4b":  0.1227*0.5824*0.1512, #0.0432 from GenXsecAnalyzer, 
                 'WHHTo4B_CV_1_0_C2V_1_0_C3_2_0':6.880e-04*0.5824*0.5824,  # 6.880e-04from GenXsecAnalyzer, does not include BR for H 
                 'WHHTo4B_CV_1_0_C2V_2_0_C3_1_0':1.115e-03*0.5824*0.5824,  # 1.115e-03from GenXsecAnalyzer, does not include BR for H 
                 'WHHTo4B_CV_1_5_C2V_1_0_C3_1_0':8.902e-04*0.5824*0.5824,  # 8.902e-04from GenXsecAnalyzer, does not include BR for H 
+                'WHHTo4B_CV_1_0_C2V_1_0_C3_20_0':2.158e-02*0.5824*0.5824, # 2.158e-02from GenXsecAnalyzer, does not include BR for H 
                 'ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0':1.663e-04*0.5824*0.5824,  # 1.663e-04from GenXsecAnalyzer, does not include BR for H 
                 'ZHHTo4B_CV_1_0_C2V_0_0_C3_1_0':9.037e-05*0.5824*0.5824,  # 9.037e-05from GenXsecAnalyzer, does not include BR for H 
                 'ZHHTo4B_CV_1_0_C2V_1_0_C3_0_0':1.544e-04*0.5824*0.5824,  # 1.544e-04from GenXsecAnalyzer, does not include BR for H 
@@ -142,8 +146,9 @@ xsDictionary = {#"ggZH4b":  0.1227*0.5824*0.1512, #0.0432 from GenXsecAnalyzer, 
                 'ZHHTo4B_CV_1_0_C2V_1_0_C3_2_0':4.255e-04*0.5824*0.5824,  # 4.255e-04from GenXsecAnalyzer, does not include BR for H 
                 'ZHHTo4B_CV_1_0_C2V_2_0_C3_1_0':6.770e-04*0.5824*0.5824,  # 6.770e-04from GenXsecAnalyzer, does not include BR for H 
                 'ZHHTo4B_CV_1_5_C2V_1_0_C3_1_0':5.738e-04*0.5824*0.5824,  # 5.738e-04from GenXsecAnalyzer, does not include BR for H 
+                'ZHHTo4B_CV_1_0_C2V_1_0_C3_20_0':1.229e-02*0.5824*0.5824, # 1.229e-02from GenXsecAnalyzer, does not include BR for H 
                 } 
-
+                
 ## figure out what sample is being run from the name of the input
 sample = ""
 for key in xsDictionary.keys():
@@ -162,8 +167,12 @@ for key in xsDictionary.keys():
 xs = 1
 if o.isMC: 
     xs = xsDictionary[sample] if sample in xsDictionary else 1.0
+    if o.doHigherOrderReweight:
+        if 'ZHH' in sample:
+            xs *= 1.35394 # NNLO/LO ZHH derived from SM coupling
+        elif 'WHH' in sample:
+            xs *= 1.22102 # NLO/LO  WHH derived from SM coupling
     print "Simulated sample:",sample,"| xs =",xs
-
 
 fileNames = []
 inputList=False
@@ -323,6 +332,7 @@ process.picoAOD = cms.PSet(
     fileName = cms.string(picoAOD),
     create   = cms.bool(create),
     fastSkim = cms.bool(o.fastSkim),
+    extraOutput = cms.string((pathOut + o.extraOutput + '.root') if o.extraOutput else '')
     )
 
 inputHFiles_3Tag = []
@@ -408,7 +418,8 @@ process.nTupleAnalysis = cms.PSet(
     inputWeightFiles4b = cms.vstring(weightFileNames4b),
     inputWeightFilesDvT = cms.vstring(weightFileNamesDvT),
     bdtWeightFile = cms.string(o.bdtWeightFile),
-    bdtMethods = cms.string(o.bdtMethods)
+    bdtMethods = cms.string(o.bdtMethods),
+    ZPtNNLOWeight = cms.string(o.ZPtNNLOWeight if (o.doHigherOrderReweight and 'ZHH' in sample) else '')
     )
 
 print("nTupleAnalysis_cfg.py done")

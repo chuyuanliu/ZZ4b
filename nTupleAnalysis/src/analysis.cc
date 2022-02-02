@@ -17,7 +17,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
 		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
-       float _SvBScore, std::string bdtWeightFile, std::string bdtMethods){
+       float _SvBScore, std::string bdtWeightFile, std::string bdtMethods, std::string ZPtNNLOWeight, std::string extraOutput){
 
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
@@ -87,7 +87,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods);  
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods, ZPtNNLOWeight);  
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
@@ -141,7 +141,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   }
 
   histFile = &fs.file();
-
+  extraRoot = new dump::dumpRoot(extraOutput);
 } 
 
 
@@ -515,7 +515,6 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("SvB_MA_q_1423", &event->SvB_MA_q_score[2]); //&SvB_MA_q_1423;
 
   picoAODEvents->Branch("BDT_c2v_c3", &event->BDT_c2v_c3);
-  picoAODEvents->Branch("BDT_c2v_c3_corrected", &event->BDT_c2v_c3_corrected);
 
   cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
   return;
@@ -958,6 +957,36 @@ int analysis::processEvent(){
   cutflow->Fill(event,"MV");
   if (passMV!=NULL && event->passHLT){
     passMV->Fill(event, event->views);
+  }
+
+  if(extraRoot->rootFile && event->passHLT && event->HHSR && ((isMC && event->fourTag)||(!isMC && event->threeTag)))
+  {
+    extraRoot->fill("weight", event->weight);
+    auto V_p = event->canVDijets[0]->p;
+    auto view = event->view_selected;
+    auto H1_p = view->lead->p;
+    auto H2_p = view->subl->p;
+    auto HH_p = H1_p + H2_p;
+    extraRoot->fill("VpT", V_p.Pt());
+    extraRoot->fill("H1m", H1_p.M());
+    extraRoot->fill("H1E", H1_p.E());
+    extraRoot->fill("H1pT", H1_p.Pt());
+    extraRoot->fill("H1eta", H1_p.Eta());
+    extraRoot->fill("H2m", H2_p.M());
+    extraRoot->fill("H2E", H2_p.E());
+    extraRoot->fill("H2pT", H2_p.Pt());
+    extraRoot->fill("H2eta", H2_p.Eta());
+    extraRoot->fill("HHm", HH_p.M());
+    extraRoot->fill("HHE", HH_p.E());
+    extraRoot->fill("HHpT", HH_p.Pt());
+    extraRoot->fill("HHeta", HH_p.Eta());
+    extraRoot->fill("HHdeta", std::abs(H1_p.Eta() - H2_p.Eta()));
+    extraRoot->fill("HHdphi", std::abs(H1_p.DeltaPhi(H2_p)));
+    extraRoot->fill("HHdR", H1_p.DeltaR(H2_p));
+    extraRoot->fill("H2H1rpT", H2_p.Pt()/H1_p.Pt());
+    extraRoot->fill("VH1phi", std::abs(V_p.DeltaPhi(H1_p)));
+    extraRoot->fill("VH2phi", std::abs(V_p.DeltaPhi(H2_p)));
+    extraRoot->fill();
   }
 
   // SvB classfier score cut

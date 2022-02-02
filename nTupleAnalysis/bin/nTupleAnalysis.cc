@@ -78,6 +78,8 @@ int main(int argc, char * argv[]){
   std::vector<std::string> inputWeightFilesDvT = parameters.getParameter<std::vector<std::string> >("inputWeightFilesDvT");
   std::string bdtWeightFile = parameters.getParameter<std::string>("bdtWeightFile");
   std::string bdtMethods = parameters.getParameter<std::string>("bdtMethods");
+  // NNLO ZHH MC reweight
+  std::string ZPtNNLOWeight = parameters.getParameter<std::string>("ZPtNNLOWeight");
 
   float SvBScore = parameters.getParameter<double>("SvBScore");
 
@@ -97,6 +99,7 @@ int main(int argc, char * argv[]){
   bool      createPicoAOD = picoAODParameters.getParameter<bool>("create");
   bool           fastSkim = picoAODParameters.getParameter<bool>("fastSkim");
   std::string picoAODFile = picoAODParameters.getParameter<std::string>("fileName");
+  std::string extraOutput = picoAODParameters.getParameter<std::string>("extraOutput");
   //fwlite::TFileService fst = fwlite::TFileService(picoAODFile);
 
   // hemiSphere Mixing
@@ -194,7 +197,7 @@ int main(int argc, char * argv[]){
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
 			looseSkim, FvTName, reweight4bName,reweightDvTName,
-      SvBScore, bdtWeightFile, bdtMethods);
+      SvBScore, bdtWeightFile, bdtMethods, ZPtNNLOWeight, extraOutput);
 
   a.event->setTagger(bTagger, bTag);
   a.makePSDataFromMC = makePSDataFromMC;
@@ -290,6 +293,10 @@ int main(int argc, char * argv[]){
   int maxEvents = inputHandler.maxEvents();
   a.eventLoop(maxEvents, firstEvent);
 
+  if(extraOutput != ""){
+    std::cout << "      Created extra root file: " << extraOutput << std::endl;
+    a.extraRoot->close();
+  }
   if(createPicoAOD){
     std::cout << "      Created picoAOD: " << picoAODFile << std::endl;
     a.storePicoAOD();

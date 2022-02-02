@@ -25,9 +25,6 @@ EOSOUTDIR = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/VHH/"
 CONDOROUTPUTBASE = "/store/user/"+USER+"/condor/VHH/"
 TARBALL   = "root://cmseos.fnal.gov//store/user/"+USER+"/condor/"+CMSSW+".tgz"
 
-# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/99cuda/
-# unset PYTHONPATH
-# source /cvmfs/sft.cern.ch/lcg/views/LCG_99cuda/x86_64-centos7-gcc8-opt/setup.sh 
 
 parser = optparse.OptionParser()
 parser.add_option('--makeFileList',action="store_true",                        default=False, help="Make file list with DAS queries")
@@ -53,7 +50,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passNjOth.passMV.HHRegions.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.allViews.passPreSel.passMDRs.passMV.HHRegions.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -63,13 +60,16 @@ parser.add_option(   '--inputHLib3Tag', default='$PWD/data18/hemiSphereLib_3TagE
 parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagEvents_*root',           help="Base path for storing output histograms and picoAOD")
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
+parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
 # for VHH study
 parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'set signal coupling')
 parser.add_option(   '--SvBScore ', dest = 'SvBScore', default = '0.8', help = 'set cut on SvB classifier score')
+parser.add_option(   '--higherOrder',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
 parser.add_option(   '--ttbarProcesses', dest = 'ttbarProcesses', default = 'TTToHadronic,TTToSemiLeptonic,TTTo2L2Nu', help = 'select ttbar processes')
 parser.add_option(   '--separate', dest = 'separate', action="store_true", default=False, help = 'run 4b, 3b separately and apply weights from other root files')
 parser.add_option(   '--separate3b4b', dest = 'separate3b4b', action="store_true", default=False, help = 'run 4b, 3b separately')
 parser.add_option(   '--debug', dest = 'debug', action="store_true", default=False, help = 'enable debug mode')
+parser.add_option(   '--extraOutput', dest = 'extraOutput', action="store_true", default=False, help = 'make extra root file')
 o, a = parser.parse_args()
 
 fromNANOAOD = (o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none") 
@@ -142,10 +142,6 @@ if o.fastSkim and fromNANOAOD:
 # xrdcp -f CMSSW_11_1_0_pre5.tgz root://cmseos.fnal.gov//store/user/bryantp/CMSSW_11_1_0_pre5.tgz
 
 
-# check classifier output
-# python ZZ4b/nTupleAnalysis/scripts/multiClassifier.py -c FvT -d "/uscms/home/bryantp/nobackup/ZZ4b/data201*/picoAOD.h5" -m "ZZ4b/nTupleAnalysis/pytorchModels/FvT_HCR+attention_14_np2840_lr0.01_epochs20_offset2_epoch20.pkl" --storeEvent "df.passMDRs & ~df.fourTag & (df.FvT==-20)" --storeEventFile data_high_negative_FvT_offset2 
-# python ZZ4b/nTupleAnalysis/scripts/makeNetworkPlots.py data_high_negative_FvT_offset0.npy 
-
 #
 # Config
 #
@@ -153,14 +149,14 @@ nWorkers   = 3
 script     = "ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py"
 years      = o.year.split(",")
 ttbarProcesses = o.ttbarProcesses.split(',')
-lumiDict   = {"2016":  "35.9e3",#35.8791
+lumiDict   = {'2016':  '36.3e3',#35.8791
               '2016_preVFP': '19.5e3',
               '2016_postVFP': '16.5e3',
-              "2017":  "36.7e3",#36.7338
-              "2018":  "60.0e3",#59.9656
-              "17+18": "96.7e3",
-              "RunII":"132.6e3",
-            }
+              '2017':  '36.7e3',#36.7338
+              '2018':  '59.8e3',#59.9656
+              '17+18': '96.7e3',
+              'RunII':'132.8e3',
+              }
 bTagDict   = {"2016": "0.6",#"0.3093", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation2016Legacy
               "2017": "0.6",#"0.3033", #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation94X
               "2018": "0.6",#"0.2770"} #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X
@@ -177,7 +173,10 @@ JECSystList = ["_jerUp", "_jerDown",
                "_jesTotalUp", "_jesTotalDown"]
 
 # VHH Files
-couplings = fh.getCouplingList(o.coupling)
+if o.coupling == 'None':
+    couplings = []
+else:
+    couplings = fh.getCouplingList(o.coupling)
 
 def dataFiles(year):
     if fromNANOAOD:
@@ -202,7 +201,13 @@ def jetCombinatoricModel(year):
 SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/SvB_ResNet_8_8_8_np1391_lr0.01_epochs20_epoch20.onnx"
 
 def signalFiles(signals, year):
-    return ["ZZ4b/fileLists/" + signal + year + ".txt" for signal in signals]
+    if year == '2016':
+        files = []
+        for signalYear in ['2016_preVFP', '2016_postVFP']:
+            files += ["ZZ4b/fileLists/" + signal + signalYear + ".txt" for signal in signals]
+        return files
+    else:
+        return ["ZZ4b/fileLists/" + signal + year + ".txt" for signal in signals]
 
 def ttbarFiles(year):
     if fromNANOAOD:
@@ -298,6 +303,8 @@ def doSignal():
                     cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
                     #cmd += " -f " if o.fastSkim else ""
                     cmd += " --isMC"
+                    cmd += " --doTrigEmulation" if o.trigger else ""
+                    cmd += " --doHigherOrderReweight" if o.higherOrder else ""
                     cmd += " --SvBScore "+o.SvBScore
                     cmd += " --bTag "+bTagDict[year]
                     cmd += " --bTagSF"
@@ -307,6 +314,7 @@ def doSignal():
                     cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
                     cmd += " --JECSyst "+JECSyst if JECSyst else ""
                     cmd += " --debug" if o.debug else ""
+                    cmd += " --extraOutput bosonKinematics" if o.extraOutput else ""
                     # if o.createPicoAOD and o.createPicoAOD != "none":
                     #     if o.createPicoAOD != "picoAOD.root":
                     #         sample = fileList.split("/")[-1].replace(".txt","")
@@ -401,6 +409,7 @@ def doDataTT():
             cmd += " --jcmNameLoad Nominal" if o.separate or o.separate3b4b else ""
             cmd += " --FvTName FvT_Nominal --inputWeightFiles " + fileList.replace(".txt ", "_SvB_FvT.txt ") if o.separate else ""
             cmd += " --debug" if o.debug else ""
+            cmd += " --extraOutput bosonKinematics" if o.extraOutput else ""
             if fileList in ttbarFiles(year):
                 if '2016' in fileList:
                     if 'preVFP' in fileList:
@@ -411,6 +420,7 @@ def doDataTT():
                 cmd += " --bTagSF"
             #cmd += " --bTagSyst" if o.bTagSyst else ""
                 cmd += " --isMC "
+                cmd += " --doTrigEmulation" if o.trigger else ""
             if o.createHemisphereLibrary  and fileList not in ttbarFiles:
                 cmd += " --createHemisphereLibrary "
             if o.noDiJetMassCutInPicoAOD:
@@ -515,84 +525,37 @@ def doDataTT():
     #     DAG.addGeneration()
     # execute(cmds, o.execute, condor_dag=DAG)
 
+def convert(file, script):
+    basePath = EOSOUTDIR if o.condor else outputBase
+    cmds = []
+    for year in years:
+        if year not in ['2016']:
+            for cps in couplings:
+                for cp in cps[0:2]:
+                    subdir = cp+year
+                    cmd = 'python ZZ4b/nTupleAnalysis/scripts/'+script
+                    cmd += ' -i '+basePath+subdir+'/'+file
+                    cmds.append( cmd )
+            for tt in ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']:
+                subdir = tt+year+'_4b'
+                cmd = 'python ZZ4b/nTupleAnalysis/scripts/'+script
+                cmd += ' -i '+basePath+subdir+'/'+file
+                cmds.append( cmd )
+        if year not in ['2016_preVFP', '2016_postVFP']:
+            for data in ['_4b', '_3b']:
+                subdir = 'data'+year+data
+                cmd = 'python ZZ4b/nTupleAnalysis/scripts/'+script
+                cmd += ' -i '+basePath+subdir+'/'+file
+                cmds.append( cmd )
+    if o.condor:
+        DAG.addGeneration()
+    execute(cmds, o.execute, condor_dag=DAG)
 
 def root2h5():
-    basePath = EOSOUTDIR if o.condor else outputBase
-    cmds = []
-    for year in years:
-        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
-            for cps in fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0'):
-                for cp in cps[0:2]:
-                    subdir = cp+year
-                    cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py'
-                    cmd += ' -i '+basePath+subdir+'/picoAOD.root'
-                    cmds.append( cmd )     
-        if year not in ['2016_preVFP', '2016_postVFP']:
-            for data in ['_4b', '_3b']:
-                subdir = 'data'+year+data
-                cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py'
-                cmd += ' -i '+basePath+subdir+'/picoAOD.root'
-                cmds.append( cmd )
-        if year not in ['2016']:
-            for tt in ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']:
-                subdir = tt+year+'_4b'
-                cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py'
-                cmd += ' -i '+basePath+subdir+'/picoAOD.root'
-                cmds.append( cmd )
-
-    if o.condor:
-        DAG.addGeneration()
-    execute(cmds, o.execute, condor_dag=DAG)
-
-
-def xrdcph5(direction="toEOS"):
-    cmds = []
-    TO   = EOSOUTDIR  if direction=="toEOS" else outputBase
-    FROM = outputBase if direction=="toEOS" else EOSOUTDIR
-    for year in years:
-        for process in ['ZZ4b', 'ggZH4b', 'ZH4b']:
-            cmd = "xrdcp -f "+FROM+process+year+'/picoAOD.h5 '+TO+process+year+'/picoAOD.h5'
-            cmds.append( cmd )
-
-        for period in periods[year]:
-            cmd = "xrdcp -f "+FROM+'data'+year+period+'/picoAOD.h5 '+TO+'data'+year+period+'/picoAOD.h5'
-            cmds.append( cmd )                
-
-        for process in ['TTToHadronic', 'TTToSemiLeptonic', 'TTTo2L2Nu']:
-            cmd = "xrdcp -f "+FROM+process+year+'/picoAOD.h5 '+TO+process+year+'/picoAOD.h5'
-            cmds.append( cmd )
-
-    for cmd in cmds: execute(cmd, o.execute)    
-
+    convert('picoAOD.root', 'convert_root2h5.py')
 
 def h52root():
-    basePath = EOSOUTDIR if o.condor else outputBase
-    cmds = []
-    for year in years:
-        if year not in ['2016', '2016_preVFP', '2016_postVFP']:
-            for cps in fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0'):
-                for cp in cps[0:2]:
-                    subdir = cp+year
-                    cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py'
-                    cmd += ' -i '+basePath+subdir+'/picoAOD.h5'
-                    cmds.append( cmd )     
-        if year not in ['2016_preVFP', '2016_postVFP']:
-            for data in ['_4b', '_3b']:
-                subdir = 'data'+year+data
-                cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py'
-                cmd += ' -i '+basePath+subdir+'/picoAOD.h5'
-                cmds.append( cmd )
-        if year not in ['2016']:
-            for tt in ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']:
-                subdir = tt+year+'_4b'
-                cmd = 'python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py'
-                cmd += ' -i '+basePath+subdir+'/picoAOD.h5'
-                cmds.append( cmd )
-
-    if o.condor:
-        DAG.addGeneration()
-    execute(cmds, o.execute, condor_dag=DAG)
-    
+    convert('picoAOD.h5', 'convert_h52root.py')
 
 
 def subtractTT():

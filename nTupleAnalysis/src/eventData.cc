@@ -1,4 +1,5 @@
 #include "ZZ4b/nTupleAnalysis/interface/eventData.h"
+#include "ZZ4b/nTupleAnalysis/interface/utils.h"
 
 using namespace nTupleAnalysis;
 
@@ -21,7 +22,7 @@ bool comp_FvT_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventVi
 bool comp_SvB_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->SvB_q_score < second->SvB_q_score); }
 bool comp_dR_close(   std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->close->dR   < second->close->dR  ); }
 
-eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, std::string bdtWeightFile, std::string bdtMethods){
+eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, std::string bdtWeightFile, std::string bdtMethods, std::string ZPtNNLOWeight){
   std::cout << "eventData::eventData()" << std::endl;
   tree  = t;
   isMC  = mc;
@@ -37,6 +38,15 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   looseSkim = _looseSkim;
   if (bdtWeightFile != "" && bdtMethods != "")
     bdtModel = std::make_unique<bdtInference>(bdtWeightFile, bdtMethods, debug);
+  if (isMC && ZPtNNLOWeight != ""){
+    auto weightFilePath = utils::splitString(ZPtNNLOWeight, ";");
+    auto weightFileTemp = new TFile(weightFilePath[0].c_str(), "READ");
+    std::cout << "Z pT NNLO weight file " + weightFilePath[0] + " loaded\n";
+    Z_Pt_NNLO_weight = std::unique_ptr<TH1F>(static_cast<TH1F*>(weightFileTemp->Get(weightFilePath[1].c_str())->Clone()));
+    Z_Pt_NNLO_weight->SetDirectory(0);
+    delete weightFileTemp;
+    std::cout << "Z pT NNLO weight histogram " + weightFilePath[1] + " loaded\n";
+  }
   // if(looseSkim) {
   //   std::cout << "Using loose pt cut. Needed to produce picoAODs for JEC uncertainties which can change jet pt by a few percent." << std::endl;
   //   jetPtMin = 35;
@@ -415,7 +425,6 @@ void eventData::resetEvent(){
   }
   selJetsV.clear();
   canJets.clear();
-  notAllTruVQuarks.clear();
   canHTruVJets.clear();
   truVJets.clear();
   othJets.clear();
@@ -461,6 +470,12 @@ void eventData::resetEvent(){
   passHLT = false;
   //passDEtaBB = false;
   p4j.SetPtEtaPhiM(0,0,0,0);
+  p4jGen.SetPtEtaPhiM(0,0,0,0);
+  p6jGen.SetPtEtaPhiM(0,0,0,0);
+  p6jReco.SetPtEtaPhiM(0,0,0,0);
+  pVGen_dR = -99;
+  leadStGen_dR = -99;
+  sublStGen_dR = -99;
   canJet1_pt = -99;
   canJet3_pt = -99;
   aveAbsEta = -99; aveAbsEtaOth = -0.1; stNotCan = 0;
@@ -484,7 +499,6 @@ void eventData::resetEvent(){
   dRbW = 1e6;
 
   BDT_c2v_c3 = -99;
-  BDT_c2v_c3_corrected = -99;
 
   for(const std::string& jcmName : jcmNames){
     pseudoTagWeightMap[jcmName]= 1.0;
@@ -539,6 +553,15 @@ void eventData::update(long int e){
     weight *= ttbarWeight;
     weightNoTrigger *= ttbarWeight;  
 
+  }
+  if(truth && Z_Pt_NNLO_weight){
+    if(truth->Zqqs.size() == 1){
+      Int_t bin = Z_Pt_NNLO_weight->FindBin(truth->Zqqs[0]->pt);
+      weight *= Z_Pt_NNLO_weight->GetBinContent(bin);
+    }
+    else if (truth->Zqqs.size() > 1){
+      std::cout << "Found more than one GEN Z in ZHH MC\n";
+    }
   }
 
   //Objects from ntuple
@@ -703,19 +726,10 @@ void eventData::buildEvent(){
     passXWt = t->rWbW > 3;
   }
   if(bdtModel && passMV){
-    bool mainViewOnly = true;
-    auto score = bdtModel->getBDTScore(this, mainViewOnly);
-    auto score_corrected = bdtModel->getBDTScore(this, mainViewOnly, true);
+    auto score = bdtModel->getBDTScore(this);
     for(size_t i = 0; i < score.size(); ++i){
       views[i]->BDT_c2v_c3 = score[i]["BDT"];
-      views[i]->BDT_c2v_c3_corrected = score_corrected[i]["BDT"];
     }
-  }
-  if(views.size() > 0){
-    BDT_c2v_c3 = views[0]->BDT_c2v_c3;
-    BDT_c2v_c3_corrected = views[0]->BDT_c2v_c3_corrected;
-    if(BDT_c2v_c3 >= bdtCut) SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC2V_signalAll_ps;
-    else SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC3_signalAll_ps;
   }
 
   //nPSTJets = nLooseTagJets + nPseudoTags;
@@ -1024,12 +1038,6 @@ void eventData::chooseCanJets(){
           truVJets.push_back(jet);
       }
     } 
-    for(const auto &V:truth->Vqqs){
-      for(const auto &q:V->daughters){
-        if(!matchJet(q,allJets))
-          notAllTruVQuarks.push_back(q);
-      }
-    }
   }
   std::sort(canHTruVJets.begin(), canHTruVJets.end(), sortPt);
   std::sort(truVJets.begin(), truVJets.end(), sortPt);
@@ -1067,6 +1075,26 @@ void eventData::chooseCanJets(){
   std::sort(canJets.begin(), canJets.end(), sortPt); // order by decreasing pt
   std::sort(othJets.begin(), othJets.end(), sortPt); // order by decreasing pt
   p4j = canJets[0]->p + canJets[1]->p + canJets[2]->p + canJets[3]->p;
+  if(canVDijets.size()>0) p6jReco = p4j + canVDijets[0]->p;
+  if(truth){
+    if(truth->Hbbs.size()>=2 && truth->Vqqs.size()>=1){
+      p6jGen = truth->Hbbs[0]->p + truth->Hbbs[1]->p + truth->Vqqs[0]->p;
+      p4jGen = truth->Hbbs[0]->p + truth->Hbbs[1]->p;
+      pVGen_dR  = truth->Vqqs[0]->daughters.at(0)->p.DeltaR(truth->Vqqs[0]->daughters.at(1)->p);
+      float dR1 = truth->Hbbs[0]->daughters.at(0)->p.DeltaR(truth->Hbbs[0]->daughters.at(1)->p);
+      float dR2 = truth->Hbbs[1]->daughters.at(0)->p.DeltaR(truth->Hbbs[1]->daughters.at(1)->p);
+      float St1 = truth->Hbbs[0]->daughters.at(0)->p.Pt() + truth->Hbbs[0]->daughters.at(1)->p.Pt();
+      float St2 = truth->Hbbs[1]->daughters.at(0)->p.Pt() + truth->Hbbs[1]->daughters.at(1)->p.Pt();
+      if(St1 > St2){
+        leadStGen_dR = dR1;
+        sublStGen_dR = dR2;
+      }
+      else{
+        leadStGen_dR = dR2;
+        sublStGen_dR = dR1;
+      }
+    }
+  }
   m4j = p4j.M();
   m123 = (canJets[1]->p + canJets[2]->p + canJets[3]->p).M();
   m023 = (canJets[0]->p + canJets[2]->p + canJets[3]->p).M();
@@ -1328,6 +1356,9 @@ void eventData::applyMDRs(){
   //   leadStM = 0;  sublStM = 0;
   //   //passDEtaBB = false;
   //   selectedViewTruthMatch = false;
+    BDT_c2v_c3 = view_selected->BDT_c2v_c3;
+    if(BDT_c2v_c3 >= bdtCut) SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC3_signalAll_ps;
+    else SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC2V_signalAll_ps;
   }
   return;
 }

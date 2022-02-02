@@ -36,7 +36,7 @@ namespace nTupleAnalysis{
     for(const auto &method : methods){
       auto weightFilePath = utils::fillString(weightFile, {{"method", method}});
       model->BookMVA(method + " method", weightFilePath);
-      if(debug) cout << method << " weight loaded from " << weightFilePath << endl;
+      cout << method << " weight loaded from " << weightFilePath << endl;
     }
   }
 
@@ -55,8 +55,8 @@ namespace nTupleAnalysis{
     HH_m = HH_p.M();
     HH_eta = HH_p.Eta();
     HH_deta = std::abs(H1_p.Eta() - H2_p.Eta());
-    HH_dphi = H1_p.DeltaPhi(H2_p);
-    V_H2_dPhi = V_p.DeltaPhi(H2_p);
+    HH_dphi = std::abs(H1_p.DeltaPhi(H2_p));
+    V_H2_dPhi = std::abs(V_p.DeltaPhi(H2_p));
     HH_dR = H1_p.DeltaR(H2_p);
     H2H1_pt_ratio = H2_p.Pt()/H1_p.Pt();
     return true;
@@ -70,14 +70,14 @@ namespace nTupleAnalysis{
     return score;
   }
 
-  std::vector<std::map<std::string, Float_t>> bdtInference::getBDTScore(eventData *event, bool mainViewOnly, bool useCorrectedMomentum){
+  std::vector<std::map<std::string, Float_t>> bdtInference::getBDTScore(eventData *event){
     std::vector<std::map<std::string, Float_t>> scores;
-    size_t nViews = mainViewOnly? 1 : event->views.size();
-    auto V_p = useCorrectedMomentum ? (event->canVDijets[0]->pW + event->canVDijets[0]->pZ) * 0.5 : event->canVDijets[0]->p;
+    size_t nViews = event->views.size();
+    auto V_p = event->canVDijets[0]->p;
     for (size_t i = 0; i < nViews; i++){
       auto view = event->views[i];
-      auto H1_p = useCorrectedMomentum ? view->lead->pH : view->lead->p;
-      auto H2_p = useCorrectedMomentum ? view->subl->pH : view->subl->p;
+      auto H1_p = view->lead->p;
+      auto H2_p = view->subl->p;
       setVariables(H1_p, H2_p, V_p);
       scores.push_back(getBDTScore());
     }

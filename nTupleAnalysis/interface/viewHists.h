@@ -71,10 +71,6 @@ namespace nTupleAnalysis {
     TH1F* nCanHTruVJets;
     jetHists* canHTruVJets;
     TH1F* nSelTruVJets;
-    TH1F* nNotAllTruVQuarks;
-    TH1F* ptNotAllTruVQuarks;
-    TH1F* etaNotAllTruVQuarks;
-    TH1F* phiNotAllTruVQuarks;
     dijetHists* allDijets;
     dijetHists* truVDijets;
     dijetHists* notTruVDijets;
@@ -85,24 +81,17 @@ namespace nTupleAnalysis {
     dijetHists* canVDijets;
     dijetHists* canVTruVDijets;
     TH1F* bdtScore; //TEMP
-    TH1F* bdtScore_corrected; //TEMP
-    TH1F* SvB_MA_signalSM_ps;
     TH1F* SvB_MA_signalAll_ps;
     TH1F* SvB_MA_regionBDT_signalAll_ps;
-    TH1F* SvB_MA_regionC3_signalAll_ps;
-    TH1F* SvB_MA_regionC2V_signalAll_ps;
-    TH1F* SvB_MA_ancillaryBDT_signalAll_ps;
+    TH1F* SvB_MA_diff_regionBDT_signalAll_ps;
 
-    TH1F* bdtScore_all_BDT_95;
-    TH1F* bdtScore_all_BDT_90;
-    TH1F* bdtScore_all_95;
-    TH1F* bdtScore_all_90;
-    TH1F* bdtScore_SM_95;
-    TH1F* bdtScore_SM_90;
+    TH1F* SvB_MA_C3_regionC3_ps;
+    TH1F* SvB_MA_C2V_regionC3_ps;
+    TH1F* SvB_MA_C3_regionC2V_ps;
+    TH1F* SvB_MA_C2V_regionC2V_ps;
+    TH1F* SvB_MA_diff_regionC3_ps;
+    TH1F* SvB_MA_diff_regionC2V_ps;
 
-    TH1F* SvB_all_BDT_BDT_bin;
-    TH1F* SvB_all_BDT_bin;
-    TH1F* SvB_SM_BDT_bin;
     //
     trigHists*  allTrigJets = NULL;
 
@@ -131,6 +120,17 @@ namespace nTupleAnalysis {
 
     TH2F* m4j_vs_leadSt_dR;
     TH2F* m4j_vs_sublSt_dR;
+
+    TH2F* m6j_vs_leadSt_dR;
+    TH2F* m6j_vs_sublSt_dR;
+    TH2F* m6j_vs_V_dR;
+    TH2F* m4j_vs_leadSt_dR_Gen;
+    TH2F* m4j_vs_sublSt_dR_Gen;
+    TH2F* m6j_vs_leadSt_dR_Gen;
+    TH2F* m6j_vs_sublSt_dR_Gen;
+    TH2F* m6j_vs_V_dR_Gen;
+    TH2F* m6j_vs_V_dR_matched;
+    TH2F* m6j_vs_V_dR_not_matched;
 
     dijetHists* leadM;
     dijetHists* sublM;

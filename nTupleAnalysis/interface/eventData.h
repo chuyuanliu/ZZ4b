@@ -8,6 +8,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <TChain.h>
 #include <TFile.h>
+#include <TH1F.h>
 #include <TLorentzVector.h>
 #include "nTupleAnalysis/baseClasses/interface/initBranch.h"
 #include "nTupleAnalysis/baseClasses/interface/truthData.h"
@@ -158,7 +159,7 @@ namespace nTupleAnalysis {
     bool L1_HTT360er = false;
     bool L1_ETT2000 = false;
 
-    const float jetPtMinV = 20;
+    const float jetPtMinV = 40;
     const float jetPtMinH = 40;
     const float jetEtaMax= 2.4;
     const int puIdMin = 0b110;//7=tight, 6=medium, 4=loose working point
@@ -188,7 +189,6 @@ namespace nTupleAnalysis {
     std::vector<jetPtr> canHTruVJets; //truth matched jets from V decay, selected as H candidate
     std::vector<jetPtr> truVJets; //truth matched jets from V decay
     std::vector<jetPtr> lowPtJets; //jets satisfy (jetPtMinV <= pt< jetPtMinH)
-    std::vector<particlePtr> notAllTruVQuarks; // truth quarks from V decay, not in all jets
     std::vector<dijetPtr> allDijets; // all dijets formed by othJets
     std::vector<dijetPtr> truVDijets; // truth matched dijets from V decay
     std::vector<dijetPtr> notTruVDijets; // not truth matched dijets from V decay
@@ -204,8 +204,9 @@ namespace nTupleAnalysis {
 
     std::unique_ptr<bdtInference> bdtModel;
     Float_t BDT_c2v_c3;
-    Float_t BDT_c2v_c3_corrected;
     const float bdtCut = 0.0;
+
+    std::unique_ptr<TH1F> Z_Pt_NNLO_weight = nullptr;
 
     Float_t SvB_MA_signalSM_ps = -99;
     Float_t SvB_MA_signalAll_ps = -99;
@@ -213,6 +214,13 @@ namespace nTupleAnalysis {
     Float_t SvB_MA_regionC3_signalAll_ps = -99;
     Float_t SvB_MA_regionC2V_signalAll_ps = -99;
     Float_t SvB_MA_ancillaryBDT_signalAll_ps = -99;
+
+    TLorentzVector p6jGen;
+    TLorentzVector p6jReco;
+    TLorentzVector p4jGen;
+    float pVGen_dR;
+    float leadStGen_dR;
+    float sublStGen_dR;
     //
 
     uint nSelJets;
@@ -291,7 +299,7 @@ namespace nTupleAnalysis {
     // Constructors and member functions
     eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _calcTrigWeights = false, bool _useMCTurnOns = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
 	      std::string JECSyst = "", bool _looseSkim = false, bool usePreCalcBTagSFs = false, std::string FvTName="FvT", std::string reweight4bName="MixedToUnmixed", std::string reweightDvTName="weight_DvT3_3b_pt3", bool doWeightStudy = false,
-        std::string bdtWeightFile = "", std::string bdtMethods = ""); 
+        std::string bdtWeightFile = "", std::string bdtMethods = "", std::string ZPtNNLOWeight = ""); 
     void setTagger(std::string, float);
     void update(long int);
     void buildEvent();

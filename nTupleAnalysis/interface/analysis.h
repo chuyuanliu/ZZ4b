@@ -20,6 +20,7 @@
 #include "ZZ4b/nTupleAnalysis/interface/hemisphereMixTool.h"
 #include "ZZ4b/nTupleAnalysis/interface/triggerStudy.h"
 #include "ZZ4b/nTupleAnalysis/interface/lumiHists.h"
+#include "ZZ4b/nTupleAnalysis/interface/dump.h"
 #include <fstream>
 
 
@@ -103,6 +104,8 @@ namespace nTupleAnalysis {
     TTree* picoAODEvents;
     TTree* picoAODRuns;
     TTree* picoAODLumiBlocks;
+
+    dump::dumpRoot *extraRoot;
 
     // debugging
     long int currentEvent = 0;
@@ -211,7 +214,7 @@ namespace nTupleAnalysis {
 	     std::string bjetSF = "", std::string btagVariations = "central",
 	     std::string JECSyst = "", std::string friendFile = "",
 	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "",std::string reweightDvTName = "",
-       float _SvBScore = 0.0, std::string bdtWeightFile = "", std::string bdtMethods = "");
+       float _SvBScore = 0.0, std::string bdtWeightFile = "", std::string bdtMethods = "", std::string ZPtNNLOWeight = "", std::string extraOutput = "");
 
 
     void createPicoAOD(std::string fileName, bool copyInputPicoAOD = true);
