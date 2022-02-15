@@ -29,7 +29,7 @@ parser.add_option('--hdf5', action="store_true", dest = 'hdf5', default = False,
 parser.add_option('--cp', action="store_true", dest = 'cp', default = False, help = 'copy files')
 parser.add_option('--init', action="store_true", dest = 'init', default = False, help = 'initialize dirs and files')
 parser.add_option('--merge', action="store_true", dest = 'merge', default = False, help = 'merge weight into root files')
-parser.add_option('--coupling', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'coupling for signal')
+parser.add_option('--coupling', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'coupling for signal')
 
 o, a = parser.parse_args()
 
@@ -177,12 +177,19 @@ def hadd_lpc():
             for cps in signals:
                 lpcmkdir('VHH/'+cps[2]+year)
                 hadd(['VHH/'+cp+year+histFile(True) for cp in cps[0:2]], 'VHH/'+cps[2]+year+histFile(True))
+    if '2016' in years:
+        haddYears = ['2016_preVFP','2016_postVFP']
+        if o.ttbar:
+            lpcmkdir('VHH/TT2016_4b')
+            hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TT2016_4b'+histFile())
+        for cps in signals:
+            lpcmkdir('VHH/'+cps[2]+'2016')
+            hadd(['VHH/'+cps[2]+year+histFile(True) for year in haddYears], 'VHH/'+cps[2]+'2016'+histFile(True))
     if '2016' in years and '2017' in years and '2018' in years:
         haddYears = ['2016','2017','2018']
         for data in datas:
             lpcmkdir('VHH/dataRunII'+data)
             hadd(['VHH/data'+year+data+histFile() for year in haddYears], 'VHH/dataRunII'+data+histFile())
-        haddYears = ['2016_preVFP','2016_postVFP','2017','2018']
         if o.ttbar:
             lpcmkdir('VHH/TTRunII_4b')
             hadd(['VHH/TT'+year +'_4b'+histFile() for year in haddYears], 'VHH/TTRunII_4b'+histFile())
@@ -269,7 +276,13 @@ if o.init:
 # source /cvmfs/sft.cern.ch/lcg/views/LCG_99cuda/x86_64-centos7-gcc8-opt/setup.sh 
 
 # training
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_[0-1]_*_C2V_[0-2]_*_C3_[0-2]_*_201*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy signalAll --train
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy signalAll,[|regionC2V|regionC3] --train
+
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_2018*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data2018*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*2018*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy signalAll,[|regionC2V|regionC3] --train
+
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier_test.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_2018*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data2018*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*2018*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy labelBDT --train
+
+# save prediction
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_*_201*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy signalAll,regionC3 -u -m "SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset0_epoch20.pkl"
 
 # ZH/ZZ

@@ -60,32 +60,40 @@ yearOpts = {}
 yearOpts["2018"]=' -y 2018 --bTag 0.3 '
 yearOpts["2017"]=' -y 2017 --bTag 0.3 '
 yearOpts["2016"]=' -y 2016 --bTag 0.3 '
+yearOpts["2016_preVFP"]=' -y 2016 --bTag 0.3 '
+yearOpts["2016_postVFP"]=' -y 2016 --bTag 0.3 '
 
 
 MCyearOpts = {}
-MCyearOpts["2018"]=yearOpts["2018"]+' --bTagSF -l 60.0e3 --isMC '
-MCyearOpts["2017"]=yearOpts["2017"]+' --bTagSF -l 36.7e3 --isMC '
-MCyearOpts["2016"]=yearOpts["2016"]+' --bTagSF -l 35.9e3 --isMC '
+MCyearOpts["2018"]=yearOpts["2018"]+' --bTagSF -l 60.0e3 --isMC --doTrigEmulation --calcTrigWeights '
+MCyearOpts["2017"]=yearOpts["2017"]+' --bTagSF -l 36.7e3 --isMC --doTrigEmulation --calcTrigWeights '
+MCyearOpts["2016"]=yearOpts["2016"]+' --bTagSF -l 35.9e3 --isMC --doTrigEmulation --calcTrigWeights '
+MCyearOpts["2016_preVFP"]=yearOpts["2016_preVFP"]+' --bTagSF -l 19.5e3 --isMC --doTrigEmulation --calcTrigWeights '
+MCyearOpts["2016_postVFP"]=yearOpts["2016_postVFP"]+' --bTagSF -l 16.5e3 --isMC --doTrigEmulation --calcTrigWeights '
 
 
 dataPeriods = {}
 # All
-dataPeriods["2018"] = ["A","B","C","D"]
-dataPeriods["2017"] = ["C","D","E","F"]
-dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
+# dataPeriods["2018"] = ["A","B","C","D"]
+# dataPeriods["2017"] = ["C","D","E","F"]
+# dataPeriods["2016"] = ["B","C","D","E","F","G","H"]
 # for skimming 
-# dataPeriods["2018"] = []
-# dataPeriods["2017"] = []
-# dataPeriods["2016"] = []
+dataPeriods["2018"] = []
+dataPeriods["2017"] = []
+dataPeriods["2016"] = []
+dataPeriods["2016_preVFP"] = []
+dataPeriods["2016_postVFP"] = []
 
 # for skimming
 ttbarSamplesByYear = {}
-ttbarSamplesByYear["2018"] = ["TTToSemiLeptonic"]#["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-ttbarSamplesByYear["2017"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
-# ttbarSamplesByYear["2018"] = []
-# ttbarSamplesByYear["2017"] = []
-#ttbarSamplesByYear["2016"] = []
+# ttbarSamplesByYear["2018"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+# ttbarSamplesByYear["2017"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+# ttbarSamplesByYear["2016"] = ["TTToHadronic","TTToSemiLeptonic","TTTo2L2Nu"]
+ttbarSamplesByYear["2018"] = []
+ttbarSamplesByYear["2017"] = []
+ttbarSamplesByYear["2016"] = []
+ttbarSamplesByYear["2016_preVFP"] = []
+ttbarSamplesByYear["2016_postVFP"] = []
 
 
 eosls = "eos root://cmseos.fnal.gov ls"
@@ -95,46 +103,47 @@ eosmkdir = "eos root://cmseos.fnal.gov mkdir "
 WHHSamples  = {}
 ZHHSamples  = {}
 
-WHHSamples["2017"] = [
-    "WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_2017",
-    "WHHTo4B_CV_1_0_C2V_0_0_C3_1_0_2017",
-    "WHHTo4B_CV_1_0_C2V_1_0_C3_0_0_2017",
-    "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_2017",
-    "WHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2017",
-    "WHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2017",
-    "WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2017",
+WHHSamples["2016"] = []
+ZHHSamples["2016"] = []
+WHHSamples["2016_preVFP"] = [
+    "WHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2016_preVFP",
 ]
-
+ZHHSamples["2016_preVFP"] = [
+    "ZHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2016_preVFP",
+]
+WHHSamples["2016_postVFP"] = [
+    "WHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2016_postVFP",
+]
+ZHHSamples["2016_postVFP"] = [
+    "ZHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2016_postVFP",
+]
+WHHSamples["2017"] = [
+    "WHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2017",
+]
 ZHHSamples["2017"] = [
-    "ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_2017",
-    "ZHHTo4B_CV_1_0_C2V_0_0_C3_1_0_2017",
-    "ZHHTo4B_CV_1_0_C2V_1_0_C3_0_0_2017",
-    "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_2017",
-    "ZHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2017",
-    "ZHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2017",
-    "ZHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2017",
+    "ZHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2017",
 ]
 
 WHHSamples["2018"] = [
-    "WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_2018",
-    "WHHTo4B_CV_1_0_C2V_0_0_C3_1_0_2018",
-    "WHHTo4B_CV_1_0_C2V_1_0_C3_0_0_2018",
-    "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_2018",
-    "WHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2018",
-    "WHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2018",
-    "WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2018",
-    "WHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2018"
+    # "WHHTo4B_CV_0_5_C2V_1_0_C3_1_0_2018",
+    # "WHHTo4B_CV_1_0_C2V_0_0_C3_1_0_2018",
+    # "WHHTo4B_CV_1_0_C2V_1_0_C3_0_0_2018",
+    # "WHHTo4B_CV_1_0_C2V_1_0_C3_1_0_2018",
+    # "WHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2018",
+    # "WHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2018",
+    # "WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2018",
+    # "WHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2018"
 ]
 
 ZHHSamples["2018"] = [
-    "ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_2018",
-    "ZHHTo4B_CV_1_0_C2V_0_0_C3_1_0_2018",
-    "ZHHTo4B_CV_1_0_C2V_1_0_C3_0_0_2018",
-    "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_2018",
-    "ZHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2018",
-    "ZHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2018",
-    "ZHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2018",
-    "ZHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2018"
+    # "ZHHTo4B_CV_0_5_C2V_1_0_C3_1_0_2018",
+    # "ZHHTo4B_CV_1_0_C2V_0_0_C3_1_0_2018",
+    # "ZHHTo4B_CV_1_0_C2V_1_0_C3_0_0_2018",
+    # "ZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_2018",
+    # "ZHHTo4B_CV_1_0_C2V_1_0_C3_2_0_2018",
+    # "ZHHTo4B_CV_1_0_C2V_2_0_C3_1_0_2018",
+    # "ZHHTo4B_CV_1_5_C2V_1_0_C3_1_0_2018",
+    # "ZHHTo4B_CV_1_0_C2V_1_0_C3_20_0_2018"
 ]
 
 VHHSamples = [WHHSamples,ZHHSamples]

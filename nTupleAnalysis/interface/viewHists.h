@@ -83,6 +83,7 @@ namespace nTupleAnalysis {
     TH1F* bdtScore; //TEMP
     TH1F* SvB_MA_signalAll_ps;
     TH1F* SvB_MA_regionBDT_signalAll_ps;
+    TH1F* SvB_MA_labelBDT_ps;
     TH1F* SvB_MA_diff_regionBDT_signalAll_ps;
 
     TH1F* SvB_MA_C3_regionC3_ps;

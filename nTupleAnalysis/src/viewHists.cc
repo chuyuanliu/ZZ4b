@@ -179,6 +179,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
 
   SvB_MA_signalAll_ps  = dir.make<TH1F>("SvB_MA_signalAll_ps",  (name+"/SvB_MA_signalAll_ps;  SvB_MA (All) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_regionBDT_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionBDT_signalAll_ps",  (name+"/SvB_MA_regionBDT_signalAll_ps;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA (BDT) Regressed P(Signal); Entries").c_str(), 100, 0, 1);
   SvB_MA_diff_regionBDT_signalAll_ps = dir.make<TH1F>("SvB_MA_diff_regionBDT_signalAll_ps",  (name+"/SvB_MA_diff_regionBDT_signalAll_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, -1, 1);
 
   SvB_MA_C3_regionC3_ps  = dir.make<TH1F>("SvB_MA_C3_regionC3_ps",  (name+"/SvB_MA_C3_regionC3_ps;  SvB_MA (C_{3}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, 0, 1);
@@ -490,6 +491,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
 
   SvB_MA_signalAll_ps->Fill(event->SvB_MA_signalAll_ps , event->weight);
   SvB_MA_regionBDT_signalAll_ps->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
+  SvB_MA_labelBDT_ps->Fill(event->SvB_MA_labelBDT_ps, event->weight);
   SvB_MA_diff_regionBDT_signalAll_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
   
   if(bdtScore && event->canVDijets.size() > 0){

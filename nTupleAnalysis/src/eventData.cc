@@ -104,7 +104,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables["SvB_MA_signalAll_ps" ] = &SvB_MA_signalAll_ps;
   classifierVariables["SvB_MA_regionC3_signalAll_ps" ] = &SvB_MA_regionC3_signalAll_ps;
   classifierVariables["SvB_MA_regionC2V_signalAll_ps" ] = &SvB_MA_regionC2V_signalAll_ps;
-  //classifierVariables["SvB_MA_ancillaryBDT_signalAll_ps" ] = &SvB_MA_ancillaryBDT_signalAll_ps;
+  classifierVariables["SvB_MA_labelBDT_ps" ] = &SvB_MA_labelBDT_ps;
 
   classifierVariables[reweight4bName    ] = &reweight4b;
   classifierVariables[reweightDvTName   ] = &DvT_raw;

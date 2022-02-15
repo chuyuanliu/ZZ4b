@@ -44,7 +44,7 @@ parser.add_argument('-t', '--ttbar',      default='',    type=str, help='Input M
 parser.add_argument('--ttbar4b',          default=None, help="Take 4b ttbar from this file if given, otherwise use --ttbar for both 3-tag and 4-tag")
 parser.add_argument('--ttbarPS',          default=None, help="")
 parser.add_argument('-s', '--signal',     default='', type=str, help='Input dataset file in hdf5 format')
-parser.add_argument('-c', '--classifier', default='', type=str, help='Which classifier to train: FvT, ZHHvB, WHHvB, M1vM2.')
+parser.add_argument('-c', '--classifier', default='', type=str, help='Which classifier to train: FvT, lklvB, sklvB, M1vM2.')
 parser.add_argument(      '--architecture', default='HCR', type=str, help='classifier architecture to use')
 parser.add_argument('-e', '--epochs', default=20, type=int, help='N of training epochs.')
 parser.add_argument('-o', '--outputName', default='', type=str, help='Prefix to output files.')
@@ -74,6 +74,7 @@ args = parser.parse_args()
 
 strategies = args.strategy.split(',')
 strategies.sort()
+singleYear = False
 MODEL_PATH  = args.model.split(',')
 OUTPUT_PATH = args.base
 if 'SvB' in args.classifier:
@@ -99,12 +100,12 @@ d3 = classInfo(abbreviation='d3', name= 'ThreeTag Data',       index=1, color='o
 t4 = classInfo(abbreviation='t4', name= r'FourTag $t\bar{t}$', index=2, color='green')
 t3 = classInfo(abbreviation='t3', name=r'ThreeTag $t\bar{t}$', index=3, color='cyan')
 
-whh = classInfo(abbreviation='whh', name= 'WHH MC',          index=0, color='red')
-zhh = classInfo(abbreviation='zhh', name= 'ZHH MC',          index=1, color='orange')
+skl = classInfo(abbreviation='skl', name= 'Small kl MC',          index=0, color='red')
+lkl = classInfo(abbreviation='lkl', name= 'Large kl MC',          index=1, color='orange')
 tt = classInfo(abbreviation='tt', name=r'$t\bar{t}$ MC',  index=2, color='green')
 mj = classInfo(abbreviation='mj', name= 'Multijet Model', index=3, color='cyan')
 
-sg = classInfo(abbreviation='sg', name='Signal',     index=[whh.index, zhh.index], color='blue')
+sg = classInfo(abbreviation='sg', name='Signal',     index=[skl.index, lkl.index], color='blue')
 bg = classInfo(abbreviation='bg', name='Background', index=[tt.index, mj.index], color='brown')
 
 lock = mp.Lock()
@@ -192,23 +193,23 @@ def getFrameSvB(fileName):
     if "HHTo4B" in fileName: # whh: c2v <cut; zhh: c3 >=cut
         c2v = (thisFrame[BDT_NAME]<BDT_CUT).to_numpy()
         c3  = (thisFrame[BDT_NAME]>=BDT_CUT).to_numpy()
-        index = c2v * np.float32(whh.index) + c3 * np.float32(zhh.index)
-        thisFrame['whh'] = pd.Series(c2v, index=thisFrame.index)
-        thisFrame['zhh'] = pd.Series(c3, index=thisFrame.index)
+        index = c2v * np.float32(skl.index) + c3 * np.float32(lkl.index)
+        thisFrame['skl'] = pd.Series(c2v, index=thisFrame.index)
+        thisFrame['lkl'] = pd.Series(c3, index=thisFrame.index)
         thisFrame['tt'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
         thisFrame['mj'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
     if "TTTo" in fileName:
         index = tt.index * np.ones(thisFrame.shape[0], dtype=np.float32)
         #index = bg.index
-        thisFrame['whh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
-        thisFrame['zhh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
+        thisFrame['skl'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
+        thisFrame['lkl'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
         thisFrame['tt'] = pd.Series(np. ones(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
         thisFrame['mj'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
     if "data201" in fileName:
         index = mj.index * np.ones(thisFrame.shape[0], dtype=np.float32)
         #index = bg.index
-        thisFrame['whh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
-        thisFrame['zhh'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
+        thisFrame['skl'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
+        thisFrame['lkl'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
         thisFrame['tt'] = pd.Series(np.zeros(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
         thisFrame['mj'] = pd.Series(np. ones(thisFrame.shape[0], dtype=bool), index=thisFrame.index)
     thisFrame['target']  = pd.Series(index, index=thisFrame.index)
@@ -399,18 +400,18 @@ if classifier in ['SvB', 'SvB_MA']:
     print("Using weight:",weight,"for classifier:",classifier) 
     yTrueLabel = 'target'
 
-    classes = [whh,zhh,tt,mj]
+    classes = [skl,lkl,tt,mj]
     # set class index
     for i,c in enumerate(classes): 
         c.index=i
-    sg.index = [whh.index,zhh.index]
+    sg.index = [skl.index,lkl.index]
     bg.index = [tt.index,mj.index]
 
     eps = 0.0001
 
     updateAttributes = [
-        nameTitle('pwhh',    classifier+args.updatePostFix+'_pwhh'),
-        nameTitle('pzhh',    classifier+args.updatePostFix+'_pzhh'),
+        nameTitle('pskl',    classifier+args.updatePostFix+'_pskl'),
+        nameTitle('plkl',    classifier+args.updatePostFix+'_plkl'),
         nameTitle('ptt',    classifier+args.updatePostFix+'_ptt'),
         nameTitle('pmj',    classifier+args.updatePostFix+'_pmj'),
         nameTitle('psg',    classifier+args.updatePostFix+'_ps'),
@@ -465,16 +466,16 @@ if classifier in ['SvB', 'SvB_MA']:
         print("nB",nB)
 
         # compute relative weighting for S and B
-        nwhh, wwhh = dfS.whh.sum(), dfS[dfS.whh][weight].sum()
-        nzhh, wzhh = dfS.zhh.sum(), dfS[dfS.zhh][weight].sum()
+        nskl, wskl = dfS.skl.sum(), dfS[dfS.skl][weight].sum()
+        nlkl, wlkl = dfS.lkl.sum(), dfS[dfS.lkl][weight].sum()
         sum_wS = dfS[weight].sum()
         sum_wB = dfB[weight].sum()
         sum_wS_HHSR = dfS[dfS.HHSR][weight].sum()
         sum_wB_HHSR = dfB[dfB.HHSR][weight].sum()
         print("sum_wS",sum_wS)
         print("sum_wB",sum_wB)
-        print("nwhh = %7d, wwhh = %6.1f"%(nwhh,wwhh))
-        print("nzhh = %7d, wzhh = %6.1f"%(nzhh,wzhh))
+        print("nskl = %7d, wskl = %6.1f"%(nskl,wskl))
+        print("nlkl = %7d, wlkl = %6.1f"%(nlkl,wlkl))
         print("sum_wS_HHSR",sum_wS_HHSR)
         print("sum_wB_HHSR",sum_wB_HHSR)
 
@@ -487,17 +488,17 @@ if classifier in ['SvB', 'SvB_MA']:
         # print("Cut Based WP:",rate_StoS,"Signal Eff.", rate_BtoB,"1-Background Eff.")
 
         #normalize signal to background
-        dfS.loc[dfS.whh, weight] = dfS[dfS.whh][weight]*sum_wB/wwhh
-        dfS.loc[dfS.zhh, weight] = dfS[dfS.zhh][weight]*sum_wB/wzhh
+        dfS.loc[dfS.skl, weight] = dfS[dfS.skl][weight]*sum_wB/wskl
+        dfS.loc[dfS.lkl, weight] = dfS[dfS.lkl][weight]*sum_wB/wlkl
 
         df = pd.concat([dfB, dfS], sort=False)
 
-        wwhh_norm = df[df.whh][weight].sum()
-        wzhh_norm = df[df.zhh][weight].sum()
+        wskl_norm = df[df.skl][weight].sum()
+        wlkl_norm = df[df.lkl][weight].sum()
         wmj = df[df.mj][weight].sum()
         wtt = df[df.tt][weight].sum()
-        w = wwhh_norm+wzhh_norm+wmj+wtt
-        fC = torch.FloatTensor([wwhh_norm/w, wzhh_norm/w, wmj/w, wtt/w])
+        w = wskl_norm+wlkl_norm+wmj+wtt
+        fC = torch.FloatTensor([wskl_norm/w, wlkl_norm/w, wmj/w, wtt/w])
         # compute the loss you would get if you only used the class fraction to predict class probability (ie a 4 sided die loaded to land with the right fraction on each class)
         loaded_die_loss = -(fC*fC.log()).sum()
         print("fC:",fC)
@@ -812,14 +813,14 @@ class roc_data:
             else:
                 wB = sum_wB
 
-            if "WHH" in self.trueName: 
-                wS = wwhh
-                self.pName = "P($WHH$)"
-            if "ZHH" in self.trueName: 
-                wS = wzhh
-                self.pName = "P($ZHH$)"
+            if "Small kl" in self.trueName: 
+                wS = wskl
+                self.pName = "P($Small kl$)"
+            if "Large kl" in self.trueName: 
+                wS = wlkl
+                self.pName = "P($Large kl$)"
             if "Signal" in self.trueName: 
-                wS = wwhh+wzhh
+                wS = wskl+wlkl
                 self.pName = "P(Signal)"
             self.S = self.tpr*wS*lumiRatio
             # self.S[self.tpr<0.10] = 0 # require at least 10% signal acceptance 
@@ -928,9 +929,9 @@ class loaderResults:
         if 'tt' in self.class_abbreviations and 'mj' in self.class_abbreviations:
             self.wbg = self.w[(self.y_true==tt.index)|(self.y_true==mj.index)]
             self.pbg = self.ptt + self.pmj
-        if 'whh' in self.class_abbreviations and 'zhh' in self.class_abbreviations:
-            self.wsg = self.w[(self.y_true==whh.index)|(self.y_true==zhh.index)]
-            self.psg = self.pwhh + self.pzhh
+        if 'skl' in self.class_abbreviations and 'lkl' in self.class_abbreviations:
+            self.wsg = self.w[(self.y_true==skl.index)|(self.y_true==lkl.index)]
+            self.psg = self.pskl + self.plkl
 
 
         # Compute reweight factor
@@ -1055,34 +1056,34 @@ class loaderResults:
                 self.roc2 = self.roc_td
 
             if classifier in ['SvB', 'SvB_MA']:
-                self.roc1 = roc_data(np.array((self.y_true==whh.index)|(self.y_true==zhh.index), dtype=np.float), 
-                                     self.y_pred[:,whh.index]+self.y_pred[:,zhh.index], 
+                self.roc1 = roc_data(np.array((self.y_true==skl.index)|(self.y_true==lkl.index), dtype=np.float), 
+                                     self.y_pred[:,skl.index]+self.y_pred[:,lkl.index], 
                                      self.w,
                                      'Signal',
                                      'Background')
-                isSignal = (self.y_true==whh.index)|(self.y_true==zhh.index)
-                self.roc2 = roc_data(np.array(self.y_true[isSignal]==whh.index, dtype=np.float), 
-                                     (self.y_pred[isSignal,whh.index]-self.y_pred[isSignal,zhh.index])/2+0.5, 
+                isSignal = (self.y_true==skl.index)|(self.y_true==lkl.index)
+                self.roc2 = roc_data(np.array(self.y_true[isSignal]==skl.index, dtype=np.float), 
+                                     (self.y_pred[isSignal,skl.index]-self.y_pred[isSignal,lkl.index])/2+0.5, 
                                      self.w[isSignal],
-                                     '$WHH$',
-                                     '$ZHH$')
+                                     '$Small kl$',
+                                     '$Large kl$')
 
-                zhhIndex = self.y_true!=whh.index
-                self.roc_zhh = roc_data(np.array(self.y_true[zhhIndex]==zhh.index, dtype=np.float), 
-                                       self.y_pred[zhhIndex][:,zhh.index], 
-                                       self.w[zhhIndex],
-                                       '$ZHH$',
+                lklIndex = self.y_true!=skl.index
+                self.roc_lkl = roc_data(np.array(self.y_true[lklIndex]==lkl.index, dtype=np.float), 
+                                       self.y_pred[lklIndex][:,lkl.index], 
+                                       self.w[lklIndex],
+                                       '$Large kl$',
                                        'Background')
-                whhIndex = self.y_true!=zhh.index
-                self.roc_whh = roc_data(np.array(self.y_true[whhIndex]==whh.index, dtype=np.float), 
-                                       self.y_pred[whhIndex][:,whh.index], 
-                                       self.w[whhIndex],
-                                       '$WHH$',
+                sklIndex = self.y_true!=lkl.index
+                self.roc_skl = roc_data(np.array(self.y_true[sklIndex]==skl.index, dtype=np.float), 
+                                       self.y_pred[sklIndex][:,skl.index], 
+                                       self.w[sklIndex],
+                                       '$Small kl$',
                                        'Background')
 
                 isSR = self.R==3
-                self.roc_SR = roc_data(np.array((self.y_true[isSR]==whh.index)|(self.y_true[isSR]==zhh.index), dtype=np.float), 
-                                       self.y_pred[isSR,whh.index]+self.y_pred[isSR,zhh.index], 
+                self.roc_SR = roc_data(np.array((self.y_true[isSR]==skl.index)|(self.y_true[isSR]==lkl.index), dtype=np.float), 
+                                       self.y_pred[isSR,skl.index]+self.y_pred[isSR,lkl.index], 
                                        self.w[isSR],
                                        'Signal',
                                        'Background',
@@ -1112,10 +1113,10 @@ class modelParameters:
         self.othJets+= ['notCanJet%s_m'  %i for i in range(self.nOthJets)]
         self.othJets+= ['notCanJet%s_isSelJet'%i for i in range(self.nOthJets)]
 
-        #self.ancillaryFeatures = ['nSelJets', 'xW', 'xbW', 'year'] 
-        self.ancillaryFeatures = ['year', 'nSelJets', 'xW', 'xbW'] + ([BDT_NAME] if 'ancillaryBDT' in strategies else []) 
-        #self.ancillaryFeatures = ['year', 'xW', 'xbW', 'nSelJets'] 
-        #self.ancillaryFeatures = ['nSelJets', 'year'] 
+        if singleYear:
+            self.ancillaryFeatures = ['xbW', 'nSelJets', 'xW']
+        else:
+            self.ancillaryFeatures = ['year', 'nSelJets', 'xW', 'xbW'] 
         self.nA = len(self.ancillaryFeatures)
 
         self.useOthJets = ''
@@ -1143,8 +1144,8 @@ class modelParameters:
         lossDict = {'FvT': 0.88,#0.1485,
                     'DvT3': 0.065,
                     'DvT4': 0.88,
-                    'WHHvB': 1,
-                    'ZHHvB': 1,
+                    'sklvB': 1,
+                    'lklvB': 1,
                     'SvB': 0.74,
                     'SvB_MA': 0.74,
                     }
@@ -1948,9 +1949,9 @@ class modelParameters:
         if not baseName: baseName = self.modelPkl.replace('.pkl', '')
         if classifier in ['SvB','SvB_MA']:
             plotROC(self.training.roc1,    self.validation.roc1,    plotName=baseName+suffix+'_ROC_hhsb.pdf')
-            plotROC(self.training.roc2,    self.validation.roc2,    plotName=baseName+suffix+'_ROC_whh_zhh.pdf')
-            plotROC(self.training.roc_whh,  self.validation.roc_whh,  plotName=baseName+suffix+'_ROC_whh.pdf')
-            plotROC(self.training.roc_zhh,  self.validation.roc_zhh,  plotName=baseName+suffix+'_ROC_zhh.pdf')
+            plotROC(self.training.roc2,    self.validation.roc2,    plotName=baseName+suffix+'_ROC_skl_lkl.pdf')
+            plotROC(self.training.roc_skl,  self.validation.roc_skl,  plotName=baseName+suffix+'_ROC_skl.pdf')
+            plotROC(self.training.roc_lkl,  self.validation.roc_lkl,  plotName=baseName+suffix+'_ROC_lkl.pdf')
             plotROC(self.training.roc_SR,  self.validation.roc_SR,  plotName=baseName+suffix+'_ROC_SR.pdf')
         if classifier in ['DvT3']:
             plotROC(self.training.roc_t3, self.validation.roc_t3, plotName=baseName+suffix+'_ROC_t3.pdf')

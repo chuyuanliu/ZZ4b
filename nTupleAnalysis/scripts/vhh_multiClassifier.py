@@ -74,6 +74,8 @@ args = parser.parse_args()
 
 strategies = args.strategy.split(',')
 strategies.sort()
+
+singleYear = False
 MODEL_PATH  = args.model.split(',')
 OUTPUT_PATH = args.base
 if 'SvB' in args.classifier:
@@ -91,12 +93,6 @@ BDT_NAME = 'BDT_c2v_c3'
 
 # signalSM      / signalAll    signal couplings
 # regionC2V     / regionC3     bdt region
-# ancillaryBDT                 bdt in ancillary feature
-
-# quadjetBDT                   ? bdt in quadjet feature
-# lossCoupling                 ?
-# labelCoupling                ?
-
 
 pathlib.Path(OUTPUT_PATH).mkdir(parents = True, exist_ok = True)
 
@@ -449,7 +445,7 @@ if classifier in ['SvB', 'SvB_MA']:
         dataFiles = glob(args.data)
 
         for d4b in args.data4b.split(","):
-            dataFiles += glob(args.data4b)    
+            dataFiles += glob(args.data4b)   
 
         results = fileReaders.map_async(getFrameSvB, sorted(dataFiles))
         frames = results.get()
@@ -1135,11 +1131,10 @@ class modelParameters:
         self.othJets+= ['notCanJet%s_phi'%i for i in range(self.nOthJets)]
         self.othJets+= ['notCanJet%s_m'  %i for i in range(self.nOthJets)]
         self.othJets+= ['notCanJet%s_isSelJet'%i for i in range(self.nOthJets)]
-
-        #self.ancillaryFeatures = ['nSelJets', 'xW', 'xbW', 'year'] 
-        self.ancillaryFeatures = ['year', 'nSelJets', 'xW', 'xbW'] + ([BDT_NAME] if 'ancillaryBDT' in strategies else []) 
-        #self.ancillaryFeatures = ['year', 'xW', 'xbW', 'nSelJets'] 
-        #self.ancillaryFeatures = ['nSelJets', 'year'] 
+        if singleYear:
+            self.ancillaryFeatures = ['xbW', 'nSelJets', 'xW']
+        else:
+            self.ancillaryFeatures = ['year', 'nSelJets', 'xW', 'xbW'] 
         self.nA = len(self.ancillaryFeatures)
 
         self.useOthJets = ''

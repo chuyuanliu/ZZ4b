@@ -62,7 +62,7 @@ parser.add_option(   '--SvB_ONNX', action="store_true", default=False,          
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
 parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
 # for VHH study
-parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0', help = 'set signal coupling')
+parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'set signal coupling')
 parser.add_option(   '--SvBScore ', dest = 'SvBScore', default = '0.8', help = 'set cut on SvB classifier score')
 parser.add_option(   '--higherOrder',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
 parser.add_option(   '--ttbarProcesses', dest = 'ttbarProcesses', default = 'TTToHadronic,TTToSemiLeptonic,TTTo2L2Nu', help = 'select ttbar processes')

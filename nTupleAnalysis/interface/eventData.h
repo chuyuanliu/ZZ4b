@@ -213,7 +213,7 @@ namespace nTupleAnalysis {
     Float_t SvB_MA_regionBDT_signalAll_ps = -99;
     Float_t SvB_MA_regionC3_signalAll_ps = -99;
     Float_t SvB_MA_regionC2V_signalAll_ps = -99;
-    Float_t SvB_MA_ancillaryBDT_signalAll_ps = -99;
+    Float_t SvB_MA_labelBDT_ps = -99;
 
     TLorentzVector p6jGen;
     TLorentzVector p6jReco;
