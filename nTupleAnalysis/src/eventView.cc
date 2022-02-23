@@ -59,10 +59,13 @@ eventView::eventView(std::shared_ptr<dijet> &dijet1, std::shared_ptr<dijet> &dij
   xZZ = getXZZ(leadSt->m, sublSt->m); //0 for perfect consistency with ZZ->4b
   xZH = getXZH(leadSt->m, sublSt->m); //0 for perfect consistency with ZH->4b
   xHH = getXHH(leadSt->m, sublSt->m); //0 for perfect consistency with HH->4b
+  r2HHm = getR2HHm(leadSt->m, sublSt->m);
+
   ZZSR = (xZZ < xMaxZZSR);
   ZHSR = (xZH < xMaxZHSR);
   HHSR = (xHH < xMaxHHSR);
   SR = ZZSR || ZHSR || HHSR;
+  HHmSR = (r2HHm < r2MaxHHmSR);
 
   //Control Regions
   rZZCR = sqrt( pow(leadSt->m - leadZ *sZZCR, 2) + pow(sublSt->m - sublZ *sZZCR, 2) );
@@ -90,6 +93,9 @@ eventView::eventView(std::shared_ptr<dijet> &dijet1, std::shared_ptr<dijet> &dij
   //passLeadStMDR = (m4j < 1250) ? (360/m4j - 0.5 < leadSt->dR) && (leadSt->dR < 653/m4j + 0.977) : (leadSt->dR < 1.5);
   //passSublStMDR = (m4j < 1250) ? (235/m4j       < sublSt->dR) && (sublSt->dR < 875/m4j + 0.800) : (sublSt->dR < 1.5);
   passMDRs = passLeadStMDR && passSublStMDR;
+
+  passLeadStLooseMDR = (250/m4j - 0.5 < leadSt->dR) && (leadSt->dR < std::max(840/m4j - 0.1, 1.5));
+  passLooseMDRs = passLeadStLooseMDR && passSublStMDR;
 
   //passLeadMDC = lead->pt > m4j*0.51 - 103;
   //passSublMDC = subl->pt > m4j*0.33 -  73;

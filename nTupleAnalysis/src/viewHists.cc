@@ -89,19 +89,15 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   leadSt_m_vs_sublSt_m = dir.make<TH2F>("leadSt_m_vs_sublSt_m", (name+"/leadSt_m_vs_sublSt_m; S_{T} leading boson candidate Mass [GeV]; S_{T} subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
 
 
-  m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1300, 25,0,5);
-  m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1300, 25,0,5);
+  m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
+  m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
+  m4j_vs_V_dR = dir.make<TH2F>("m4j_vs_V_dR", (name+"/m4j_vs_V_dR; m_{4j} [GeV]; Vector boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
 
-  m6j_vs_leadSt_dR = dir.make<TH2F>("m6j_vs_leadSt_dR", (name+"/m6j_vs_leadSt_dR; m_{6j} [GeV]; S_{T} leading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1300, 25,0,5);
-  m6j_vs_sublSt_dR = dir.make<TH2F>("m6j_vs_sublSt_dR", (name+"/m6j_vs_sublSt_dR; m_{6j} [GeV]; S_{T} subleading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1300, 25,0,5);
-  m6j_vs_V_dR = dir.make<TH2F>("m6j_vs_V_dR", (name+"/m6j_vs_V_dR; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1300, 25,0,5);
-  m4j_vs_leadSt_dR_Gen = dir.make<TH2F>("m4j_vs_leadSt_dR_Gen", (name+"/m4j_vs_leadSt_dR_Gen; m_{4j} [GeV]; S_{T} leading Higgs candidate #DeltaR(j,j) GEN; Entries").c_str(), 40,100,1300, 25,0,5);
-  m4j_vs_sublSt_dR_Gen = dir.make<TH2F>("m4j_vs_sublSt_dR_Gen", (name+"/m4j_vs_sublSt_dR_Gen; m_{4j} [GeV]; S_{T} subleading Higgs candidate #DeltaR(j,j) GEN; Entries").c_str(), 40,100,1300, 25,0,5);
-  m6j_vs_leadSt_dR_Gen = dir.make<TH2F>("m6j_vs_leadSt_dR_Gen", (name+"/m6j_vs_leadSt_dR_Gen; m_{6j} [GeV]; S_{T} leading Higgs candidate #DeltaR(j,j) GEN; Entries").c_str(), 40,100,1300, 25,0,5);
-  m6j_vs_sublSt_dR_Gen = dir.make<TH2F>("m6j_vs_sublSt_dR_Gen", (name+"/m6j_vs_sublSt_dR_Gen; m_{6j} [GeV]; S_{T} subleading Higgs candidate #DeltaR(j,j) GEN; Entries").c_str(), 40,100,1300, 25,0,5);
-  m6j_vs_V_dR_Gen = dir.make<TH2F>("m6j_vs_V_dR_Gen", (name+"/m6j_vs_V_dR_Gen; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) GEN; Entries").c_str(), 40,100,1300, 25,0,5);
-  m6j_vs_V_dR_matched = dir.make<TH2F>("m6j_vs_V_dR_matched", (name+"/m6j_vs_V_dR_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Truth Matched; Entries").c_str(), 40,100,1300, 25,0,5);
-  m6j_vs_V_dR_not_matched = dir.make<TH2F>("m6j_vs_V_dR_not_matched", (name+"/m6j_vs_V_dR_not_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Not Truth Matched; Entries").c_str(), 40,100,1300, 25,0,5);
+  m6j_vs_V_dR = dir.make<TH2F>("m6j_vs_V_dR", (name+"/m6j_vs_V_dR; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
+  m6j_vs_V_dR_Gen = dir.make<TH2F>("m6j_vs_V_dR_Gen", (name+"/m6j_vs_V_dR_Gen; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) GEN; Entries").c_str(), 40,100,1400, 25,0,5);
+  m6j_vs_V_dR_matched = dir.make<TH2F>("m6j_vs_V_dR_matched", (name+"/m6j_vs_V_dR_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
+  m6j_vs_V_dR_not_matched = dir.make<TH2F>("m6j_vs_V_dR_not_matched", (name+"/m6j_vs_V_dR_not_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Not Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
+  m6j_vs_V_dR_Loose = dir.make<TH2F>("m6j_vs_V_dR_Loose", (name+"/m6j_vs_V_dR_Loose; m_{6j} [GeV]; Vector boson candidate (Loose) #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
 
   leadM  = new dijetHists(name+"/leadM",  fs,    "Leading mass boson candidate");
   sublM  = new dijetHists(name+"/sublM",  fs, "Subleading mass boson candidate");
@@ -178,9 +174,12 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
   SvB_MA_signalAll_ps  = dir.make<TH1F>("SvB_MA_signalAll_ps",  (name+"/SvB_MA_signalAll_ps;  SvB_MA (All) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_regionBDT_signalAll_ps  = dir.make<TH1F>("SvB_MA_regionBDT_signalAll_ps",  (name+"/SvB_MA_regionBDT_signalAll_ps;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA (BDT) Regressed P(Signal); Entries").c_str(), 100, 0, 1);
-  SvB_MA_diff_regionBDT_signalAll_ps = dir.make<TH1F>("SvB_MA_diff_regionBDT_signalAll_ps",  (name+"/SvB_MA_diff_regionBDT_signalAll_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, -1, 1);
+  SvB_MA_regionBDT_ps  = dir.make<TH1F>("SvB_MA_regionBDT_ps",  (name+"/SvB_MA_regionBDT_ps;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA (BDT) Regressed P(kl like)+P(not kl like); Entries").c_str(), 100, 0, 1);
+  SvB_MA_signalAll_ps_rebin  = dir.make<TH1F>("SvB_MA_signalAll_ps_rebin",  (name+"/SvB_MA_signalAll_ps_rebin;  SvB_MA (All) Regressed P(WHH)+P(ZHH) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
+  SvB_MA_regionBDT_ps_rebin  = dir.make<TH1F>("SvB_MA_regionBDT_ps_rebin",  (name+"/SvB_MA_regionBDT_ps_rebin;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
+  SvB_MA_labelBDT_ps_rebin  = dir.make<TH1F>("SvB_MA_labelBDT_ps_rebin",  (name+"/SvB_MA_labelBDT_ps_rebin;  SvB_MA (BDT) Regressed P(kl like)+P(not kl like) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
+  SvB_MA_diff_regionBDT_ps = dir.make<TH1F>("SvB_MA_diff_regionBDT_ps",  (name+"/SvB_MA_diff_regionBDT_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, -1, 1);
 
   SvB_MA_C3_regionC3_ps  = dir.make<TH1F>("SvB_MA_C3_regionC3_ps",  (name+"/SvB_MA_C3_regionC3_ps;  SvB_MA (C_{3}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, 0, 1);
   SvB_MA_C2V_regionC3_ps  = dir.make<TH1F>("SvB_MA_C2V_regionC3_ps",  (name+"/SvB_MA_C2V_regionC3_ps;  SvB_MA (C_{2V}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, 0, 1);
@@ -188,6 +187,10 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   SvB_MA_C2V_regionC2V_ps  = dir.make<TH1F>("SvB_MA_C2V_regionC2V_ps",  (name+"/SvB_MA_C2V_regionC2V_ps;  SvB_MA (C_{2V}) Regressed P(WHH)+P(ZHH) in C_{2V} region; Entries").c_str(), 100, 0, 1);
   SvB_MA_diff_regionC3_ps  = dir.make<TH1F>("SvB_MA_diff_regionC3_ps",  (name+"/SvB_MA_diff_regionC3_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, -1, 1);
   SvB_MA_diff_regionC2V_ps  = dir.make<TH1F>("SvB_MA_diff_regionC2V_ps",  (name+"/SvB_MA_diff_regionC2V_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH) in C_{2V} region; Entries").c_str(), 100, -1, 1);
+
+  bdt_vs_labelBDT = dir.make<TH2F>("bdt_vs_labelBDT", (name+"/bdt_vs_labelBDT; BDT output; SvB (BDT label) output; Entries").c_str(), 40,-1,1, 40,0,1);
+  bdt_vs_regionBDT = dir.make<TH2F>("bdt_vs_regionBDT", (name+"/bdt_vs_regionBDT; BDT output; SvB (two classifier) output; Entries").c_str(), 40,-1,1, 40,0,1);
+  bdt_vs_simple = dir.make<TH2F>("bdt_vs_simple", (name+"/bdt_vs_simple; BDT output; SvB (one classifier) output; Entries").c_str(), 40,-1,1, 40,0,1);
 
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
@@ -361,23 +364,20 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   leadSt_m_vs_sublSt_m->Fill(view->leadSt->m, view->sublSt->m, event->weight);
   m4j_vs_leadSt_dR->Fill(view->m4j, view->leadSt->dR, event->weight);
   m4j_vs_sublSt_dR->Fill(view->m4j, view->sublSt->dR, event->weight);
-
+  
   if(event->canVDijets.size()>0){
-    m6j_vs_leadSt_dR->Fill(event->p6jReco.M(), view->leadSt->dR, event->weight);
-    m6j_vs_sublSt_dR->Fill(event->p6jReco.M(), view->sublSt->dR, event->weight);
-    m6j_vs_V_dR->Fill(event->p6jReco.M(), event->canVDijets[0]->dR, event->weight);
+    m6j_vs_V_dR->Fill(event->m6j, event->canVDijets[0]->dR, event->weight);
+    m4j_vs_V_dR->Fill(event->m4j, event->canVDijets[0]->dR, event->weight);
   }
   
   if(event->p6jGen.Pt()>0){
-    m4j_vs_leadSt_dR_Gen->Fill(event->p4jGen.M(), event->leadStGen_dR, event->weight);
-    m4j_vs_sublSt_dR_Gen->Fill(event->p4jGen.M(), event->sublStGen_dR, event->weight);
-    m6j_vs_leadSt_dR_Gen->Fill(event->p6jGen.M(), event->leadStGen_dR, event->weight);
-    m6j_vs_sublSt_dR_Gen->Fill(event->p6jGen.M(), event->sublStGen_dR, event->weight);
-    m6j_vs_V_dR_Gen->Fill(event->p6jGen.M(), event->pVGen_dR, event->weight);
-    for(auto &dijet: event->truVDijets) m6j_vs_V_dR_matched->Fill(event->p6jGen.M(), dijet->dR, event->weight);
-    for(auto &dijet: event->notTruVDijets) m6j_vs_V_dR_not_matched->Fill(event->p6jGen.M(), dijet->dR, event->weight);
+    m6j_vs_V_dR_Gen->Fill(event->m6jGen, event->pVGen_dR, event->weight);
+    for(auto &dijet: event->truVDijets) m6j_vs_V_dR_matched->Fill(event->m6jGen, dijet->dR, event->weight);
+    for(auto &dijet: event->notTruVDijets) m6j_vs_V_dR_not_matched->Fill(event->m6jGen, dijet->dR, event->weight);
   }
-
+  if(event->passLooseMV){
+    m6j_vs_V_dR_Loose->Fill(event->m6jLoose, event->pVLoose_dR, event->weight);
+  }
   leadM ->Fill(view->leadM,  event->weight);
   sublM ->Fill(view->sublM,  event->weight);
   leadM_m_vs_sublM_m->Fill(view->leadM->m, view->sublM->m, event->weight);
@@ -490,10 +490,17 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
 
   SvB_MA_signalAll_ps->Fill(event->SvB_MA_signalAll_ps , event->weight);
-  SvB_MA_regionBDT_signalAll_ps->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
+  SvB_MA_regionBDT_ps->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
   SvB_MA_labelBDT_ps->Fill(event->SvB_MA_labelBDT_ps, event->weight);
-  SvB_MA_diff_regionBDT_signalAll_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
-  
+  SvB_MA_signalAll_ps_rebin->Fill(event->SvB_MA_signalAll_ps , event->weight);
+  SvB_MA_regionBDT_ps_rebin->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
+  SvB_MA_labelBDT_ps_rebin->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+
+  bdt_vs_labelBDT->Fill(event->BDT_c2v_c3, event->SvB_MA_labelBDT_ps, event->weight);
+  bdt_vs_regionBDT->Fill(event->BDT_c2v_c3, event->SvB_MA_regionBDT_signalAll_ps, event->weight);
+  bdt_vs_simple->Fill(event->BDT_c2v_c3, event->SvB_MA_signalAll_ps, event->weight);
+
+  SvB_MA_diff_regionBDT_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
   if(bdtScore && event->canVDijets.size() > 0){
     bdtScore->Fill(event->BDT_c2v_c3, event->weight);
     if(event->BDT_c2v_c3 >= event->bdtCut){ // C3 region

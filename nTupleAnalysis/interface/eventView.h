@@ -38,6 +38,17 @@ namespace nTupleAnalysis {
     const float rMaxHHSB = 45.00;
     const float    sHHSB =  1.06;
 
+    const float leadHm     = 125.00;
+    const float sublHm     = 120.00;
+    const float aHHm       =   1.20;
+    const float r2MaxHHmSR = 2.0 * pow(22.0, 2);
+
+    float getR2HHm(float m1, float m2){
+      float mSum  = (m1 + m2 - leadHm - sublHm)/aHHm;
+      float mDiff = m1 - m2 - leadHm + sublHm;
+      return pow(mSum, 2) + pow(mDiff, 2);
+    }
+
     const float slopeDBB = leadStBias/sublStBias;
     const float denomDBB = sqrt(1+pow(slopeDBB, 2));
 
@@ -122,10 +133,12 @@ namespace nTupleAnalysis {
     float xZZ;
     float xZH;
     float xHH;
+    float r2HHm;
     bool ZZSR;
     bool ZHSR;
     bool HHSR;
     bool SR;
+    bool HHmSR;
 
     float rZZCR;
     float rZHCR;
@@ -145,8 +158,10 @@ namespace nTupleAnalysis {
 
     //m4j dependent view requirements (MDRs)
     bool passLeadStMDR;
+    bool passLeadStLooseMDR;
     bool passSublStMDR;
     bool passMDRs;
+    bool passLooseMDRs;
 
     //m4j dependent cuts (MDCs)
     //bool passLeadMDC;

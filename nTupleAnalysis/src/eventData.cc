@@ -440,6 +440,7 @@ void eventData::resetEvent(){
   dijets .clear();
   views  .clear();
   views_passMDRs.clear();
+  views_passLooseMDRs.clear();
   view_selected.reset();
   view_dR_min.reset();
   view_max_FvT_q_score.reset();
@@ -449,9 +450,15 @@ void eventData::resetEvent(){
   other.reset();
   appliedMDRs = false;
   m4j = -99;
+  m6j = -99;
+  m6jGen = -99;
+  m6jLoose = -99;
+  pVLoose_dR = -99;
+  passLooseMDRs = false;
+  passLooseMV = false;
   ZZSB = false; ZZCR = false; ZZSR = false;
   ZHSB = false; ZHCR = false; ZHSR = false;
-  HHSB = false; HHCR = false; HHSR = false;
+  HHSB = false; HHCR = false; HHSR = false;  HHmSR = false;
   SB = false; CR = false; SR = false;
   leadStM = -99; sublStM = -99;
   passDijetMass = false;
@@ -470,12 +477,9 @@ void eventData::resetEvent(){
   passHLT = false;
   //passDEtaBB = false;
   p4j.SetPtEtaPhiM(0,0,0,0);
-  p4jGen.SetPtEtaPhiM(0,0,0,0);
   p6jGen.SetPtEtaPhiM(0,0,0,0);
   p6jReco.SetPtEtaPhiM(0,0,0,0);
   pVGen_dR = -99;
-  leadStGen_dR = -99;
-  sublStGen_dR = -99;
   canJet1_pt = -99;
   canJet3_pt = -99;
   aveAbsEta = -99; aveAbsEtaOth = -0.1; stNotCan = 0;
@@ -1075,24 +1079,29 @@ void eventData::chooseCanJets(){
   std::sort(canJets.begin(), canJets.end(), sortPt); // order by decreasing pt
   std::sort(othJets.begin(), othJets.end(), sortPt); // order by decreasing pt
   p4j = canJets[0]->p + canJets[1]->p + canJets[2]->p + canJets[3]->p;
-  if(canVDijets.size()>0) p6jReco = p4j + canVDijets[0]->p;
+
+  for(auto& dijet:allDijets){
+    if(dijet->m >= 50 && dijet->m <= 120){
+       auto p6jReco_temp = p4j + dijet->p;
+       auto m6j_temp = p6jReco_temp.M();
+       if(dijet->dR < std::max(650.0/m6j_temp + 0.3, 1.3)){
+          passLooseMV = true;
+          m6jLoose = m6j_temp;
+          pVLoose_dR = dijet->dR;
+          break;
+       }
+    }
+  }
+
+  if(canVDijets.size()>0){
+    p6jReco = p4j + canVDijets[0]->p;
+    m6j = p6jReco.M();
+  }
   if(truth){
     if(truth->Hbbs.size()>=2 && truth->Vqqs.size()>=1){
       p6jGen = truth->Hbbs[0]->p + truth->Hbbs[1]->p + truth->Vqqs[0]->p;
-      p4jGen = truth->Hbbs[0]->p + truth->Hbbs[1]->p;
+      m6jGen = p6jGen.M();
       pVGen_dR  = truth->Vqqs[0]->daughters.at(0)->p.DeltaR(truth->Vqqs[0]->daughters.at(1)->p);
-      float dR1 = truth->Hbbs[0]->daughters.at(0)->p.DeltaR(truth->Hbbs[0]->daughters.at(1)->p);
-      float dR2 = truth->Hbbs[1]->daughters.at(0)->p.DeltaR(truth->Hbbs[1]->daughters.at(1)->p);
-      float St1 = truth->Hbbs[0]->daughters.at(0)->p.Pt() + truth->Hbbs[0]->daughters.at(1)->p.Pt();
-      float St2 = truth->Hbbs[1]->daughters.at(0)->p.Pt() + truth->Hbbs[1]->daughters.at(1)->p.Pt();
-      if(St1 > St2){
-        leadStGen_dR = dR1;
-        sublStGen_dR = dR2;
-      }
-      else{
-        leadStGen_dR = dR2;
-        sublStGen_dR = dR1;
-      }
     }
   }
   m4j = p4j.M();
@@ -1337,12 +1346,14 @@ void eventData::applyMDRs(){
   //views.erase(std::remove_if(views.begin(), views.end(), failMDRs), views.end());
   for(auto &view: views){
     if(view->passMDRs) views_passMDRs.push_back(view);
+    if(view->passLooseMDRs) views_passLooseMDRs.push_back(view);
   }
   passMDRs = views_passMDRs.size() > 0;
+  passLooseMDRs = views_passLooseMDRs.size() > 0;
 
   if(passMDRs){
     view_selected = views_passMDRs[0];
-    HHSB = view_selected->HHSB; HHCR = view_selected->HHCR; HHSR = view_selected->HHSR;
+    HHSB = view_selected->HHSB; HHCR = view_selected->HHCR; HHSR = view_selected->HHSR; HHmSR = view_selected->HHmSR;
     ZHSB = view_selected->ZHSB; ZHCR = view_selected->ZHCR; ZHSR = view_selected->ZHSR;
     ZZSB = view_selected->ZZSB; ZZCR = view_selected->ZZCR; ZZSR = view_selected->ZZSR;
     SB = view_selected->SB; CR = view_selected->CR; SR = view_selected->SR;

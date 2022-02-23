@@ -50,7 +50,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.allViews.passPreSel.passMDRs.passMV.HHRegions.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passPreSel.passLooseMDRs.passLooseNjOth.passLooseMV.passMDRs.passNjOth.passMV.HHSR.HHmSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")

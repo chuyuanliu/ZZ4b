@@ -7,6 +7,7 @@ import optparse
 
 CMSSW = getCMSSW()
 USER = getUSER()
+runCount = 0 # TEMP
 
 parser = optparse.OptionParser()
 parser.add_option('-d', '--data', action="store_true", dest = 'data', default =  False, help = 'operate on data root files')
@@ -80,9 +81,10 @@ def full_path(path, area, user = USER):
     return area(path, user)
 
 def run(cmd):
-    if o.debug:
-        print(cmd)
-    else:
+    global runCount
+    runCount += 1
+    print(str(runCount).ljust(5) + cmd)
+    if not o.debug:
         os.system(cmd)
 def eosmv(src, dest):
     run('eos root://cmseos.fnal.gov mv ' + eos(src) + ' ' + eos(dest)) 

@@ -199,6 +199,10 @@ namespace nTupleAnalysis {
     bool matchDijet(const dijetPtr& dijet, const truthData* truth);
 
     bool passMV;
+    bool passLooseMDRs;
+    bool passLooseMV;
+    bool HHmSR;
+    std::vector< std::shared_ptr<eventView> > views_passLooseMDRs;
 
     uint nSelJetsV;
 
@@ -217,10 +221,11 @@ namespace nTupleAnalysis {
 
     TLorentzVector p6jGen;
     TLorentzVector p6jReco;
-    TLorentzVector p4jGen;
+    float m6j;
+    float m6jGen;
+    float m6jLoose;
+    float pVLoose_dR;
     float pVGen_dR;
-    float leadStGen_dR;
-    float sublStGen_dR;
     //
 
     uint nSelJets;

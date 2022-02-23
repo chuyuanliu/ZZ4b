@@ -33,21 +33,27 @@ void cutflowHists::AddCut(std::string cut){
   weighted->GetXaxis()->FindBin((cut+"_SR").c_str());
   unitWeight->GetXaxis()->FindBin((cut+"_HHSR").c_str());  
   weighted->GetXaxis()->FindBin((cut+"_HHSR").c_str());
+  unitWeight->GetXaxis()->FindBin((cut+"_HHmSR").c_str());  
+  weighted->GetXaxis()->FindBin((cut+"_HHmSR").c_str());
   unitWeight->GetXaxis()->FindBin((cut+"_HLT").c_str());  
   weighted->GetXaxis()->FindBin((cut+"_HLT").c_str());
   unitWeight->GetXaxis()->FindBin((cut+"_SR_HLT").c_str());  
   weighted->GetXaxis()->FindBin((cut+"_SR_HLT").c_str());
   unitWeight->GetXaxis()->FindBin((cut+"_HHSR_HLT").c_str());  
   weighted->GetXaxis()->FindBin((cut+"_HHSR_HLT").c_str());
+  unitWeight->GetXaxis()->FindBin((cut+"_HHmSR_HLT").c_str());  
+  weighted->GetXaxis()->FindBin((cut+"_HHmSR_HLT").c_str());
   unitWeight->GetXaxis()->FindBin((cut+"_SR_HLT_VetoHH").c_str());  
   weighted->GetXaxis()->FindBin((cut+"_SR_HLT_VetoHH").c_str());
   if(truthM4b != NULL){
     truthM4b->GetYaxis()->FindBin(cut.c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_SR").c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_HHSR").c_str());
+    truthM4b->GetYaxis()->FindBin((cut+"_HHmSR").c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_HLT").c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_SR_HLT").c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_HHSR_HLT").c_str());
+    truthM4b->GetYaxis()->FindBin((cut+"_HHmSR_HLT").c_str());
     truthM4b->GetYaxis()->FindBin((cut+"_SR_HLT_VetoHH").c_str());
   }
 }
@@ -93,7 +99,7 @@ void cutflowHists::Fill(const std::string& cut, eventData* event){
   if(event->views.size()>0){
     
     //Cut+SR
-    if(event->views[0]->SR){
+    if(event->SR){
       if(event->doTrigEmulation){
 	BasicFill(cut+"_SR", event, event->weightNoTrigger);
 	// BasicFill(cut+"_SR_HLT_HT330_4j_75_60_45_40_3b", event, event->weight);
@@ -104,7 +110,7 @@ void cutflowHists::Fill(const std::string& cut, eventData* event){
       }
     }
       //Cut+HHSR
-    if(event->views[0]->HHSR){
+    if(event->HHSR){
       if(event->doTrigEmulation){
     BasicFill(cut+"_HHSR", event, event->weightNoTrigger);
     BasicFill(cut+"_HHSR_HLT_HT330_4j_75_60_45_40_3b", event, event->weight);
@@ -121,6 +127,18 @@ void cutflowHists::Fill(const std::string& cut, eventData* event){
     // if(event->HLT_j500)                    BasicFill(cut+"_HHSR_HLT_j500", event);
     // if(event->HLT_2j300ave)                BasicFill(cut+"_HHSR_HLT_2j300ave", event);
     if(event->passHLT)                     BasicFill(cut+"_HHSR_HLT", event);
+        }
+    }
+    if(event->HHmSR){
+      if(event->doTrigEmulation){
+    BasicFill(cut+"_HHmSR", event, event->weightNoTrigger);
+    BasicFill(cut+"_HHmSR_HLT_HT330_4j_75_60_45_40_3b", event, event->weight);
+    BasicFill(cut+"_HHmSR_HLT", event, event->weight);
+        }else{
+    BasicFill(cut+"_HHmSR", event);
+    //Cut+HHmSR+Trigger
+    if(event->passL1)                      BasicFill(cut+"_HHmSR_L1", event);
+    if(event->passHLT)                     BasicFill(cut+"_HHmSR_HLT", event);
         }
     }
   }

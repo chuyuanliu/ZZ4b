@@ -21,11 +21,11 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['RunII']
+years = ['2018']
 signals = ['VHH']
 no_background = False #temp
 event_count = True
-signal_scale = 50
+signal_scale = 1
 
 if not os.path.isdir(out_path):
     os.mkdir(out_path)
@@ -329,12 +329,13 @@ class histogram_2d_collection:
         self.y_max = float('-inf')
         self.y_min = float('inf')
 
-    def add_curve(self, curve, levels = [], range = [None, None]):
+    def add_curve(self, curve, levels = [], range = [None, None], color = ROOT.kRed):
         if len(levels) == 0:
             x_min = self.x_min if range[0] is None else max(self.x_min, range[0])
             x_max = self.x_max if range[1] is None else min(self.x_max, range[1])
             curve = ROOT.TF1('range', curve, x_min, x_max)
-            curve.SetLineColor(ROOT.kRed)
+            curve.SetNpx(1000)
+            curve.SetLineColor(color)
             self.curves.append(curve)
         else:
             curve = ROOT.TF2('range', curve, self.x_min, self.x_max, self.y_min, self.y_max)
@@ -342,7 +343,9 @@ class histogram_2d_collection:
             for level in levels:
                 contour.append(level)
             curve.SetContour(len(levels), contour)
-            curve.SetLineColor(ROOT.kRed)
+            curve.SetNpx(1000)
+            curve.SetNpy(1000)
+            curve.SetLineColor(color)
             self.curves.append(curve)
 
     def add_hist(self, hist, tag):
@@ -365,7 +368,7 @@ class histogram_2d_collection:
 
     def plot(self):
         for tag in self.hists:
-            canvas = ROOT.TCanvas(self.title + tag, self.title, 1400, 800)
+            canvas = ROOT.TCanvas(self.title + tag, self.title, 1000, 800)
             self.hists[tag].Draw('COLZ')
             for curve in self.curves:
                 curve.Draw('SAME')
@@ -606,10 +609,10 @@ class plots:
             for signal in self.signals:
                 for hist in self.plot_hists:
                     if self.debug: print('Plot'.ljust(self.cmd_length) + hist) 
-                    path = self.path[year][signal].mkdir(self.all_hists[hist])
                     signal_mc = self.load_signal_mc_hists(year, signal, hist)
                     if not isinstance(signal_mc[0], ROOT.TH2F) and not isinstance(signal_mc[0], ROOT.TH2D):
                         continue
+                    path = self.path[year][signal].mkdir(self.all_hists[hist])
                     ploter = histogram_2d_collection(path, title=hist)
                     if not no_background:
                         ploter.add_hist(self.load_data_hists(year, hist), 'Data')
@@ -619,16 +622,23 @@ class plots:
                         for coupling in self.plot_couplings:
                             weights = self.couplings.generate_weight(**coupling)
                             ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_filename(**coupling))
-                    if 'm4j' in hist and 'leadSt' in hist and 'dR' in hist:
+                    if 'm4j' in hist and 'leadSt_dR' in hist:
                         ploter.add_curve('650.0/x+0.5', range=[None, 650])
                         ploter.add_curve('360.0/x-0.5')
                         ploter.add_curve('1.5', range = [650, None])
-                    if 'm4j' in hist and 'sublSt' in hist and 'dR' in hist:
+                        ploter.add_curve('840.0/x-0.1',range = [None, 525], color=ROOT.kGreen)
+                        ploter.add_curve('1.5',range = [525, None], color=ROOT.kGreen)
+                        ploter.add_curve('250.0/x-0.5',color=ROOT.kGreen)
+                    if 'm4j' in hist and 'sublSt_dR' in hist:
                         ploter.add_curve('650.0/x+0.7', range=[None, 812.5])
                         ploter.add_curve('235.0/x')
                         ploter.add_curve('1.5', range=[812.5, None])
+                    if 'm6j' in hist and 'V_dR' in hist:
+                        ploter.add_curve('650.0/x+0.3', range=[None, 650], color=ROOT.kGreen)
+                        ploter.add_curve('', range=[650, None], color=ROOT.kGreen)
                     if 'leadSt_m' in hist and 'sublSt_m' in hist:
                         ploter.add_curve('(((x-125*1.02)/(0.1*x))**2 +((y-125*0.98)/(0.1*y))**2)',[1.9**2])
+                        ploter.add_curve('(((x+y-245)/1.2)**2 +((x-y-5))**2)',[2*22**2], color=ROOT.kGreen)
                     ploter.plot()
 
     def compare(self, hists, rebin = 1, normalize = False):
@@ -786,6 +796,7 @@ class plots:
             if d == 0:
                 denominatorZero = hSignal.Clone()
             hRatioAbs.Divide(denominatorZero)
+            hRatioAbs.SetAxisRange(250, 1700)
             count.append((den_name, hSignal))
             absolute.append((den_name, hRatioAbs))
             if d+1< len(cuts):
@@ -796,6 +807,7 @@ class plots:
                 hNumerator=h2d.ProjectionX(numerator, b, b)
                 hRatioRel=ROOT.TH1D(hNumerator)
                 hRatioRel.SetName(numerator+"_over_"+denominator)
+                hRatioRel.SetAxisRange(250, 1700)
                 hRatioRel.Divide(hDenominator)
                 relative.append((num_name+" / "+den_name,hRatioRel))
         return relative, absolute, count
@@ -831,12 +843,13 @@ if __name__ == '__main__':
     with plots() as producer:
         producer.debug_mode(True)
         # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
-        producer.add_dir(['pass[mv|mdrs]/fourTag/mainview/[HHSR|CR|SB]/nSel*','pass*/fourTag/mainview/[HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
-        # producer.add_dir(['passMV/fourTag/mainview/[HHSR|CR]/*[BDT|SvB_MA*_ps]*'])
+        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/nSel*'])
+        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/*[BDT|SvB_MA*_ps]*'])
         # producer.add_dir(['pass*/fourTag/mainview/HHSR/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
-        # producer.add_dir(['pass*/fourTag/*view*/[HHSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|inclusive]/lead*subl*'])
+        # producer.add_dir(['pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/lead*subl*','pass*/fourTag/*view*/[HHSR|inclusive]/bdt_vs*'])
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
+        producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
 
         # MC
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
@@ -850,7 +863,8 @@ if __name__ == '__main__':
         # producer.optimize('passNjOth/fourTag/mainView/HHSR/canJet3BTag')
         # producer.optimize('passMV/fourTag/mainView/HHSR/canJet3BTag')
 
-        # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('MDRs','#Delta R_{jj}'), ('NjOth','N_{j}#geq 6'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
+        # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('MDRs','#Delta R_{jj}'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
+        # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('LooseMDRs','Loose #Delta R_{jj}'), ('LooseMV','Loose m_{V}'),('LooseMV_HHmSR','modified SR'),('LooseMV_HHmSR_HLT','HLT')]
         # producer.AccxEff(cuts)
         # producer.plot_2d()
         producer.plot_1d(1)
