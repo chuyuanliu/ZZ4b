@@ -31,6 +31,7 @@ parser.add_option(      '--bTagSF',               dest="bTagSF",        action="
 parser.add_option(      '--bTagSyst',             dest="bTagSyst",      action="store_true", default=False, help="run btagging systematics")
 parser.add_option(      '--JECSyst',              dest="JECSyst",       default="", help="Name of JEC Systematic uncertainty, examples: _jerDown, _jesTotalUp")
 parser.add_option('-i', '--input',                dest="input",         default="ZZ4b/fileLists/data2016H.txt", help="Input file(s). If it ends in .txt, will treat it as a list of input files.")
+parser.add_option(      '--friends',              dest="friends",       default=None, help="Extra friend files. comma separated list where each item replaces picoAOD in the input file, ie FvT,SvB for FvT.root stored in same location as picoAOD.root")
 parser.add_option(      '--inputWeightFiles',     dest="inputWeightFiles",default=None, help="Input weight file(s). If it ends in .txt, will treat it as a list of input files. These are used as the FvT")
 parser.add_option(      '--inputWeightFiles4b',   dest="inputWeightFiles4b",default=None, help="Input weight file(s). If it ends in .txt, will treat it as a list of input files. These are used to scale the 4b data")
 parser.add_option(      '--inputWeightFilesDvT',   dest="inputWeightFilesDvT",default=None, help="Input weight file(s). If it ends in .txt, will treat it as a list of input files. These are used to scale the 4b data")
@@ -41,6 +42,7 @@ parser.add_option(      '--looseSkim',            dest="looseSkim",     action="
 parser.add_option(      '--doTrigEmulation',                            action="store_true", default=False, help="Emulate the trigger using weights stored in the picoAODs")
 parser.add_option(      '--calcTrigWeights',                            action="store_true", default=False, help="Calculate and store trigger weights in the picoAODs")
 parser.add_option(      '--useMCTurnOns',                               action="store_true", default=False, help="Calculate and store trigger weights in the picoAODs")
+parser.add_option(      '--useUnitTurnOns',                               action="store_true", default=False, help="Calculate and store trigger weights in the picoAODs")
 parser.add_option('-n', '--nevents',              dest="nevents",       default="-1", help="Number of events to process. Default -1 for no limit.")
 #parser.add_option(      '--histogramming',        dest="histogramming", default="1000", help="Histogramming level. 0 to make no kinematic histograms. 1: only make histograms for full event selection, larger numbers add hists in reverse cutflow order.")
 #parser.add_option(      '--histDetailLevel',        dest="histDetailLevel", default="6", help="Hist Detail level. Higher the number the more hisgotrams: < 10 only mainView / < 5 kills ZH / < 7 kills ZZ / specific regions")
@@ -121,7 +123,8 @@ lumiData   = {'2015':'',
 ## Higgs BR(mH=125.0) = 0.5824, BR(mH=125.09) = 0.5809: https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
 ## Z BR = 0.1512+/-0.0005 from PDG
 ## store all process cross sections in pb. Can compute xs of sample with GenXsecAnalyzer. Example: 
-## cd genproductions/test/calculateXSectionAndFilterEfficiency; ./calculateXSectionAndFilterEfficiency.sh -f ../../../ZZ_dataset.txt -c RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1 -d MINIAODSIM -n -1 
+## https://twiki.cern.ch/twiki/bin/viewauth/CMS/HowToGenXSecAnalyzer
+## cd genproductions/Utilities/calculateXSectionAndFilterEfficiency; ./calculateXSectionAndFilterEfficiency.sh -f ../../../ZZ_dataset.txt -c RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1 -d MINIAODSIM -n -1 
 ## tt xs NNLO and measurement in dilep and semilep tt+jets, tt+bb: https://cds.cern.ch/record/2684606/files/TOP-18-002-paper-v19.pdf
 xsDictionary = {#"ggZH4b":  0.1227*0.5824*0.1512, #0.0432 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.0432/0.69911 = 0.0618, almost exactly half the LHCXSWG value... NNLO = 2x NLO??
                 #  "ZH4b":  0.7612*0.5824*0.1512, #0.5540 from GenXsecAnalyzer, does not include BR for H, does include BR(Z->hadrons) = 0.69911. 0.5540/0.69911 = 0.7924, 4% larger than the LHCXSWG value.
@@ -284,6 +287,14 @@ if fileNames[0] == picoAOD and create:
     sys.exit()
 
 
+friendFiles = []
+if o.friends:
+    friends = o.friends.split(',')
+    for friend in friends:
+        friendFileName = pathOut+friend+'.root'
+        friendFiles.append(friendFileName)
+        print('Friend:',friendFileName)
+
 
 
 #
@@ -379,6 +390,7 @@ process.nTupleAnalysis = cms.PSet(
     doTrigEmulation = cms.bool(o.doTrigEmulation),
     calcTrigWeights = cms.bool(o.calcTrigWeights),
     useMCTurnOns    = cms.bool(o.useMCTurnOns),
+    useUnitTurnOns    = cms.bool(o.useUnitTurnOns),
     lumi    = cms.double(o.lumi),
     firstEvent  = cms.int32(int(o.firstEvent)),
     xs      = cms.double(xs),
@@ -414,6 +426,7 @@ process.nTupleAnalysis = cms.PSet(
     reweight4bName     = cms.string(o.reweight4bName),
     reweightDvTName     = cms.string(o.reweightDvTName),
     SvB_ONNX = cms.string(o.SvB_ONNX),
+    friends          = cms.vstring(friendFiles),
     inputWeightFiles = cms.vstring(weightFileNames),
     inputWeightFiles4b = cms.vstring(weightFileNames4b),
     inputWeightFilesDvT = cms.vstring(weightFileNamesDvT),

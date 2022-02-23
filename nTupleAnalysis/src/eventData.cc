@@ -22,16 +22,23 @@ bool comp_FvT_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventVi
 bool comp_SvB_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->SvB_q_score < second->SvB_q_score); }
 bool comp_dR_close(   std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->close->dR   < second->close->dR  ); }
 
-eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, std::string bdtWeightFile, std::string bdtMethods, std::string ZPtNNLOWeight){
+eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _useUnitTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, std::string bdtWeightFile, std::string bdtMethods, std::string ZPtNNLOWeight){
   std::cout << "eventData::eventData()" << std::endl;
   tree  = t;
   isMC  = mc;
   year  = ::atof(y.c_str());
   debug = d;
   useMCTurnOns = _useMCTurnOns;
+  useUnitTurnOns = _useUnitTurnOns;
   fastSkim = _fastSkim;
   doTrigEmulation = _doTrigEmulation;
   calcTrigWeights = _calcTrigWeights;
+  if(!tree->FindBranch("trigWeight_Data") && doTrigEmulation && !calcTrigWeights){
+    cout << "WARNING:: You are trying to use trigger emulation without precomputed weights and without computing weights. Falling back to MC trigger decisions." << endl;
+    assert(!tree->FindBranch("trigWeight_Data") && doTrigEmulation && !calcTrigWeights); // for now lets just throw error to prevent this from going unnoticed. Comment this line to fall back to simulated triggers
+    doTrigEmulation = false;
+    calcTrigWeights = false;
+  }
   doReweight = _doReweight;
   isDataMCMix = _isDataMCMix;
   usePreCalcBTagSFs = _usePreCalcBTagSFs;
@@ -83,6 +90,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables[FvTName+"_q_1324"] = &FvT_q_score[1]; //&FvT_q_1324;
   classifierVariables[FvTName+"_q_1423"] = &FvT_q_score[2]; //&FvT_q_1423;
   classifierVariables["weight_dRjjClose"] = &weight_dRjjClose;
+  check_classifierVariables[FvTName+"_event"] = &FvT_event;
 
   classifierVariables["SvB_ps" ] = &SvB_ps;
   classifierVariables["SvB_pwhh"] = &SvB_pwhh;
@@ -91,6 +99,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables["SvB_q_1234"] = &SvB_q_score[0]; //&SvB_q_1234;
   classifierVariables["SvB_q_1324"] = &SvB_q_score[1]; //&SvB_q_1324;
   classifierVariables["SvB_q_1423"] = &SvB_q_score[2]; //&SvB_q_1423;
+  check_classifierVariables["SvB_event"] = &SvB_event;
 
   classifierVariables["SvB_MA_ps" ] = &SvB_MA_ps;
   classifierVariables["SvB_MA_pwhh"] = &SvB_MA_pwhh;
@@ -99,6 +108,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables["SvB_MA_q_1234"] = &SvB_MA_q_score[0]; //&SvB_MA_q_1234;
   classifierVariables["SvB_MA_q_1324"] = &SvB_MA_q_score[1]; //&SvB_MA_q_1324;
   classifierVariables["SvB_MA_q_1423"] = &SvB_MA_q_score[2]; //&SvB_MA_q_1423;
+  check_classifierVariables["SvB_MA_event"] = &SvB_MA_event;
 
   classifierVariables["SvB_MA_signalSM_ps" ] = &SvB_MA_signalSM_ps;
   classifierVariables["SvB_MA_signalAll_ps" ] = &SvB_MA_signalAll_ps;
@@ -126,23 +136,25 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
       std::cout << "Tree has " << variable.first << std::endl;
       inputBranch(tree, variable.first.c_str(), *variable.second);
     }else{
-      if(variable.first == FvTName){
-	std::cout << "WARNING FvTName: " << FvTName << " is not in Tree  " << std::endl;
-      }
-      if(variable.first == reweight4bName){
-	std::cout << "WARNING reweight4bName: " << reweight4bName << " is not in Tree  " << std::endl;
-      }
-      if(variable.first == reweightDvTName){
-	std::cout << "WARNING reweightDvT: " << reweightDvTName << " is not in Tree  " << std::endl;
-      }
-      if(variable.first == "SvB_ps"){
-	std::cout << "WARNING SvB_ps is not in Tree  " << std::endl;
-      }
+      std::cout << "Tree does not have " << variable.first << std::endl;
+    }
+  }
 
-      if(variable.first == "weight_dRjjClose"){
-	std::cout << "WARNING weight_dRjjClose is not in Tree  " << std::endl;
+  for(auto& variable: check_classifierVariables){
+    if(tree->FindBranch(variable.first.c_str())){
+      std::cout << "Tree has " << variable.first << std::endl;
+      inputBranch(tree, variable.first.c_str(), *variable.second);
+      if(variable.first == FvTName+"_event"){
+	check_FvT_event = true;
       }
-
+      if(variable.first == "SvB_event"){
+	check_SvB_event = true;
+      }
+      if(variable.first == "SvB_MA_event"){
+	check_SvB_MA_event = true;
+      }
+    }else{
+      std::cout << "Tree does not have " << variable.first << std::endl;
     }
   }
 
@@ -501,6 +513,7 @@ void eventData::resetEvent(){
   xWbW0 = 1e6; xWbW1 = 1e6; xWbW = 1e6; //xWt2=1e6;  
   xW = 1e6; xt=1e6; xbW=1e6;
   dRbW = 1e6;
+  passTTCR = false;
 
   BDT_c2v_c3 = -99;
 
@@ -532,6 +545,16 @@ void eventData::update(long int e){
 
   tree->GetEntry(e);
   if(debug) std::cout<<"Got Entry "<<e<<std::endl;
+
+  if(check_FvT_event){
+    assert( event==ULong64_t(FvT_event) );
+  }
+  if(check_SvB_event){
+    assert( event==ULong64_t(SvB_event) );
+  }
+  if(check_SvB_MA_event){
+    assert( event==ULong64_t(SvB_MA_event) );
+  }
 
   //
   // Reset the derived data
@@ -594,9 +617,6 @@ void eventData::update(long int e){
   //
   if(isMC && (calcTrigWeights || doTrigEmulation)){
 
-    passL1  = true;
-    passHLT = true;
-
     if(calcTrigWeights){
 
       if(fourTag){
@@ -625,9 +645,12 @@ void eventData::update(long int e){
     }
  
     trigWeight = useMCTurnOns ? trigWeight_MC : trigWeight_Data;
+    if(useUnitTurnOns) trigWeight = 1.0;
 
     weight *= trigWeight;
 
+    passL1  = trigWeight>0;
+    passHLT = trigWeight>0;
 
   }else{
     for(auto &trigger: HLT_triggers){
@@ -643,7 +666,7 @@ void eventData::update(long int e){
   
 
   //
-  // For signal injection study
+  // For signal injection study / and mixed + 4b TTbar  dataset
   //
 
   //
@@ -654,6 +677,7 @@ void eventData::update(long int e){
       mixedEventIsData = true;
     }else{
       mixedEventIsData = false;
+      passHLT = true; // emulation weights already included in the skimming 
     }
 
   }
@@ -728,6 +752,7 @@ void eventData::buildEvent(){
     #endif
     //((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/2.5,2)) > 1)&(xW<0.5)) || ((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/4.0,2)) > 1)&(xW>=0.5)); //(t->xWbW > 2); //(t->xWt > 2) & !( (t->m>173)&(t->m<207) & (t->W->m>90)&(t->W->m<105) );
     passXWt = t->rWbW > 3;
+    passTTCR = (muons_isoMed40.size()>0) && (t->rWbW < 2);
   }
   if(bdtModel && passMV){
     auto score = bdtModel->getBDTScore(this);
@@ -1310,6 +1335,10 @@ void eventData::buildViews(){
   views.push_back(std::make_shared<eventView>(eventView(dijets[0], dijets[1], FvT_q_score[0], SvB_q_score[0], SvB_MA_q_score[0])));
   views.push_back(std::make_shared<eventView>(eventView(dijets[2], dijets[3], FvT_q_score[1], SvB_q_score[1], SvB_MA_q_score[1])));
   views.push_back(std::make_shared<eventView>(eventView(dijets[4], dijets[5], FvT_q_score[2], SvB_q_score[2], SvB_MA_q_score[2])));
+  for(auto &view: views){
+    views_passMDRs.push_back(view);
+    views_passLooseMDRs.push_back(view);
+  }
 
   dR0123 = views[0]->dRBB;
   dR0213 = views[1]->dRBB;
@@ -1343,11 +1372,8 @@ bool failMDRs(std::shared_ptr<eventView> &view){ return !view->passMDRs; }
 
 void eventData::applyMDRs(){
   appliedMDRs = true;
-  //views.erase(std::remove_if(views.begin(), views.end(), failMDRs), views.end());
-  for(auto &view: views){
-    if(view->passMDRs) views_passMDRs.push_back(view);
-    if(view->passLooseMDRs) views_passLooseMDRs.push_back(view);
-  }
+  views_passMDRs.erase(std::remove_if(views_passMDRs.begin(), views_passMDRs.end(), failMDRs), views_passMDRs.end());
+  views_passLooseMDRs.erase(std::remove_if(views_passLooseMDRs.begin(), views_passLooseMDRs.end(), [](auto view){return !view->passLooseMDRs;}), views_passLooseMDRs.end());
   passMDRs = views_passMDRs.size() > 0;
   passLooseMDRs = views_passLooseMDRs.size() > 0;
 

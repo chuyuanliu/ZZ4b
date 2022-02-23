@@ -6,6 +6,7 @@
 #include <iostream>
 #include <boost/range/numeric.hpp>
 #include <boost/range/adaptor/map.hpp>
+#include <boost/any.hpp>
 #include <TChain.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -40,7 +41,8 @@ namespace nTupleAnalysis {
     bool isMC;
     float year;
     bool debug;
-    bool useMCTurnOns;
+    bool useMCTurnOns = false;
+    bool useUnitTurnOns = false;
     bool printCurrentFile = true;
     bool fastSkim = false;
     bool looseSkim = false;
@@ -87,9 +89,16 @@ namespace nTupleAnalysis {
     Float_t   DvT_pt = 0.0;
     Float_t   DvT_pm = 1.0;
     Float_t   DvT_pd = 1.0;
-    Float_t   weight_dRjjClose  = 1.0;
+    Float_t   weight_dRjjClose = 1.0;
+    Long64_t  FvT_event = 0;
+    bool      check_FvT_event = false;
+    Long64_t  SvB_event = 0;
+    bool      check_SvB_event = false;
+    Long64_t  SvB_MA_event = 0;
+    bool      check_SvB_MA_event = false;
 
-    std::map<std::string, Float_t*> classifierVariables;
+    std::map<std::string, float*>           classifierVariables;
+    std::map<std::string, Long64_t*> check_classifierVariables;
 
     Float_t   genWeight =  1;
     Float_t   weight    =  1;
@@ -288,6 +297,7 @@ namespace nTupleAnalysis {
     bool passDijetMass;
     bool passMDRs;
     bool passXWt;
+    bool passTTCR = false;
     //bool passDEtaBB;
     Int_t d01TruthMatch = 0;
     Int_t d23TruthMatch = 0;
@@ -302,7 +312,7 @@ namespace nTupleAnalysis {
     nTupleAnalysis::trigData* treeTrig = NULL;
 
     // Constructors and member functions
-    eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _calcTrigWeights = false, bool _useMCTurnOns = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
+    eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _calcTrigWeights = false, bool _useMCTurnOns = false, bool _useUnitTurnOns = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
 	      std::string JECSyst = "", bool _looseSkim = false, bool usePreCalcBTagSFs = false, std::string FvTName="FvT", std::string reweight4bName="MixedToUnmixed", std::string reweightDvTName="weight_DvT3_3b_pt3", bool doWeightStudy = false,
         std::string bdtWeightFile = "", std::string bdtMethods = "", std::string ZPtNNLOWeight = ""); 
     void setTagger(std::string, float);

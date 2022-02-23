@@ -13,7 +13,7 @@ using std::cout;  using std::endl;
 using namespace nTupleAnalysis;
 
 analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, std::string histDetailLevel, 
-		   bool _doReweight, bool _debug, bool _fastSkim, bool doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _isDataMCMix, bool usePreCalcBTagSFs,
+		   bool _doReweight, bool _debug, bool _fastSkim, bool doTrigEmulation, bool _calcTrigWeights, bool useMCTurnOns, bool useUnitTurnOns, bool _isDataMCMix, bool usePreCalcBTagSFs,
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
 		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
@@ -30,7 +30,6 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   looseSkim  = _looseSkim;
   SvBScore   = _SvBScore;
   calcTrigWeights = _calcTrigWeights;
-  useMCTurnOns = _useMCTurnOns;
   events->SetBranchStatus("*", 0);
 
   //keep branches needed for JEC Uncertainties
@@ -87,7 +86,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods, ZPtNNLOWeight);  
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods, ZPtNNLOWeight);  
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
@@ -125,6 +124,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(nTupleAnalysis::findSubStr(histDetailLevel,"failrWbW2"))     failrWbW2     = new   tagHists("failrWbW2",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMuon"))      passMuon      = new   tagHists("passMuon",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passDvT05"))     passDvT05     = new   tagHists("passDvT05",     fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCR"))      passTTCR      = new   tagHists("passTTCR",      fs, true,  isMC, blind, histDetailLevel, debug);
 
   if(!allEvents)     std::cout << "Turning off allEvents Hists" << std::endl; 
   if(!passPreSel)    std::cout << "Turning off passPreSel Hists" << std::endl; 
@@ -139,6 +139,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(failrWbW2)     std::cout << "Turning on failrWbW2 Hists" << std::endl; 
   if(passMuon)      std::cout << "Turning on passMuon Hists" << std::endl; 
   if(passDvT05)     std::cout << "Turning on passDvT05 Hists" << std::endl; 
+  if(passTTCR)      std::cout << "Turning on passTTCR Hists" << std::endl; 
 
 
 
@@ -542,10 +543,11 @@ void analysis::storeHemiSphereFile(){
 
 void analysis::monitor(long int e){
   //Monitor progress
-  timeTotal = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+  //timeTotal = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+  timeTotal = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start).count();
   timeElapsed          = timeTotal - previousMonitorTime;
   eventsElapsed        =         e - previousMonitorEvent;
-  if( timeElapsed < 1 && e+1!=nEvents) return;
+  if( timeElapsed < 1 ) return;
   previousMonitorEvent = e;
   previousMonitorTime  = timeTotal;
   percent              = (e+1)*100/nEvents;
@@ -584,7 +586,8 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
 
   bool mixedEventWasData = false;
 
-  start = std::clock();
+  //start = std::clock();
+  start = std::chrono::system_clock::now();
   for(long int e = firstEvent; e < lastEvent; e++){
     
     currentEvent = e;
@@ -946,6 +949,10 @@ int analysis::processEvent(){
     passMDRs->Fill(event, event->views_passMDRs);
 
     lumiCounts->FillMDRs(event);
+  }
+
+  if(passTTCR != NULL && event->passTTCR && event->passHLT){
+    passTTCR->Fill(event, event->views_passMDRs);
   }
 
 

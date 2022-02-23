@@ -515,7 +515,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
     }
   }
 
-  m4j_vs_nViews->Fill(view->m4j, event->views.size(), event->weight);
+  m4j_vs_nViews->Fill(view->m4j, event->views_passMDRs.size(), event->weight);
 
   if(event->truth != NULL){
     truthM4b       ->Fill(event->truth->m4b,            event->weight);
