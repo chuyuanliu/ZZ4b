@@ -81,8 +81,9 @@ parser.add_option(      '--reweightDvTName',    dest="reweightDvTName", type="st
 parser.add_option(      '--SvB_ONNX', dest="SvB_ONNX", default="", help="path to ONNX version of SvB model. If none specified, it won't be used.")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="currenty does nothing. Try to keep it that way")
 parser.add_option(   '--SvBScore',   dest='SvBScore', type='float', default='0.0',   help='SvB classifier score cut')
-parser.add_option(      '--bdtWeightFile',    dest="bdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/BDT_c3_20vs0_out.xml", help="BDT model weight files. /*method*/ will be replaced by BDT method")
-parser.add_option(      '--bdtMethods',    dest="bdtMethods", type="string", default="BDT", help="Name of BDT methods used in inference. BDT for VHH c2V BDT")
+parser.add_option(      '--klBdtWeightFile',    dest="klBdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/BDT_c3_20vs0_out.xml", help="path to kl BDT model weight files. /*method*/ will be replaced by kl BDT method")
+parser.add_option(      '--klBdtMethods',    dest="klBdtMethods", type="string", default="BDT", help="Name of kl BDT methods used in evaluation.")
+parser.add_option(      '--runKlBdt',    action="store_true", default=False, help="run kl categorization BDT and store output in picoAODs")
 parser.add_option(      '--doHigherOrderReweight',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
 parser.add_option(      '--ZPtNNLOWeight',    dest="ZPtNNLOWeight", default="ZZ4b/nTupleAnalysis/weights/ZHH_NNLO_vs_LO.root;h_ratio", help="path of NNLO MC ZHH weight")
 parser.add_option(      '--extraOutput',  dest="extraOutput", type ="string", default="", help="extra information stored in a separate root file")
@@ -430,8 +431,9 @@ process.nTupleAnalysis = cms.PSet(
     inputWeightFiles = cms.vstring(weightFileNames),
     inputWeightFiles4b = cms.vstring(weightFileNames4b),
     inputWeightFilesDvT = cms.vstring(weightFileNamesDvT),
-    bdtWeightFile = cms.string(o.bdtWeightFile),
-    bdtMethods = cms.string(o.bdtMethods),
+    klBdtWeightFile = cms.string(o.klBdtWeightFile),
+    klBdtMethods = cms.string(o.klBdtMethods),
+    runKlBdt = cms.bool(o.runKlBdt),
     ZPtNNLOWeight = cms.string(o.ZPtNNLOWeight if (o.doHigherOrderReweight and 'ZHH' in sample) else '')
     )
 

@@ -25,7 +25,7 @@ years = ['2018']
 signals = ['VHH']
 no_background = False #temp
 event_count = True
-signal_scale = 1
+signal_scale = 10
 
 if not os.path.isdir(out_path):
     os.mkdir(out_path)
@@ -135,18 +135,29 @@ class coupling_weight_generator:
 
 # Plot Rules
 
-class plot_rule:
-    def __init__(self):
-        None
+class plot_rule: #TEMP
+    def __init__(self, patterns, operations):
+        self.patterns = patterns
+        self.operations = operations
+        self.match = wildcard_match()
+    def check(self, hist):
+        for pattern in self.patterns:
+            if not self.match.match(pattern[1],hist[pattern[0]]):
+                return False
+        return True
+    def apply(self, hist_collection):
+        for operation in self.operations:
+            operation(hist_collection)
 
 # Plot
 
 class histogram_1d_collection:
-    def __init__(self, path, title = '', tag = '', normalize = False, x_label = '', y_label = '', y_range = None, smooth = False):
+    def __init__(self, path, title = '', tag = '', normalize = False, x_label = '', y_label = '', y_range = None, smooth = False, rules = []):
         self.path = path
         self.title = title
         self.tag = tag
         self.normalize = normalize
+        self.rules = rules
 
         self.signals = {}
         self.data = None
@@ -255,6 +266,8 @@ class histogram_1d_collection:
         if self.y_range is not None:
             self.y_min = self.y_range[0]
             self.y_max = self.y_range[1]
+        for rule in self.rules:
+            rule.apply(self)
         canvas_gen = canvas_helper.ROOTCanvas(self.x_min, self.x_max, self.y_min, self.y_max * 1.05)
         canvas_gen.XLabel.Text = self.set_font(self.x_label)
         canvas_gen.YLabel.Text = self.set_font(self.y_label)
@@ -405,6 +418,7 @@ class plots:
         self.ttbar_files = {}
         self.multijet_files = {}
 
+        self.plot_rules = []
         self.couplings = coupling_weight_generator([{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0},{'c3':20.0}], debug = debug, cmd_length = cmd_length)
         self.match = wildcard_match(match_all_dirs, ignore_case, debug = debug, cmd_length = cmd_length)
         self.base_path = path_extensions(self.output, clean = True, debug = debug, cmd_length = cmd_length)
@@ -582,18 +596,24 @@ class plots:
             for c2v_iter in c2v:
                 for c3_iter in c3:
                     self.plot_couplings.append({'cv':cv_iter, 'c2v':c2v_iter, 'c3':c3_iter})
-    
+    def add_plot_rule(self, rule):
+        self.plot_rules.append(rule)
+
     def plot_1d(self, rebin = 1): #TEMP
         for year in self.years:
             for signal in self.signals:
                 for hist in self.plot_hists:
                     if self.debug: print('Plot'.ljust(self.cmd_length) + hist) 
+                    rules = []
+                    for rule in self.plot_rules:
+                        if rule.check(self.all_hists[hist]):
+                            rules.append(rule)
                     path = self.path[year][signal].mkdir(self.all_hists[hist][:-1])
                     path += self.all_hists[hist][-1]
                     signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
                     if not isinstance(signal_mc[0], ROOT.TH1F) and not isinstance(signal_mc[0], ROOT.TH1D):
                         continue
-                    ploter = histogram_1d_collection(path, title=hist, normalize = self.plot_hists[hist],y_label='Events')
+                    ploter = histogram_1d_collection(path, title=hist, normalize = self.plot_hists[hist],y_label='Events',rules=rules)
                     if not no_background:
                         ploter.add_hist(self.load_data_hists(year, hist, rebin), 'Data ' + self.lumi[year] + ' ' + year)
                         ploter.add_hist(self.load_multijet_hists(year, hist, rebin), 'Multijet Model')
@@ -621,7 +641,7 @@ class plots:
                     if signal_mc is not None:
                         for coupling in self.plot_couplings:
                             weights = self.couplings.generate_weight(**coupling)
-                            ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_filename(**coupling))
+                            ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_filename(**coupling)[1:-1])
                     if 'm4j' in hist and 'leadSt_dR' in hist:
                         ploter.add_curve('650.0/x+0.5', range=[None, 650])
                         ploter.add_curve('360.0/x-0.5')
@@ -635,10 +655,10 @@ class plots:
                         ploter.add_curve('1.5', range=[812.5, None])
                     if 'm6j' in hist and 'V_dR' in hist:
                         ploter.add_curve('650.0/x+0.3', range=[None, 650], color=ROOT.kGreen)
-                        ploter.add_curve('', range=[650, None], color=ROOT.kGreen)
+                        ploter.add_curve('1.3', range=[650, None], color=ROOT.kGreen)
                     if 'leadSt_m' in hist and 'sublSt_m' in hist:
-                        ploter.add_curve('(((x-125*1.02)/(0.1*x))**2 +((y-125*0.98)/(0.1*y))**2)',[1.9**2])
-                        ploter.add_curve('(((x+y-245)/1.2)**2 +((x-y-5))**2)',[2*22**2], color=ROOT.kGreen)
+                        ploter.add_curve('(((x-125*1.02)/(0.1*x))**2+((y-125*0.98)/(0.1*y))**2)',[1.9**2])
+                        ploter.add_curve('(((x+y-245)/1.2)**2+(x-y-5)**2)',[2*22**2], color=ROOT.kGreen)
                     ploter.plot()
 
     def compare(self, hists, rebin = 1, normalize = False):
@@ -838,19 +858,25 @@ class plots:
                     if self.debug: print('AccEff'.ljust(self.cmd_length) + title) 
 
             
+def fix_y_SvB_rebin(hist_collection):
+    hist_collection.y_max = 180
+
+def fix_y_SvB(hist_collection):
+    hist_collection.y_max = 20
 
 if __name__ == '__main__':
     with plots() as producer:
         producer.debug_mode(True)
         # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/nSel*'])
-        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/*[BDT|SvB_MA*_ps]*'])
-        # producer.add_dir(['pass*/fourTag/mainview/HHSR/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
-        producer.add_dir(['pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/lead*subl*','pass*/fourTag/*view*/[HHSR|inclusive]/bdt_vs*'])
+        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/SvB_MA*_ps*'])
+        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
+        # producer.add_dir(['pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/lead*subl*','pass*/fourTag/*view*/[HHSR|inclusive]/bdt_vs*'])
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
         producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
-
+        # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps')],[fix_y_SvB]))
+        # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps_rebin')],[fix_y_SvB_rebin]))
         # MC
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=2.0, c3=1.0)
@@ -866,7 +892,7 @@ if __name__ == '__main__':
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('MDRs','#Delta R_{jj}'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('LooseMDRs','Loose #Delta R_{jj}'), ('LooseMV','Loose m_{V}'),('LooseMV_HHmSR','modified SR'),('LooseMV_HHmSR_HLT','HLT')]
         # producer.AccxEff(cuts)
-        producer.plot_2d()
+        # producer.plot_2d()
         producer.plot_1d(1)
         # producer.save('VhadHH_combine_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_signalAll_ps', 4)
         # producer.save('VhadHH_combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)

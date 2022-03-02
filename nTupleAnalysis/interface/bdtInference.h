@@ -47,7 +47,7 @@ namespace nTupleAnalysis{
     
     bool setVariables(const TLorentzVector &H1_p, const TLorentzVector &H2_p, const TLorentzVector &V_p);
     std::map<std::string, Float_t> getBDTScore();
-    std::vector<std::map<std::string, Float_t>> getBDTScore(eventData *event);
+    std::map<std::string, Float_t> getBDTScore(eventData* event, std::shared_ptr<eventView> view);
   };
 
 }

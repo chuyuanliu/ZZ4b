@@ -216,12 +216,12 @@ namespace nTupleAnalysis {
     uint nSelJetsV;
 
     std::unique_ptr<bdtInference> bdtModel;
-    Float_t BDT_c2v_c3;
+    Float_t BDT_kl = -99;
+    bool runKlBdt;
     const float bdtCut = 0.0;
 
     std::unique_ptr<TH1F> Z_Pt_NNLO_weight = nullptr;
 
-    Float_t SvB_MA_signalSM_ps = -99;
     Float_t SvB_MA_signalAll_ps = -99;
     Float_t SvB_MA_regionBDT_signalAll_ps = -99;
     Float_t SvB_MA_regionC3_signalAll_ps = -99;
@@ -314,7 +314,7 @@ namespace nTupleAnalysis {
     // Constructors and member functions
     eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _calcTrigWeights = false, bool _useMCTurnOns = false, bool _useUnitTurnOns = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
 	      std::string JECSyst = "", bool _looseSkim = false, bool usePreCalcBTagSFs = false, std::string FvTName="FvT", std::string reweight4bName="MixedToUnmixed", std::string reweightDvTName="weight_DvT3_3b_pt3", bool doWeightStudy = false,
-        std::string bdtWeightFile = "", std::string bdtMethods = "", std::string ZPtNNLOWeight = ""); 
+        std::string bdtWeightFile = "", std::string bdtMethods = "", bool _runKlBdt = false, std::string ZPtNNLOWeight = ""); 
     void setTagger(std::string, float);
     void update(long int);
     void buildEvent();

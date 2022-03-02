@@ -70,6 +70,7 @@ parser.add_option(   '--separate', dest = 'separate', action="store_true", defau
 parser.add_option(   '--separate3b4b', dest = 'separate3b4b', action="store_true", default=False, help = 'run 4b, 3b separately')
 parser.add_option(   '--debug', dest = 'debug', action="store_true", default=False, help = 'enable debug mode')
 parser.add_option(   '--extraOutput', dest = 'extraOutput', action="store_true", default=False, help = 'make extra root file')
+parser.add_option(   '--runKlBdt', dest = 'runKlBdt', action="store_true", default=False, help = 'run kl BDT')
 o, a = parser.parse_args()
 
 fromNANOAOD = (o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none") 
@@ -301,6 +302,7 @@ def doSignal():
                     cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
                     cmd += " -r " if o.reweight else ""
                     cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
+                    cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
                     #cmd += " -f " if o.fastSkim else ""
                     cmd += " --isMC"
                     cmd += " --doTrigEmulation" if o.trigger else ""
@@ -402,6 +404,7 @@ def doDataTT():
             cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
             cmd += " -r " if o.reweight else ""
             cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
+            cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
             cmd += " -f " if o.fastSkim else ""
             cmd += " --SvBScore "+o.SvBScore
             cmd += " --bTag "+bTagDict[year]

@@ -70,17 +70,11 @@ namespace nTupleAnalysis{
     return score;
   }
 
-  std::vector<std::map<std::string, Float_t>> bdtInference::getBDTScore(eventData *event){
-    std::vector<std::map<std::string, Float_t>> scores;
-    size_t nViews = event->views.size();
+  std::map<std::string, Float_t> bdtInference::getBDTScore(eventData* event, std::shared_ptr<eventView> view){
     auto V_p = event->canVDijets[0]->p;
-    for (size_t i = 0; i < nViews; i++){
-      auto view = event->views[i];
-      auto H1_p = view->lead->p;
-      auto H2_p = view->subl->p;
-      setVariables(H1_p, H2_p, V_p);
-      scores.push_back(getBDTScore());
-    }
-    return scores;
+    auto H1_p = view->lead->p;
+    auto H2_p = view->subl->p;
+    setVariables(H1_p, H2_p, V_p);
+    return getBDTScore();
   }
 }

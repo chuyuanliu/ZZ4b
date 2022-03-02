@@ -17,7 +17,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
 		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
-       float _SvBScore, std::string bdtWeightFile, std::string bdtMethods, std::string ZPtNNLOWeight, std::string extraOutput){
+       float _SvBScore, std::string bdtWeightFile, std::string bdtMethods, bool runKlBdt, std::string ZPtNNLOWeight, std::string extraOutput){
 
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
@@ -86,7 +86,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods, ZPtNNLOWeight);  
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods, runKlBdt, ZPtNNLOWeight);  
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
@@ -495,34 +495,16 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
 
   //classifier variables
   picoAODEvents->Branch("FvT"    , &event->FvT);
-  picoAODEvents->Branch("FvT_pd4", &event->FvT_pd4);
-  picoAODEvents->Branch("FvT_pd3", &event->FvT_pd3);
-  picoAODEvents->Branch("FvT_pt4", &event->FvT_pt4);
-  picoAODEvents->Branch("FvT_pt3", &event->FvT_pt3);
-  picoAODEvents->Branch("FvT_pm4", &event->FvT_pm4);
-  picoAODEvents->Branch("FvT_pm3", &event->FvT_pm3);
-  picoAODEvents->Branch("FvT_pt" , &event->FvT_pt);
   picoAODEvents->Branch("FvT_q_1234", &event->FvT_q_score[0]); //&FvT_q_1234;
   picoAODEvents->Branch("FvT_q_1324", &event->FvT_q_score[1]); //&FvT_q_1324;
   picoAODEvents->Branch("FvT_q_1423", &event->FvT_q_score[2]); //&FvT_q_1423;
 
-  picoAODEvents->Branch("SvB_ps" , &event->SvB_ps);
-  picoAODEvents->Branch("SvB_pwhh", &event->SvB_pwhh);
-  picoAODEvents->Branch("SvB_pzhh", &event->SvB_pzhh);
-  picoAODEvents->Branch("SvB_ptt", &event->SvB_ptt);
-  picoAODEvents->Branch("SvB_q_1234", &event->SvB_q_score[0]); //&SvB_q_1234;
-  picoAODEvents->Branch("SvB_q_1324", &event->SvB_q_score[1]); //&SvB_q_1324;
-  picoAODEvents->Branch("SvB_q_1423", &event->SvB_q_score[2]); //&SvB_q_1423;
-
-  picoAODEvents->Branch("SvB_MA_ps" , &event->SvB_MA_ps);
-  picoAODEvents->Branch("SvB_MA_pwhh", &event->SvB_MA_pwhh);
-  picoAODEvents->Branch("SvB_MA_pzhh", &event->SvB_MA_pzhh);
-  picoAODEvents->Branch("SvB_MA_ptt", &event->SvB_MA_ptt);
-  picoAODEvents->Branch("SvB_MA_q_1234", &event->SvB_MA_q_score[0]); //&SvB_MA_q_1234;
-  picoAODEvents->Branch("SvB_MA_q_1324", &event->SvB_MA_q_score[1]); //&SvB_MA_q_1324;
-  picoAODEvents->Branch("SvB_MA_q_1423", &event->SvB_MA_q_score[2]); //&SvB_MA_q_1423;
-
-  picoAODEvents->Branch("BDT_c2v_c3", &event->BDT_c2v_c3);
+  picoAODEvents->Branch("FvT"    , &event->FvT);
+  picoAODEvents->Branch("SvB_MA_signalAll_ps"    , &event->SvB_MA_signalAll_ps);
+  picoAODEvents->Branch("SvB_MA_regionC3_signalAll_ps"    , &event->SvB_MA_regionC3_signalAll_ps);
+  picoAODEvents->Branch("SvB_MA_regionC2V_signalAll_ps"    , &event->SvB_MA_regionC2V_signalAll_ps);
+  picoAODEvents->Branch("SvB_MA_labelBDT_ps"    , &event->SvB_MA_labelBDT_ps);
+  picoAODEvents->Branch("BDT_kl", &event->BDT_kl);
 
   cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
   return;

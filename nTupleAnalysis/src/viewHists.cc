@@ -254,7 +254,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
 
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"bdtStudy")){
-    bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; c_{2V} vs c_{3} BDT Output; Entries").c_str(), 32, -1 , 1); 
+    bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; #kappa_{#lambda} BDT Output; Entries").c_str(), 32, -1 , 1); 
   }
   
 } 
@@ -496,14 +496,14 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   SvB_MA_regionBDT_ps_rebin->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
   SvB_MA_labelBDT_ps_rebin->Fill(event->SvB_MA_labelBDT_ps, event->weight);
 
-  bdt_vs_labelBDT->Fill(event->BDT_c2v_c3, event->SvB_MA_labelBDT_ps, event->weight);
-  bdt_vs_regionBDT->Fill(event->BDT_c2v_c3, event->SvB_MA_regionBDT_signalAll_ps, event->weight);
-  bdt_vs_simple->Fill(event->BDT_c2v_c3, event->SvB_MA_signalAll_ps, event->weight);
+  bdt_vs_labelBDT->Fill(event->BDT_kl, event->SvB_MA_labelBDT_ps, event->weight);
+  bdt_vs_regionBDT->Fill(event->BDT_kl, event->SvB_MA_regionBDT_signalAll_ps, event->weight);
+  bdt_vs_simple->Fill(event->BDT_kl, event->SvB_MA_signalAll_ps, event->weight);
 
   SvB_MA_diff_regionBDT_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
   if(bdtScore && event->canVDijets.size() > 0){
-    bdtScore->Fill(event->BDT_c2v_c3, event->weight);
-    if(event->BDT_c2v_c3 >= event->bdtCut){ // C3 region
+    bdtScore->Fill(event->BDT_kl, event->weight);
+    if(event->BDT_kl >= event->bdtCut){ // C3 region
       SvB_MA_C3_regionC3_ps->Fill(event->SvB_MA_regionC3_signalAll_ps , event->weight);
       SvB_MA_C2V_regionC3_ps->Fill(event->SvB_MA_regionC2V_signalAll_ps , event->weight);
       SvB_MA_diff_regionC3_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);

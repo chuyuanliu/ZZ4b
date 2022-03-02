@@ -85,7 +85,7 @@ if 'SvB' in args.classifier:
         args.updatePostFix = '_' + '_'.join(strategies)
 
 BDT_CUT = 0.0
-BDT_NAME = 'BDT_c2v_c3'
+BDT_NAME = 'BDT_kl'
 
 
 
