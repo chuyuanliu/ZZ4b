@@ -17,7 +17,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
 		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
-       float _SvBScore, std::string bdtWeightFile, std::string bdtMethods, bool runKlBdt, std::string ZPtNNLOWeight, std::string extraOutput){
+       std::string bdtWeightFile, std::string bdtMethods, bool runKlBdt, std::string ZPtNNLOWeight, std::string extraOutput){
 
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
@@ -28,7 +28,6 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   year       = _year;
   events     = _events;
   looseSkim  = _looseSkim;
-  SvBScore   = _SvBScore;
   calcTrigWeights = _calcTrigWeights;
   events->SetBranchStatus("*", 0);
 
@@ -106,7 +105,6 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("MDRs");
   cutflow->AddCut("NjOth");
   cutflow->AddCut("MV");
-  cutflow->AddCut("SvB");
 
   
   lumiCounts    = new lumiHists("lumiHists", fs, year, false, debug);
@@ -952,12 +950,6 @@ int analysis::processEvent(){
   if(passTTCRem != NULL && event->passTTCRem && event->passHLT){
     passTTCRem->Fill(event, event->views_passMDRs);
   }
-
-
-  if(passSvB != NULL &&  (event->SvB_ps > 0.9) && event->passHLT){ 
-    passSvB->Fill(event, event->views_passMDRs);
-  }    
-
 
 
   //

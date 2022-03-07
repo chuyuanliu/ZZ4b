@@ -88,13 +88,11 @@ namespace nTupleAnalysis {
     TH1F* SvB_MA_regionBDT_ps_rebin;
     TH1F* SvB_MA_labelBDT_ps_rebin;
     TH1F* SvB_MA_diff_regionBDT_ps;
+    systHists* SvB_MA_labelBDT_ps_bTagSysts =NULL;
+    systHists* SvB_MA_labelBDT_ps_rebin_bTagSysts = NULL;
     const static int SvB_nbins = 13;
     const Float_t SvB_bins[SvB_nbins + 1] = {0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.78, 0.86, 0.93, 0.97, 0.99, 1.0};
 
-    TH1F* SvB_MA_C3_regionC3_ps;
-    TH1F* SvB_MA_C2V_regionC3_ps;
-    TH1F* SvB_MA_C3_regionC2V_ps;
-    TH1F* SvB_MA_C2V_regionC2V_ps;
     TH1F* SvB_MA_diff_regionC3_ps;
     TH1F* SvB_MA_diff_regionC2V_ps;
 
@@ -126,11 +124,9 @@ namespace nTupleAnalysis {
 
     TH2F* m4j_vs_leadSt_dR;
     TH2F* m4j_vs_sublSt_dR;
-    TH2F* m4j_vs_V_dR;
 
     TH2F* m6j_vs_V_dR;
     TH2F* m6j_vs_V_dR_Loose;
-    TH2F* m6j_vs_V_dR_Gen;
     TH2F* m6j_vs_V_dR_matched;
     TH2F* m6j_vs_V_dR_not_matched;
 

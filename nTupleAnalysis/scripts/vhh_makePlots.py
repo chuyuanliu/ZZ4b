@@ -869,8 +869,8 @@ if __name__ == '__main__':
         producer.debug_mode(True)
         # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/nSel*'])
-        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/SvB_MA*_ps*'])
-        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
+        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/SvB_MA*_ps*'])
+        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/lead*subl*','pass*/fourTag/*view*/[HHSR|inclusive]/bdt_vs*'])
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
@@ -893,11 +893,18 @@ if __name__ == '__main__':
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('LooseMDRs','Loose #Delta R_{jj}'), ('LooseMV','Loose m_{V}'),('LooseMV_HHmSR','modified SR'),('LooseMV_HHmSR_HLT','HLT')]
         # producer.AccxEff(cuts)
         # producer.plot_2d()
-        producer.plot_1d(1)
-        # producer.save('VhadHH_combine_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_signalAll_ps', 4)
-        # producer.save('VhadHH_combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)
+        # producer.plot_1d(1)
+        
 
-
+        # classifier
+        producer.save('combine_regionBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps', 4)
+        producer.save('combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)
+        producer.save('combine_signalAll_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps', 4)
+        producer.save('combine_regionBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps_rebin', 1)
+        producer.save('combine_labelBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
+        producer.save('combine_signalAll_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps_rebin', 1)
+        producer.save('combine_loose_', 'passLooseMV/fourTag/mainView/HHmSR/SvB_MA_labelBDT_ps_rebin', 1)
+        producer.save('combine_tight_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
 
 # UL dataset
 # dataset =/*HHTo4B_CV_*_C2V_*_C3_*_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2*v15*/NANOAODSIM 

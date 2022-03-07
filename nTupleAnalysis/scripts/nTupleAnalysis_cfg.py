@@ -80,7 +80,6 @@ parser.add_option(      '--reweight4bName',    dest="reweight4bName", type="stri
 parser.add_option(      '--reweightDvTName',    dest="reweightDvTName", type="string", default="", help="FVT Name to load FvT+XXX")
 parser.add_option(      '--SvB_ONNX', dest="SvB_ONNX", default="", help="path to ONNX version of SvB model. If none specified, it won't be used.")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="currenty does nothing. Try to keep it that way")
-parser.add_option(   '--SvBScore',   dest='SvBScore', type='float', default='0.0',   help='SvB classifier score cut')
 parser.add_option(      '--klBdtWeightFile',    dest="klBdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/BDT_c3_20vs0_out.xml", help="path to kl BDT model weight files. /*method*/ will be replaced by kl BDT method")
 parser.add_option(      '--klBdtMethods',    dest="klBdtMethods", type="string", default="BDT", help="Name of kl BDT methods used in evaluation.")
 parser.add_option(      '--runKlBdt',    action="store_true", default=False, help="run kl categorization BDT and store output in picoAODs")
@@ -396,7 +395,6 @@ process.nTupleAnalysis = cms.PSet(
     firstEvent  = cms.int32(int(o.firstEvent)),
     xs      = cms.double(xs),
     fourbkfactor = cms.double(fourbkfactor),
-    SvBScore = cms.double(o.SvBScore),
     bTag    = cms.double(o.bTag),
     bTagger = cms.string(o.bTagger),
     bjetSF  = cms.string(bjetSF),

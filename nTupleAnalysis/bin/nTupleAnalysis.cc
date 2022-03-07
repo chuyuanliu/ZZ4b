@@ -84,8 +84,6 @@ int main(int argc, char * argv[]){
   // NNLO ZHH MC reweight
   std::string ZPtNNLOWeight = parameters.getParameter<std::string>("ZPtNNLOWeight");
 
-  float SvBScore = parameters.getParameter<double>("SvBScore");
-
   //lumiMask
   const edm::ParameterSet& inputs = process.getParameter<edm::ParameterSet>("inputs");   
   std::vector<edm::LuminosityBlockRange> lumiMask;
@@ -213,7 +211,7 @@ int main(int argc, char * argv[]){
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
 			looseSkim, FvTName, reweight4bName,reweightDvTName,
-      SvBScore, klBdtWeightFile, klBdtMethods, runKlBdt, ZPtNNLOWeight, extraOutput);
+      klBdtWeightFile, klBdtMethods, runKlBdt, ZPtNNLOWeight, extraOutput);
 
   a.event->setTagger(bTagger, bTag);
   a.makePSDataFromMC = makePSDataFromMC;

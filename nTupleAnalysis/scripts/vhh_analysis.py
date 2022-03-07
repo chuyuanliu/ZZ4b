@@ -50,7 +50,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passPreSel.passLooseMDRs.passLooseNjOth.passLooseMV.passMDRs.passNjOth.passMV.HHSR.HHmSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passPreSel.passMDRs.passNjOth.passMV.HHSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -63,7 +63,6 @@ parser.add_option(   '--condor',   action="store_true", default=False,          
 parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
 # for VHH study
 parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'set signal coupling')
-parser.add_option(   '--SvBScore ', dest = 'SvBScore', default = '0.8', help = 'set cut on SvB classifier score')
 parser.add_option(   '--higherOrder',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
 parser.add_option(   '--ttbarProcesses', dest = 'ttbarProcesses', default = 'TTToHadronic,TTToSemiLeptonic,TTTo2L2Nu', help = 'select ttbar processes')
 parser.add_option(   '--separate', dest = 'separate', action="store_true", default=False, help = 'run 4b, 3b separately and apply weights from other root files')
@@ -307,7 +306,6 @@ def doSignal():
                     cmd += " --isMC"
                     cmd += " --doTrigEmulation" if o.trigger else ""
                     cmd += " --doHigherOrderReweight" if o.higherOrder else ""
-                    cmd += " --SvBScore "+o.SvBScore
                     cmd += " --bTag "+bTagDict[year]
                     cmd += " --bTagSF"
                     cmd += " --bTagSyst" if o.bTagSyst else ""
@@ -406,7 +404,6 @@ def doDataTT():
             cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
             cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
             cmd += " -f " if o.fastSkim else ""
-            cmd += " --SvBScore "+o.SvBScore
             cmd += " --bTag "+bTagDict[year]
             cmd += " --nevents "+o.nevents
             cmd += " --jcmNameLoad Nominal" if o.separate or o.separate3b4b else ""
