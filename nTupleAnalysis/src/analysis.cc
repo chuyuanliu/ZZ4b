@@ -505,7 +505,6 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("FvT_q_1324", &event->FvT_q_score[1]); //&FvT_q_1324;
   picoAODEvents->Branch("FvT_q_1423", &event->FvT_q_score[2]); //&FvT_q_1423;
 
-  picoAODEvents->Branch("FvT"    , &event->FvT);
   picoAODEvents->Branch("SvB_MA_signalAll_ps"    , &event->SvB_MA_signalAll_ps);
   picoAODEvents->Branch("SvB_MA_regionC3_signalAll_ps"    , &event->SvB_MA_regionC3_signalAll_ps);
   picoAODEvents->Branch("SvB_MA_regionC2V_signalAll_ps"    , &event->SvB_MA_regionC2V_signalAll_ps);
