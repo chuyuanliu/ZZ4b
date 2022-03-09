@@ -21,7 +21,7 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['2018']
+years = ['RunII']
 signals = ['VHH']
 no_background = False #temp
 event_count = True
@@ -176,6 +176,14 @@ class histogram_1d_collection:
         self.y_label = y_label
         self.smooth = smooth
         self.y_range = y_range
+        self.topmid_label = ''
+        self.topright_label = ''
+
+    def set_topright(self, label):
+        self.topright_label = label
+
+    def set_topmid(self, label):
+        self.topmid_label = label
 
     def add_hist(self, hist, tag, scale = 1, line_color = 1):
         if not isinstance(hist, ROOT.TH1F) and not isinstance(hist, ROOT.TH1D):
@@ -269,6 +277,8 @@ class histogram_1d_collection:
         for rule in self.rules:
             rule.apply(self)
         canvas_gen = canvas_helper.ROOTCanvas(self.x_min, self.x_max, self.y_min, self.y_max * 1.05)
+        canvas_gen.TopMid.Text = self.set_font(self.topmid_label)
+        canvas_gen.TopRight.Text = self.set_font(self.topright_label)
         canvas_gen.XLabel.Text = self.set_font(self.x_label)
         canvas_gen.YLabel.Text = self.set_font(self.y_label)
         canvas_gen.AllowLegend = True
@@ -322,6 +332,7 @@ class histogram_1d_collection:
             bkgd_error.SetMarkerSize(0)
             bkgd_error.Draw('SAME E2')
             ratio.Draw('SAME X0 P E1')
+        canvas_gen.MainPad.RedrawAxis()
         canvas.Print(self.path + self.tag + '.pdf')
        
 class histogram_2d_collection:
@@ -385,6 +396,7 @@ class histogram_2d_collection:
             self.hists[tag].Draw('COLZ')
             for curve in self.curves:
                 curve.Draw('SAME')
+            canvas.RedrawAxis()
             canvas.Print(self.path + tag + self.tag + '.pdf')
 
 class plots:
@@ -623,6 +635,8 @@ class plots:
                             weights = self.couplings.generate_weight(**coupling)
                             ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), signal_scale)
                     ploter.plot()
+    def plot_syst(self, hist, systs):
+        pass
 
     def plot_2d(self): #TEMP
         for year in self.years:
@@ -869,12 +883,17 @@ if __name__ == '__main__':
         producer.debug_mode(True)
         # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/nSel*'])
-        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/SvB_MA*_ps*'])
+        producer.add_dir(['pass*/fourTag/mainview/[SR|HHSR]/[SvB_MA*_ps*|bdtScore]'])
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/lead*subl*','pass*/fourTag/*view*/[HHSR|inclusive]/bdt_vs*'])
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
         producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
+        producer.add_plot_rule(plot_rule([(0,'passMV')],[lambda hist: hist.set_topright('Pass m_{V_{jj}}')]))
+        producer.add_plot_rule(plot_rule([(0,'passMDRs')],[lambda hist: hist.set_topright('Pass #Delta R(j,j)')]))
+        producer.add_plot_rule(plot_rule([(3,'HHSR')],[lambda hist: hist.set_topmid('HH Signal Region')]))
+        producer.add_plot_rule(plot_rule([(3,'SR')],[lambda hist: hist.set_topmid('Inclusive Signal Region')]))
+
         # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps')],[fix_y_SvB]))
         # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps_rebin')],[fix_y_SvB_rebin]))
         # MC
@@ -893,18 +912,18 @@ if __name__ == '__main__':
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('LooseMDRs','Loose #Delta R_{jj}'), ('LooseMV','Loose m_{V}'),('LooseMV_HHmSR','modified SR'),('LooseMV_HHmSR_HLT','HLT')]
         # producer.AccxEff(cuts)
         # producer.plot_2d()
-        # producer.plot_1d(1)
+        producer.plot_1d(1)
         
 
         # classifier
-        producer.save('combine_regionBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps', 4)
-        producer.save('combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)
-        producer.save('combine_signalAll_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps', 4)
-        producer.save('combine_regionBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps_rebin', 1)
-        producer.save('combine_labelBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
-        producer.save('combine_signalAll_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps_rebin', 1)
-        producer.save('combine_loose_', 'passLooseMV/fourTag/mainView/HHmSR/SvB_MA_labelBDT_ps_rebin', 1)
-        producer.save('combine_tight_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
+        # producer.save('combine_regionBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps', 4)
+        # producer.save('combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)
+        # producer.save('combine_signalAll_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps', 4)
+        # producer.save('combine_regionBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps_rebin', 1)
+        # producer.save('combine_labelBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
+        # producer.save('combine_signalAll_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps_rebin', 1)
+        # producer.save('combine_loose_', 'passLooseMV/fourTag/mainView/HHmSR/SvB_MA_labelBDT_ps_rebin', 1)
+        # producer.save('combine_tight_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
 
 # UL dataset
 # dataset =/*HHTo4B_CV_*_C2V_*_C3_*_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2*v15*/NANOAODSIM 

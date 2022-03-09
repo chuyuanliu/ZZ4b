@@ -87,14 +87,14 @@ namespace nTupleAnalysis {
     TH1F* SvB_MA_signalAll_ps_rebin;
     TH1F* SvB_MA_regionBDT_ps_rebin;
     TH1F* SvB_MA_labelBDT_ps_rebin;
-    TH1F* SvB_MA_diff_regionBDT_ps;
     systHists* SvB_MA_labelBDT_ps_bTagSysts =NULL;
     systHists* SvB_MA_labelBDT_ps_rebin_bTagSysts = NULL;
     const static int SvB_nbins = 13;
     const Float_t SvB_bins[SvB_nbins + 1] = {0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.78, 0.86, 0.93, 0.97, 0.99, 1.0};
-
-    TH1F* SvB_MA_diff_regionC3_ps;
-    TH1F* SvB_MA_diff_regionC2V_ps;
+    TH1F* SvB_MA_labelBDT_ps_BDT_nkl;
+    TH1F* SvB_MA_labelBDT_ps_BDT_kl;
+    TH1F* SvB_MA_labelBDT_ps_BDT_nkl_rebin;
+    TH1F* SvB_MA_labelBDT_ps_BDT_kl_rebin;
 
     //
     trigHists*  allTrigJets = NULL;

@@ -172,20 +172,22 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   // SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
   SvB_MA_signalAll_ps  = dir.make<TH1F>("SvB_MA_signalAll_ps",  (name+"/SvB_MA_signalAll_ps;  SvB_MA (All) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_regionBDT_ps  = dir.make<TH1F>("SvB_MA_regionBDT_ps",  (name+"/SvB_MA_regionBDT_ps;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA (BDT) Regressed P(kl like)+P(not kl like); Entries").c_str(), 100, 0, 1);
   SvB_MA_signalAll_ps_rebin  = dir.make<TH1F>("SvB_MA_signalAll_ps_rebin",  (name+"/SvB_MA_signalAll_ps_rebin;  SvB_MA (All) Regressed P(WHH)+P(ZHH) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
+  SvB_MA_regionBDT_ps  = dir.make<TH1F>("SvB_MA_regionBDT_ps",  (name+"/SvB_MA_regionBDT_ps;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_regionBDT_ps_rebin  = dir.make<TH1F>("SvB_MA_regionBDT_ps_rebin",  (name+"/SvB_MA_regionBDT_ps_rebin;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
-  SvB_MA_labelBDT_ps_rebin  = dir.make<TH1F>("SvB_MA_labelBDT_ps_rebin",  (name+"/SvB_MA_labelBDT_ps_rebin;  SvB_MA (BDT) Regressed P(kl like)+P(not kl like) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
-  SvB_MA_diff_regionBDT_ps = dir.make<TH1F>("SvB_MA_diff_regionBDT_ps",  (name+"/SvB_MA_diff_regionBDT_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, -1, 1);
+
+  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_rebin  = dir.make<TH1F>("SvB_MA_labelBDT_ps_rebin",  (name+"/SvB_MA_labelBDT_ps_rebin;  SvB_MA Regressed P(VHH) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
+  SvB_MA_labelBDT_ps_BDT_nkl  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_nkl",  (name+"/SvB_MA_labelBDT_ps_BDT_nkl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_kl = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl",  (name+"/SvB_MA_labelBDT_ps_BDT_kl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_nkl_rebin = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_nkl_rebin",  (name+"/SvB_MA_labelBDT_ps_BDT_nkl_rebin;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0 (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
+  SvB_MA_labelBDT_ps_BDT_kl_rebin = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl_rebin",  (name+"/SvB_MA_labelBDT_ps_BDT_kl_rebin;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0 (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
 
   if(event){
     SvB_MA_labelBDT_ps_bTagSysts = new systHists(SvB_MA_labelBDT_ps, event->treeJets->m_btagVariations);
     SvB_MA_labelBDT_ps_rebin_bTagSysts = new systHists(SvB_MA_labelBDT_ps_rebin, event->treeJets->m_btagVariations);
   }
 
-  SvB_MA_diff_regionC3_ps  = dir.make<TH1F>("SvB_MA_diff_regionC3_ps",  (name+"/SvB_MA_diff_regionC3_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, -1, 1);
-  SvB_MA_diff_regionC2V_ps  = dir.make<TH1F>("SvB_MA_diff_regionC2V_ps",  (name+"/SvB_MA_diff_regionC2V_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH) in C_{2V} region; Entries").c_str(), 100, -1, 1);
 
   bdt_vs_labelBDT = dir.make<TH2F>("bdt_vs_labelBDT", (name+"/bdt_vs_labelBDT; BDT output; SvB (BDT label) output; Entries").c_str(), 40,-1,1, 40,0,1);
   bdt_vs_regionBDT = dir.make<TH2F>("bdt_vs_regionBDT", (name+"/bdt_vs_regionBDT; BDT output; SvB (two classifier) output; Entries").c_str(), 40,-1,1, 40,0,1);
@@ -498,20 +500,20 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   if(SvB_MA_labelBDT_ps_rebin_bTagSysts){
     SvB_MA_labelBDT_ps_rebin_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
   }
-
+  if(event->BDT_kl<0 && event->BDT_kl>=-1){
+    SvB_MA_labelBDT_ps_BDT_nkl->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+    SvB_MA_labelBDT_ps_BDT_nkl_rebin->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+  }
+  if(event->BDT_kl>=0){
+    SvB_MA_labelBDT_ps_BDT_kl->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+    SvB_MA_labelBDT_ps_BDT_kl_rebin->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+  }
   bdt_vs_labelBDT->Fill(event->BDT_kl, event->SvB_MA_labelBDT_ps, event->weight);
   bdt_vs_regionBDT->Fill(event->BDT_kl, event->SvB_MA_regionBDT_signalAll_ps, event->weight);
   bdt_vs_simple->Fill(event->BDT_kl, event->SvB_MA_signalAll_ps, event->weight);
 
-  SvB_MA_diff_regionBDT_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
   if(bdtScore && event->canVDijets.size() > 0){
     bdtScore->Fill(event->BDT_kl, event->weight);
-    if(event->BDT_kl >= event->bdtCut){ // C3 region
-      SvB_MA_diff_regionC3_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
-    }
-    else{ // C2V region
-      SvB_MA_diff_regionC2V_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
-    }
   }
 
   m4j_vs_nViews->Fill(view->m4j, event->views_passMDRs.size(), event->weight);
