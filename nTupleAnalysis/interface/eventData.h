@@ -54,6 +54,9 @@ namespace nTupleAnalysis {
     Float_t   trigWeight_Data = 0;
     Float_t   reweight = 1.0;
 
+    //Bool_t    SBTest       =  false;
+    //Bool_t    CRTest       =  false;
+
     Float_t   FvT = 1.0;
     Float_t   FvT_pd4 = 1.0;
     Float_t   FvT_pd3 = 1.0;
@@ -83,11 +86,9 @@ namespace nTupleAnalysis {
     Float_t   SvB_MA_q_1324 = -99.0;
     Float_t   SvB_MA_q_1423 = -99.0;
     Float_t   SvB_MA_q_score[3] = {-99.0};
+    Float_t   SvB_MA_VHH_ps = -99.0;
     Float_t   reweight4b = 1.0;
-    Float_t   DvT_raw = 0.0;
-    Float_t   DvT_pt = 0.0;
-    Float_t   DvT_pm = 1.0;
-    Float_t   DvT_pd = 1.0;
+    Float_t   DvT = 0.0;
     Float_t   weight_dRjjClose = 1.0;
     Long64_t  FvT_event = 0;
     bool      check_FvT_event = false;
@@ -95,6 +96,7 @@ namespace nTupleAnalysis {
     bool      check_SvB_event = false;
     Long64_t  SvB_MA_event = 0;
     bool      check_SvB_MA_event = false;
+    std::vector<Float_t>   otherWeights;
 
     std::map<std::string, float*>           classifierVariables;
     std::map<std::string, Long64_t*> check_classifierVariables;
@@ -272,10 +274,15 @@ namespace nTupleAnalysis {
     float notCanJet_pt[40]; float notCanJet_eta[40]; float notCanJet_phi[40]; float notCanJet_m[40];
     
     bool appliedMDRs;
-    bool HHSB; bool HHCR; bool HHSR;
-    bool ZHSB; bool ZHCR; bool ZHSR;
-    bool ZZSB; bool ZZCR; bool ZZSR;
-    bool SB; bool CR; bool SR;
+    // bool HHSB; bool HHCR;
+    // bool ZHSB; bool ZHCR;
+    // bool ZZSB; bool ZZCR;
+    bool HHSR;
+    bool ZHSR;
+    bool ZZSR;
+    bool SB; 
+    // bool CR; 
+    bool SR;
     float leadStM; float sublStM;
 
     nTupleAnalysis::muonData* treeMuons;
@@ -295,14 +302,14 @@ namespace nTupleAnalysis {
     std::shared_ptr<nTupleAnalysis::dijet> close;
     std::shared_ptr<nTupleAnalysis::dijet> other;
     std::vector< std::shared_ptr<eventView> > views;
-    std::vector< std::shared_ptr<eventView> > views_passMDRs;
+    // std::vector< std::shared_ptr<eventView> > views_passMDRs;
     std::shared_ptr<eventView> view_selected;
     std::shared_ptr<eventView> view_dR_min;
     std::shared_ptr<eventView> view_max_FvT_q_score;
     std::shared_ptr<eventView> view_max_SvB_q_score;
 
     bool passDijetMass;
-    bool passMDRs;
+    // bool passMDRs;
     bool passXWt;
     bool passTTCR = false;
     bool passTTCRe = false;

@@ -43,6 +43,7 @@ py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --testDvTWeights -c -e --doDvTRe
 
 
 
+
 #
 #  Now to clossure
 #
@@ -107,6 +108,7 @@ py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --addJ
 #
 py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --makeAutonDirsForFvT --mixedName 3bDvTMix4bDvT -e
 py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyToAutonForFvT   --mixedName 3bDvTMix4bDvT -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyToAutonForFvTROOT   --mixedName 3bDvTMix4bDvT -e
 
 #
 #  Train (on gpu nodes)
@@ -116,7 +118,9 @@ cat ULTrigTraining.sh
 #
 # Copy back
 #
-py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyFromAutonForFvT   --mixedName 3bDvTMix4bDvT --gpuName gpu14 --weightName FvTWeights -e
+#py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyFromAutonForFvT   --mixedName 3bDvTMix4bDvT --gpuName gpu14 --weightName FvTWeights -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyFromAutonForFvTROOT   --mixedName 3bDvTMix4bDvT --gpuName gpu14 --weightName FvTWeights -e
+
 
 #
 #  Write out FvT SvB File
@@ -245,6 +249,78 @@ weights_nf8_offset0
 weights_nf8_offset1
 weights_nf8_offset2
 
+
+#
+#  nf8 With HH
+#
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyToAutonForFvTROOT   --mixedName 3bDvTMix4bDvT -e
+# train
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyFromAutonForFvTROOT   --mixedName 3bDvTMix4bDvT --gpuName gpu14 -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --makeInputFileListsFriends --mixedName 3bDvTMix4bDvT 
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --histsWithFvT -c --histDetailStr "passMDRs.passMjjOth.HHSR.bdtStudy"  --weightName weights_nf8_HH -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py  --histsNoFvT -c --histDetailStr "passMDRs.passTTCR.passTTCRe.passTTCRem.passMjjOth.HHSR.bdtStudy" -e
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --plotsWithFvT -c --weightName weights_nf8_HH 
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --makeInputsForCombine -c  --weightName weights_nf8_HH
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --plotsWithFvTVHH -c --weightName weights_nf8_HH  -e
+
+
+
+#
+# 1D Reweighting and OT
+#
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --makeInputFileListsFriendsRW --mixedName 3bDvTMix4bDvT -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --histsWithRW -c --histDetailStr "passMDRs.passMjjOth.HHSR.bdtStudy"  --weightName weights_rw -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --plotsWithRW -c --weightName weights_nf8_HH 
+
+#
+#  Train DvT weights on Auton
+#
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyFromAutonForDvTROOT   --mixedName 3bDvTMix4bDvT --gpuName gpu14 --weightName DvTWeights -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --makeInputFileListsFriendsRW --mixedName 3bDvTMix4bDvT -e
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --testDvTWeightsWJCM -c -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --testDvTWeightsWJCM -c -e --doDvTReweight
+
+
+
+#
+#  New SB defintion
+#
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py -c  --makeTTPseudoData -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py -c  --makeTTPSDataFilesLists -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py -c  --checkPSData  -e
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --inputsForDataVsTT -c -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --histsForJCM -c --mixedName 3bDvTMix4bDvT -e
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyFromAutonDvT  --gpuName gpu14 -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyFromAutonForDvTROOT  --gpuName gpu14 -e
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --makeDvTFileLists -c -e
+
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --testDvTWeights -c -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --testDvTWeights -c -e --doDvTReweight
+
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py -c --doWeightsNominal -e
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --doWeightsMixed -c -e
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --mixedName 3bDvTMix4bDvT --addJCM -c -e  # Does both pico.root and pico.h5
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --copyToAutonForFvTROOT   --mixedName 3bDvTMix4bDvT -e
+
+
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --makeInputFileListsSvBFvT --mixedName 3bDvTMix4bDvT -c --weightName testJCM  -e  
+py ZZ4b/nTupleAnalysis/scripts/makeULClosure.py --histsWithFvT --mixedName 3bDvTMix4bDvT -c --weightName testJCM -s ""  -e  
 
 
 ###### Not yet run 

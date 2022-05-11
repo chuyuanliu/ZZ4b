@@ -288,16 +288,17 @@ void analysis::picoAODFillEvents(){
   alreadyFilled = true;
   //if(m4jPrevious == event->m4j) std::cout << "WARNING: previous event had identical m4j = " << m4jPrevious << std::endl;
 
-  assert( !(event->ZZSR && event->ZZSB) );
-  assert( !(event->ZZSR && event->ZZCR) );
-  assert( !(event->ZZSB && event->ZZCR) );
-
-  assert( !(event->ZHSR && event->ZHSB) );
-  assert( !(event->ZHSR && event->ZHCR) );
-  assert( !(event->ZHSB && event->ZHCR) );
-
+  // assert( !(event->ZZSR && event->ZZSB) );
+  // assert( !(event->ZHSR && event->ZHSB) );
+  // assert( !(event->HHSR && event->HHSB) );
   assert( !(event->SR && event->SB) );
-  assert( !(event->SR && event->CR) );
+  // assert( !(event->ZZSR && event->ZZCR) );
+  // assert( !(event->ZZSB && event->ZZCR) );
+
+  // assert( !(event->ZHSR && event->ZHCR) );
+  // assert( !(event->ZHSB && event->ZHCR) );
+
+  // assert( !(event->SR && event->CR) );
   // assert( !(event->SB && event->CR) ); // Changed SB to contain CR
 
   if(loadHSphereFile || emulate4bFrom3b){
@@ -473,10 +474,15 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("notCanJet_eta", event->notCanJet_eta, "notCanJet_eta[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_phi", event->notCanJet_phi, "notCanJet_phi[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_m",   event->notCanJet_m,   "notCanJet_m[nAllNotCanJets]/F");
-  picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
-  picoAODEvents->Branch("ZHSB", &event->ZHSB); picoAODEvents->Branch("ZHCR", &event->ZHCR); picoAODEvents->Branch("ZHSR", &event->ZHSR);
-  picoAODEvents->Branch("ZZSB", &event->ZZSB); picoAODEvents->Branch("ZZCR", &event->ZZCR); picoAODEvents->Branch("ZZSR", &event->ZZSR);
-  picoAODEvents->Branch("SB", &event->SB); picoAODEvents->Branch("CR", &event->CR); picoAODEvents->Branch("SR", &event->SR);
+  // picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); 
+  // picoAODEvents->Branch("ZHSB", &event->ZHSB); picoAODEvents->Branch("ZHCR", &event->ZHCR); 
+  // picoAODEvents->Branch("ZZSB", &event->ZZSB); picoAODEvents->Branch("ZZCR", &event->ZZCR); 
+  picoAODEvents->Branch("HHSR", &event->HHSR);
+  picoAODEvents->Branch("ZHSR", &event->ZHSR);
+  picoAODEvents->Branch("ZZSR", &event->ZZSR);
+  picoAODEvents->Branch("SB", &event->SB);
+  // picoAODEvents->Branch("CR", &event->CR); 
+  picoAODEvents->Branch("SR", &event->SR);
   picoAODEvents->Branch("leadStM", &event->leadStM); picoAODEvents->Branch("sublStM", &event->sublStM);
   picoAODEvents->Branch("st", &event->st);
   picoAODEvents->Branch("stNotCan", &event->stNotCan);
@@ -485,7 +491,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("nPSTJets", &event->nPSTJets);
   picoAODEvents->Branch("passHLT", &event->passHLT);
   picoAODEvents->Branch("passDijetMass", &event->passDijetMass);
-  picoAODEvents->Branch("passMDRs", &event->passMDRs);
+  // picoAODEvents->Branch("passMDRs", &event->passMDRs);
   picoAODEvents->Branch("passXWt", &event->passXWt);
   picoAODEvents->Branch("xW", &event->xW);
   picoAODEvents->Branch("xt", &event->xt);
@@ -744,6 +750,8 @@ int analysis::processEvent(){
       std::cout<< "\tmcWeight " << event->mcWeight << std::endl;
       std::cout<< "\tpseudoTagWeight " << event->pseudoTagWeight << std::endl;
       std::cout<< "\treweight " << event->reweight << std::endl;
+      std::cout<< "\treweight4b " << event->reweight4b << std::endl;
+      std::cout<< "\ttrigWeight " << event->trigWeight << std::endl;
       }
 
     for(const std::string& jcmName : event->jcmNames){
@@ -867,20 +875,17 @@ int analysis::processEvent(){
 
 
   // Fill picoAOD
-  if(writePicoAOD && (writePicoAODBeforeDiJetMass || looseSkim)){//if we are making picoAODs for hemisphere mixing, we need to write them out before the dijetMass cut
-    // WARNING: Applying MDRs early will change apparent dijetMass cut efficiency.
-    event->applyMDRs(); // computes some of the derived quantities added to the picoAOD. 
+  if(writePicoAOD){
     picoAODFillEvents();
-    if(fastSkim) return 0;
   }
 
 
-  // // Dijet mass preselection. Require at least one view has leadM(sublM) dijets with masses between 45(45) and 190(190) GeV.
-  // if(!event->passDijetMass){
-  //   if(debug) cout << "Fail dijet mass cut" << endl;
-  //   return 0;
-  // }
-  // cutflow->Fill(event, "DijetMass");
+  // Dijet mass preselection. 
+  if(!event->passDijetMass){
+    if(debug) cout << "Fail dijet mass cut" << endl;
+    return 0;
+  }
+  cutflow->Fill(event, "DijetMass");
 
   // if(passDijetMass != NULL && event->passHLT) passDijetMass->Fill(event, event->views);
 
@@ -928,22 +933,22 @@ int analysis::processEvent(){
     trigStudy->Fill(event);
 
 
-  if(passMDRs != NULL && event->passHLT){
-    passMDRs->Fill(event, event->views_passMDRs);
+  // if(passMDRs != NULL && event->passHLT){
+  //   passMDRs->Fill(event, event->views_passMDRs);
 
-    lumiCounts->FillMDRs(event);
-  }
+  //   lumiCounts->FillMDRs(event);
+  // }
 
   if(passTTCR != NULL && event->passTTCR && event->passHLT){
-    passTTCR->Fill(event, event->views_passMDRs);
+    passTTCR->Fill(event, event->views);
   }
 
   if(passTTCRe != NULL && event->passTTCRe && event->passHLT){
-    passTTCRe->Fill(event, event->views_passMDRs);
+    passTTCRe->Fill(event, event->views);
   }
 
   if(passTTCRem != NULL && event->passTTCRem && event->passHLT){
-    passTTCRem->Fill(event, event->views_passMDRs);
+    passTTCRem->Fill(event, event->views);
   }
 
 
@@ -1013,17 +1018,17 @@ int analysis::processEvent(){
   //
   if(failrWbW2 != NULL && event->passHLT){
     if(event->t->rWbW < 2){
-      failrWbW2->Fill(event, event->views_passMDRs);
+      failrWbW2->Fill(event, event->views);
     }
   }
 
   if(passMuon != NULL && event->passHLT && event->muons_isoMed25.size()>0){
-    passMuon->Fill(event, event->views_passMDRs);
+    passMuon->Fill(event, event->views);
   }
 
   if(passDvT05 != NULL && event->passHLT){
-    if(event->DvT_raw > 0.5){
-      passDvT05->Fill(event, event->views_passMDRs);
+    if(event->DvT < 0){
+      passDvT05->Fill(event, event->views);
     }
   }
 

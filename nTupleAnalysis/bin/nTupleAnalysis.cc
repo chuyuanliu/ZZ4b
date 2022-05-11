@@ -77,6 +77,7 @@ int main(int argc, char * argv[]){
   std::string reweight4bName = parameters.getParameter<std::string>("reweight4bName");
   std::string reweightDvTName = parameters.getParameter<std::string>("reweightDvTName");
   std::vector<std::string> friends          = parameters.getParameter<std::vector<std::string> >("friends");
+  std::vector<std::string> otherWeights          = parameters.getParameter<std::vector<std::string> >("otherWeights");
   std::vector<std::string> inputWeightFiles = parameters.getParameter<std::vector<std::string> >("inputWeightFiles");
   std::vector<std::string> inputWeightFiles4b = parameters.getParameter<std::vector<std::string> >("inputWeightFiles4b");
   std::vector<std::string> inputWeightFilesDvT = parameters.getParameter<std::vector<std::string> >("inputWeightFilesDvT");
@@ -221,6 +222,10 @@ int main(int argc, char * argv[]){
   a.mcUnitWeight = mcUnitWeight;
   a.skip4b = skip4b;
   a.skip3b = skip3b;
+
+  for(std::string oWeight : otherWeights){
+    std::cout << "Will weight events with : (" << oWeight << ")" << std::endl;
+  }
 
   if(doDvTReweight){
     std::cout << "\t doDvTReweight = true " << std::endl;    

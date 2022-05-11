@@ -81,6 +81,7 @@ parser.add_option(      '--jcmNameLoad', default="", help="jcmName to load (has 
 parser.add_option(      '--FvTName',    dest="FvTName", type="string", default="FvT", help="FVT Name to load FvT+XXX")
 parser.add_option(      '--reweight4bName',    dest="reweight4bName", type="string", default="", help="FVT Name to load FvT+XXX")
 parser.add_option(      '--reweightDvTName',    dest="reweightDvTName", type="string", default="", help="FVT Name to load FvT+XXX")
+parser.add_option(      '--otherWeights',     type="string", default=None, help="other event weights to apply")
 parser.add_option(      '--SvB_ONNX', dest="SvB_ONNX", default="", help="path to ONNX version of SvB model. If none specified, it won't be used.")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="currenty does nothing. Try to keep it that way")
 parser.add_option(      '--klBdtWeightFile',    dest="klBdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/BDT_c3_20vs0_out.xml", help="path to kl BDT model weight files. /*method*/ will be replaced by kl BDT method")
@@ -92,7 +93,8 @@ parser.add_option(      '--extraOutput',  dest="extraOutput", type ="string", de
 o, a = parser.parse_args()
 
 
-bjetSF = "deepjet"+o.year
+bjetSF = "deepjet"+o.era # TODO switch to year
+# year = o.year.replace('_preVFP','').replace('_postVFP','')
 if o.fastSkim or not o.isMC or not o.bTagSF:
     bjetSF = ""
 btagVariations = "central"
@@ -116,14 +118,18 @@ isData     = not o.isMC
 blind      = True and isData and not o.isDataMCMix and not o.unBlind
 #https://cms-service-dqmdc.web.cern.ch/CAF/certification/
 JSONfiles  = {'2015':'',
-              '2016':'ZZ4b/lumiMasks/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt', #Ultra Legacy
-              '2017':'ZZ4b/lumiMasks/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt', #Ultra Legacy
-              '2018':'ZZ4b/lumiMasks/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'} #Ultra Legacy
+              '2016':        'ZZ4b/lumiMasks/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt', #Ultra Legacy
+              '2016_preVFP': 'ZZ4b/lumiMasks/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt', #Ultra Legacy
+              '2016_postVFP':'ZZ4b/lumiMasks/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt', #Ultra Legacy
+              '2017':        'ZZ4b/lumiMasks/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt', #Ultra Legacy
+              '2018':        'ZZ4b/lumiMasks/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt'} #Ultra Legacy
 # Calculated lumi per lumiBlock from brilcalc. See README
 lumiData   = {'2015':'',
-              '2016':'ZZ4b/lumiMasks/brilcalc_2016_HLT_QuadJet45_TripleBTagCSV_p087.csv', 
-              '2017':'ZZ4b/lumiMasks/brilcalc_2017_HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0.csv',
-              '2018':'ZZ4b/lumiMasks/brilcalc_2018_HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5.csv'} 
+              '2016':        'ZZ4b/lumiMasks/brilcalc_2016_HLT_QuadJet45_TripleBTagCSV_p087.csv', 
+              '2016_preVFP': 'ZZ4b/lumiMasks/brilcalc_2016_HLT_QuadJet45_TripleBTagCSV_p087.csv', 
+              '2016_postVFP':'ZZ4b/lumiMasks/brilcalc_2016_HLT_QuadJet45_TripleBTagCSV_p087.csv', 
+              '2017':        'ZZ4b/lumiMasks/brilcalc_2017_HLT_PFHT300PT30_QuadPFJet_75_60_45_40_TriplePFBTagCSV_3p0.csv',
+              '2018':        'ZZ4b/lumiMasks/brilcalc_2018_HLT_PFHT330PT30_QuadPFJet_75_60_45_40_TriplePFBTagDeepCSV_4p5.csv'} 
 
 # for MC we need to normalize the sample to the recommended cross section * BR times the target luminosity
 ## Higgs BRs https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR BR(h125->bb) = 0.5824 BR(h125->\tau\tau) = 0.06272 BR(Z->bb) = 0.1512, BR(Z->\tau\tau) = 0.03696
@@ -300,12 +306,19 @@ if fileNames[0] == picoAOD and create:
 
 friendFiles = []
 if o.friends:
-    friends = o.friends.split(',')
-    for friend in friends:
-        friendFileName = pathOut+friend+'.root'
-        friendFiles.append(friendFileName)
-        print('Friend:',friendFileName)
-
+    if ".txt" in o.friends:
+        for line in open(o.friends, 'r').readlines():
+            line = line.replace('\n','').strip()
+            if line    == '' : continue
+            if line[0] == '#': continue
+            friendFiles.append(line.replace('\n',''))
+    else:
+        friends = o.friends.split(',')
+        for friend in friends:
+            friendFileName = pathOut+friend+'.root'
+            friendFiles.append(friendFileName)
+            print('Friend:',friendFileName)
+    
 
 
 #
@@ -326,7 +339,14 @@ if o.jcmFileList:
         print "\n\n"
         import sys
         sys.exit(-1)
-    
+
+
+#
+#  Logic to prepare the other weights
+#
+otherWeights = []
+if o.otherWeights:
+    otherWeights = o.otherWeights.split(",")
 
 
 #
@@ -346,7 +366,7 @@ process.inputs = cms.PSet(
     )
 if isData:
     # get JSON file correctly parced
-    myList = LumiList.LumiList(filename = JSONfiles[o.year]).getCMSSWString().split(',')
+    myList = LumiList.LumiList(filename = JSONfiles[year]).getCMSSWString().split(',')
     process.inputs.lumisToProcess.extend(myList)
 
 # Setup picoAOD
@@ -414,7 +434,7 @@ process.nTupleAnalysis = cms.PSet(
     puIdVariations = cms.string(puIdVariations),
     JECSyst = cms.string(o.JECSyst),
     friendFile = cms.string(fileNames[0].replace(".root","_Friend.root")),
-    lumiData= cms.string(lumiData[o.year]),
+    lumiData= cms.string(lumiData[year]),
     histDetailLevel = cms.string(o.histDetailLevel),
     jetCombinatoricModel = cms.string(o.jetCombinatoricModel),
     doReweight= cms.bool(o.doReweight),
@@ -437,6 +457,7 @@ process.nTupleAnalysis = cms.PSet(
     FvTName     = cms.string(o.FvTName),
     reweight4bName     = cms.string(o.reweight4bName),
     reweightDvTName     = cms.string(o.reweightDvTName),
+    otherWeights     = cms.vstring(otherWeights),
     SvB_ONNX = cms.string(o.SvB_ONNX),
     friends          = cms.vstring(friendFiles),
     inputWeightFiles = cms.vstring(weightFileNames),

@@ -2670,5 +2670,4 @@ if __name__ == '__main__':
                 models += glob(path)
             models.sort()
             models = [modelParameters(name) for name in models]
-
             

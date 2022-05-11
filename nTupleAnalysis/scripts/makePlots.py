@@ -41,7 +41,7 @@ parser.add_option('--ZZandZH',          default=None, help="ZZandZH file overrid
 parser.add_option('--qcd',         default=None, help="qcd file override")
 parser.add_option('--noSignal',    action="store_true", help="dont plot signal")
 parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      default=False, help="plot JEC variations")
-parser.add_option('--histDetailLevel',  default="passMDRs,fourTag,SB,SR,SRNoHH,ttbar3b",      help="")
+parser.add_option('--histDetailLevel',  default="passPreSel,fourTag,SB,SR,SBSR,ttbar3b",      help="")
 parser.add_option('--rMin',  default=0.9,      help="")
 parser.add_option('--rMax',  default=1.1,      help="")
 parser.add_option('--mixed',        default=None, help="mixed file override")
@@ -51,7 +51,7 @@ parser.add_option('--mixedSamplesDen',        default=None, help="mixed file ove
 
 
 o, a = parser.parse_args()
-
+onlySignal2D = False
 #make sure outputBase ends with /
 outputBase = o.outputBase + ("" if o.outputBase[-1] == "/" else "/")
 inputBase = outputBase
@@ -95,13 +95,13 @@ def jetCombinatoricModel(year):
 # mu_qcd['RunII'] += mu_qcd['2018'] * lumiDict['2018']/(lumiDict['2016']+lumiDict['2017']+lumiDict['2018'])
 
 jcm = PlotTools.read_parameter_file(jetCombinatoricModel('RunII'))
-mu_qcd = jcm['mu_qcd_passMDRs']
+mu_qcd = jcm['mu_qcd_passPreSel']
 
 files = {"data"+o.year  : inputBase+"data"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
          # "ZH4b"+o.year   : inputBase+"ZH4b"+o.year+"/hists.root",
          # "ggZH4b"+o.year : inputBase+"ggZH4b"+o.year+"/hists.root",
          "bothZH4b"+o.year : inputBase+"bothZH4b"+o.year+"/hists.root",
-         "ZZandZH4b"+o.year : inputBase+"ZZandZH4b"+o.year+"/hists.root",
+         "ZZZHHH4b"+o.year : inputBase+"ZZZHHH4b"+o.year+"/hists.root",
          "ZZ4b"+o.year   : inputBase+"ZZ4b"+o.year+"/hists.root",
          "HH4b"+o.year   : inputBase+"HH4b"+o.year+"/hists.root",
          #"TTJets"+o.year : inputBase+"TTJets"+o.year+"/hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root",
@@ -158,7 +158,7 @@ if o.bothZH is not None:
 
 if o.ZZandZH is not None:
     print "Using ZZandZH file",o.ZZandZH
-    files["ZZandZH4b"+o.year] = o.ZZandZH
+    files["ZZZHHH4b"+o.year] = o.ZZandZH
 
 
 mixedNames   = []
@@ -185,8 +185,9 @@ if o.noSignal:
     #del files["ggZH4b"+o.year]
     del files["bothZH4b"+o.year]
     del files["ZZ4b"+o.year]
-    del files["ZZandZH4b"+o.year]
-
+    #del files["ZZandZH4b"+o.year]
+    del files["HH4b"+o.year]
+    del files["ZZZHHH4b"+o.year]
 
 # for sample in files:
 #     files[sample] = TFile.Open(files[sample])
@@ -233,7 +234,7 @@ cutDict = {
     "passPreSel"    : nameTitle("passPreSel", "Preselection"), 
     "passDijetMass" : nameTitle("passDijetMass", "Pass m(j,j) Cuts"), 
     "passMDRs"      : nameTitle("passMDRs", "Pass #DeltaR(j,j)"), 
-    "passTTCR"      : nameTitle("passTTCR", "R_{W,bW}<2,N_{#mu, iso, 25}>0"), 
+    "passTTCR"      : nameTitle("passTTCR", "t#bar{t} CR"), 
     "passMuon"      : nameTitle("passMuon", "nIsoMed25Muons>0"), 
     "passSvB"       : nameTitle("passSvB", "Pass SvB"), 
     "passMjjOth"    : nameTitle("passMjjOth", "Pass #M(j,j)"), 
@@ -246,6 +247,8 @@ cuts = []
 for c in o.histDetailLevel.split(","):
     if c in cutDict:
         cuts.append(cutDict[c])
+# if onlySignal2D:
+#     cuts.append(cutDict['passPreSel'])
 
 print "Plotting cuts"
 for c in cuts:
@@ -263,10 +266,12 @@ for c in cuts:
 views = [#"allViews",
          "mainView",
          ]
+if onlySignal2D: views.append('allViews')
 
 regionDict = {
     "inclusive" : nameTitle("inclusive", ""),
     'notSR' : nameTitle('notSR', 'Not SR'),
+    'outSB' : nameTitle('outSB', 'Outer SB'),
     "ZH" : nameTitle("ZH", "ZH SB+CR+SR"),
     "ZH_SvB_high" : nameTitle("ZH_SvB_high", "ZH SB+CR+SR SvB>0.5"), 
     "ZH_SvB_low" : nameTitle("ZH_SvB_low", "ZH SB+CR+SR SvB<0.5"),
@@ -279,7 +284,7 @@ regionDict = {
     "ZZSB" : nameTitle("ZZSB", "ZZ Sideband"), 
     "ZZCR" : nameTitle("ZZCR", "ZZ Control Region"), 
     "ZZSR" : nameTitle("ZZSR", "ZZ Signal Region"),
-    "SCSR" : nameTitle("SCSR", "SB+CR+SR"),
+    "SBSR" : nameTitle("SBSR", "SB and SR"),
     "SB" : nameTitle("SB", "Sideband"), 
     "CR" : nameTitle("CR", "Control Region"), 
     "SRNoHH" : nameTitle("SRNoHH", "Signal Region (HH Veto)"),
@@ -373,6 +378,7 @@ class standardPlot:
             "color" : "ROOT.kAzure-9"}
 
 
+        # signalCut = cutDict['passMDRs']
         if "HH4b"+year in files:
             self.samples[files[    "HH4b"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
                 "label"    : "HH#rightarrowb#bar{b}b#bar{b} (#times100)",
@@ -454,6 +460,7 @@ class threeTagPlot:
             "ratio" : "denom A",
             "color" : "ROOT.kAzure-9"}
 
+        # signalCut = cutDict['passMDRs']
         if "HH4b"+year in files:
             self.samples[files[    "HH4b"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
                 "label"    : "3b HH#rightarrowb#bar{b}b#bar{b} (#times100)",
@@ -505,9 +512,10 @@ class mcPlot:
         self.samples[files[    "ZZ4b"+year]] = collections.OrderedDict()
 
         self.samples[files["TT"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label" : "t#bar{t} (3-tag)",
+            "label" : "t#bar{t} (3-tag #times0.25)",
             "legend": 1,
             "ratio" : "denom A",
+            'weight': 0.25,
             "color" : "ROOT.kAzure-9"}
         self.samples[files["TT"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
             "label" : "t#bar{t} (4-tag)",
@@ -516,11 +524,12 @@ class mcPlot:
             "ratio" : "numer A",
             "color" : "ROOT.kAzure-9"}
 
+        # signalCut = cutDict['passMDRs']
         self.samples[files["HH4b"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "HH#rightarrowb#bar{b}b#bar{b} (3-tag #times100)",
+            "label"    : "HH#rightarrowb#bar{b}b#bar{b} (3-tag #times1000)",
             "legend"   : 5,
             "ratio" : "denom B",
-            "weight" : 100,
+            "weight" : 1000,
             "color"    : "ROOT.kBlue+1"}
         self.samples[files["HH4b"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
             "label"    : "HH#rightarrowb#bar{b}b#bar{b} (4-tag #times100)",
@@ -531,13 +540,13 @@ class mcPlot:
             "color"    : "ROOT.kBlue+1"}
 
         self.samples[files["bothZH4b"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "All ZH#rightarrowb#bar{b}b#bar{b} (3-tag #times100)",
+            "label"    : "ZH#rightarrowb#bar{b}b#bar{b} (3-tag #times1000)",
             "legend"   : 7,
             "ratio" : "denom C",
-            "weight" : 100,
+            "weight" : 1000,
             "color"    : "ROOT.kRed"}
         self.samples[files["bothZH4b"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "All ZH#rightarrowb#bar{b}b#bar{b} (4-tag #times100)",
+            "label"    : "ZH#rightarrowb#bar{b}b#bar{b} (4-tag #times100)",
             "drawOptions" : "PE ex0",
             "legend"   : 8,
             "ratio" : "numer C",
@@ -545,10 +554,10 @@ class mcPlot:
             "color"    : "ROOT.kRed"}
         
         self.samples[files["ZZ4b"+year]][cut.name+"/threeTag/"+view+"/"+region.name+"/"+var.name] = {
-            "label"    : "ZZ#rightarrowb#bar{b}b#bar{b} (3-tag #times100)",
+            "label"    : "ZZ#rightarrowb#bar{b}b#bar{b} (3-tag #times1000)",
             "legend"   : 9,
             "ratio" : "denom D",
-            "weight" : 100,
+            "weight" : 1000,
             "color"    : "ROOT.kGreen+3"}
         self.samples[files["ZZ4b"+year]][cut.name+"/fourTag/"+view+"/"+region.name+"/"+var.name] = {
             "label"    : "ZZ#rightarrowb#bar{b}b#bar{b} (4-tag #times100)",
@@ -644,6 +653,11 @@ class JECPlot:
         PlotTools.plot(self.samples, self.parameters, o.debug or debug)
 
 
+sublMDRs = [["(235./x     - y)",100,1100,0,5,[0],"ROOT.kRed",1],
+            ["(650./x+0.7 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
+leadMDRs = [["(360./x-0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1],
+            ["(650./x+0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
+
 class TH2Plot:
     def __init__(self, topDir, fileName, year, cut, tag, view, region, var, debug=False):
         self.debug = debug
@@ -685,7 +699,15 @@ class TH2Plot:
                            "outputDir"   : outputPlot+topDir+"/"+year+"/"+cut.name+"/"+view+"/"+region.name+"/",
                            "outputName"  : var.name+"_"+tag,
                            }
-        self.parameters["functions"] = SRs
+        if var.name == 'leadSt_m_vs_sublSt_m':
+            self.parameters["functions"] = SRs
+        if 'm4j_vs_leadSt_dR' in var.name:
+            self.parameters['functions'] = leadMDRs
+        if 'm4j_vs_sublSt_dR' in var.name:
+            self.parameters['functions'] = sublMDRs
+        if 'm4j_vs_nViews' in var.name:
+            self.parameters['yMin'], self.parameters['yMax'] = 0.5, 3.5
+            self.parameters["yNdivisions"] = 003
 
     def newSample(self, topDir, fileName, year, cut, tag, view, region, var):
         self.samples[files[fileName.name]] = collections.OrderedDict()
@@ -793,6 +815,7 @@ class mixedVsDataPlot:
         if var.normalizeStack: self.parameters["normalizeStack"] = var.normalizeStack
         if 'SvB' in var.name and 'SR' in region.name: self.parameters['xleg'] = [0.3, 0.3+0.33]
 
+
     def plot(self, debug=False):
         PlotTools.plot(self.samples, self.parameters, o.debug or debug)
 
@@ -825,34 +848,36 @@ variables=[variable("nPVs", "Number of Primary Vertices"),
            variable("FvT_pm4", "FvT Regressed P(Four-tag Multijet)", rebin = 2),
            variable("FvT_pm3", "FvT Regressed P(Three-tag Multijet)", rebin = 2),
            variable("FvT_pt",  "FvT Regressed P(t#bar{t})", rebin = 2),
-           #variable("SvB_ps",  "SvB Regressed P(ZZ)+P(ZH)", rebin = 2, logy=True),
-           variable("SvB_ps",  "SvB Regressed P(ZZ)+P(ZH)", rebin = 2),
-           variable("SvB_ps",  "SvB Regressed P(Signal)", rebin = 2),
-           variable("SvB_pzz", "SvB Regressed P(ZZ)", rebin = 2),
-           variable("SvB_pzh", "SvB Regressed P(ZH)", rebin = 2),
-           variable("SvB_phh", "SvB Regressed P(HH)", rebin = 2),
+           # variable("bdtScore",  "KlBdT Score", rebin = 2),
+           # variable("SvB_MA_VHH_ps", "SvB_MA VHH Regressed", rebin = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.78, 0.86, 0.93, 0.97, 0.99, 1.0]),
+           # variable("SvB_MA_VHH_ps_sbdt", "SvB_MA VHH Regressed small bdt", rebin = 2),
+           # variable("SvB_MA_VHH_ps_lbdt", "SvB_MA VHH Regressed large bdt", rebin = 2),
+           variable("SvB_ps",  "SvB Regressed P(Signal)", rebin = 1),
+           variable("SvB_pzz", "SvB Regressed P(ZZ)", rebin = 1),
+           variable("SvB_pzh", "SvB Regressed P(ZH)", rebin = 1),
+           variable("SvB_phh", "SvB Regressed P(HH)", rebin = 1),
            variable("SvB_ptt", "SvB Regressed P(t#bar{t})", rebin = [0.02*i for i in range(21)]),
-           variable("SvB_ps_hh",  "SvB Regressed P(Signal) | P(HH) is largest", rebin = 2),
-           variable("SvB_ps_zh",  "SvB Regressed P(Signal) | P(ZH) is largest", rebin = 2),
-           variable("SvB_ps_zz",  "SvB Regressed P(Signal) | P(ZZ) is largest", rebin = 2),
-           variable("SvB_MA_ps",  "SvB_MA Regressed P(Signal)", rebin = 2),
-           variable("SvB_MA_pzz", "SvB_MA Regressed P(ZZ)", rebin = 2),
-           variable("SvB_MA_pzh", "SvB_MA Regressed P(ZH)", rebin = 2),
-           variable("SvB_MA_phh", "SvB_MA Regressed P(HH)", rebin = 2),
+           variable("SvB_ps_hh",  "SvB Regressed P(Signal) #cbar P(HH) is largest", rebin = 1),
+           variable("SvB_ps_zh",  "SvB Regressed P(Signal) #cbar P(ZH) is largest", rebin = 1),
+           variable("SvB_ps_zz",  "SvB Regressed P(Signal) #cbar P(ZZ) is largest", rebin = 1),
+           variable("SvB_MA_ps",  "SvB_MA Regressed P(Signal)", rebin = 1),
+           variable("SvB_MA_pzz", "SvB_MA Regressed P(ZZ)", rebin = 1),
+           variable("SvB_MA_pzh", "SvB_MA Regressed P(ZH)", rebin = 1),
+           variable("SvB_MA_phh", "SvB_MA Regressed P(HH)", rebin = 1),
            variable("SvB_MA_ptt", "SvB_MA Regressed P(t#bar{t})", rebin = [0.02*i for i in range(21)]),
-           variable("SvB_MA_ps_hh",  "SvB_MA Regressed P(Signal) | P(HH) is largest", rebin = 2),
-           variable("SvB_MA_ps_zh",  "SvB_MA Regressed P(Signal) | P(ZH) is largest", rebin = 2),
-           variable("SvB_MA_ps_zz",  "SvB_MA Regressed P(Signal) | P(ZZ) is largest", rebin = 2),
-           variable("SvB_ps_zh_0_75",  "SvB Regressed P(Signal) | P(ZH) is largest, 0<p_{T,Z}<75", rebin = 5),
-           variable("SvB_ps_zh_75_150",  "SvB Regressed P(Signal) | P(ZH) is largest, 75<p_{T,Z}<150", rebin = 2),
-           variable("SvB_ps_zh_150_250",  "SvB Regressed P(Signal) | P(ZH) is largest, 150<p_{T,Z}<250", rebin = 2),
-           variable("SvB_ps_zh_250_400",  "SvB Regressed P(Signal) | P(ZH) is largest, 250<p_{T,Z}<400", rebin = 2),
-           variable("SvB_ps_zh_400_inf",  "SvB Regressed P(Signal) | P(ZH) is largest, 400<p_{T,Z}<inf", rebin = 5),
-           variable("SvB_ps_zz_0_75",  "SvB Regressed P(Signal) | P(ZZ) is largest, 0<p_{T,Z}<75", rebin = 5),
-           variable("SvB_ps_zz_75_150",  "SvB Regressed P(Signal) | P(ZZ) is largest, 75<p_{T,Z}<150", rebin = 2),
-           variable("SvB_ps_zz_150_250",  "SvB Regressed P(Signal) | P(ZZ) is largest, 150<p_{T,Z}<250", rebin = 2),
-           variable("SvB_ps_zz_250_400",  "SvB Regressed P(Signal) | P(ZZ) is largest, 250<p_{T,Z}<400", rebin = 2),
-           variable("SvB_ps_zz_400_inf",  "SvB Regressed P(Signal) | P(ZZ) is largest, 400<p_{T,Z}<inf", rebin = 5),
+           variable("SvB_MA_ps_hh",  "SvB_MA Regressed P(Signal) #cbar P(HH) is largest", rebin = 1),
+           variable("SvB_MA_ps_zh",  "SvB_MA Regressed P(Signal) #cbar P(ZH) is largest", rebin = 1),
+           variable("SvB_MA_ps_zz",  "SvB_MA Regressed P(Signal) #cbar P(ZZ) is largest", rebin = 1),
+           # variable("SvB_ps_zh_0_75",  "SvB Regressed P(Signal) #cbar P(ZH) is largest, 0<p_{T,Z}<75", rebin = 5),
+           # variable("SvB_ps_zh_75_150",  "SvB Regressed P(Signal) #cbar P(ZH) is largest, 75<p_{T,Z}<150", rebin = 2),
+           # variable("SvB_ps_zh_150_250",  "SvB Regressed P(Signal) #cbar P(ZH) is largest, 150<p_{T,Z}<250", rebin = 2),
+           # variable("SvB_ps_zh_250_400",  "SvB Regressed P(Signal) #cbar P(ZH) is largest, 250<p_{T,Z}<400", rebin = 2),
+           # variable("SvB_ps_zh_400_inf",  "SvB Regressed P(Signal) #cbar P(ZH) is largest, 400<p_{T,Z}<inf", rebin = 5),
+           # variable("SvB_ps_zz_0_75",  "SvB Regressed P(Signal) #cbar P(ZZ) is largest, 0<p_{T,Z}<75", rebin = 5),
+           # variable("SvB_ps_zz_75_150",  "SvB Regressed P(Signal) #cbar P(ZZ) is largest, 75<p_{T,Z}<150", rebin = 2),
+           # variable("SvB_ps_zz_150_250",  "SvB Regressed P(Signal) #cbar P(ZZ) is largest, 150<p_{T,Z}<250", rebin = 2),
+           # variable("SvB_ps_zz_250_400",  "SvB Regressed P(Signal) #cbar P(ZZ) is largest, 250<p_{T,Z}<400", rebin = 2),
+           # variable("SvB_ps_zz_400_inf",  "SvB Regressed P(Signal) #cbar P(ZZ) is largest, 400<p_{T,Z}<inf", rebin = 5),
            variable("FvT_q_score", "FvT q_score (selected pairing)", rebin = 2),
            variable("FvT_q_score_dR_min", "FvT q_score (min #DeltaR(j,j) pairing)", rebin = 2),
            variable("FvT_q_score_SvB_q_score_max", "FvT q_score (max SvB q_score pairing)", rebin = 2),
@@ -1039,7 +1064,7 @@ variables=[variable("nPVs", "Number of Primary Vertices"),
            variable("other/phi",  "Complement of Minimum #DeltaR(j,j) Dijet #phi"),
            ]
 
-if o.doMain:
+if o.doMain and not onlySignal2D:
     if  'fourTag' in o.histDetailLevel: 
         for cut in cuts:
             for view in views:
@@ -1077,10 +1102,6 @@ if o.doMain:
 
 
 
-sublMDRs = [["(235./x     - y)",100,1100,0,5,[0],"ROOT.kRed",1],
-            ["(650./x+0.7 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
-leadMDRs = [["(360./x-0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1],
-            ["(650./x+0.5 - y)",100,1100,0,5,[0],"ROOT.kRed",1]]
 
 variables2d = [variable("leadSt_m_vs_sublSt_m", "Leading S_{T} Dijet Mass [GeV]", "Subleading S_{T} Dijet Mass [GeV]"),
                variable("leadM_m_vs_sublM_m", "Leading Mass Dijet Mass [GeV]", "Subleading Mass Dijet Mass [GeV]"),
@@ -1104,7 +1125,8 @@ variables2d = [variable("leadSt_m_vs_sublSt_m", "Leading S_{T} Dijet Mass [GeV]"
                variable("t1/xW_vs_xt", "x_{W}", "x_{t}"),
                variable("t1/xW_vs_xbW", "x_{W}", "x_{bW}"),                               
                ]
-if o.doMain:# and  False:
+
+if o.doMain and not onlySignal2D:
     for cut in cuts:
         for view in views:
             for region in regions:
@@ -1134,7 +1156,7 @@ if o.doMain:
             for region in regions:
                 #if True:
                 for var in variables2d:
-                    for process in ['HH4b','bothZH4b','ZZ4b','ZZandZH4b']:
+                    for process in ['HH4b','bothZH4b','ZZ4b','ZZZHHH4b']:
                         if process+o.year in files:
                             decay = []
                             if 'ZZ' in process: decay.append('ZZ')
@@ -1143,14 +1165,6 @@ if o.doMain:
                             decay = ','.join(decay) + '#rightarrowb#bar{b}b#bar{b}'
                             sample = nameTitle(process+o.year, decay)
                             TH2 = TH2Plot(process, sample, o.year, cut, "fourTag", view, region, var)
-
-                            if 'm4j_vs_leadSt_dR' in var.name:
-                                TH2.parameters['functions'] = leadMDRs
-                            if 'm4j_vs_sublSt_dR' in var.name:
-                                TH2.parameters['functions'] = sublMDRs
-                            if 'm4j_vs_nViews' in var.name:
-                                TH2.parameters['yMin'], TH2.parameters['yMax'] = 0.5, 3.5
-                                TH2.parameters["yNdivisions"] = 003
                             plots.append(TH2)
 
 
@@ -1174,33 +1188,37 @@ class accxEffPlot:
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
-        # self.samplesAbs[files[fileName.name]]["DijetMass_over_"+denominator.name+tag+weight] = {
-        #     "label"      : "m(j,j)",
-        #     "legend"     : 3,
-        #     "color"      : "ROOT.kGreen+3",
-        #     "drawOptions" : "HIST PC",
-        #     "marker"      : "20"}
-        self.samplesAbs[files[fileName.name]]["MDRs_over_"+denominator.name+tag+weight] = {
-            "label"      : "#DeltaR(j,j)",
-            "legend"     : 4,
+        self.samplesAbs[files[fileName.name]]["DijetMass_over_"+denominator.name+tag+weight] = {
+            "label"      : "m(j,j)",
+            "legend"     : 3,
             "color"      : "ROOT.kGreen+3",
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
-        self.samplesAbs[files[fileName.name]]["MDRs_SR_over_"+denominator.name+tag+weight] = {
+        # self.samplesAbs[files[fileName.name]]["MDRs_over_"+denominator.name+tag+weight] = {
+        #     "label"      : "#DeltaR(j,j)",
+        #     "legend"     : 4,
+        #     "color"      : "ROOT.kGreen+3",
+        #     "drawOptions" : "HIST PC",
+        #     'errorBands' : False,
+        #     "marker"      : "20"}
+        self.samplesAbs[files[fileName.name]]["DijetMass_SR_over_"+denominator.name+tag+weight] = {
             "label"      : "SR",
             "legend"     : 6,
             "color"      : "ROOT.kRed",
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
-        self.samplesAbs[files[fileName.name]]["MDRs_SR_HLT_over_"+denominator.name+tag+weight] = {
+        self.samplesAbs[files[fileName.name]]["DijetMass_SR_HLT_over_"+denominator.name+tag+weight] = {
             "label"      : "Trigger",
             "legend"     : 7,
             "color"      : "ROOT.kBlack",
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
+
+        xmin = 160
+        if topDir=='HH4b': xmin = 250
 
         self.parametersAbs = {"titleLeft"       : "#scale[0.7]{#bf{CMS} Simulation Internal}",
                               "titleCenter"      : "#scale[0.7]{"+denominator.title+"}",
@@ -1214,7 +1232,7 @@ class accxEffPlot:
                               "rMargin"    : 0.05,
                               "lMargin"    : 0.12,
                               "yTitleOffset": 1.1,
-                              "xMin" :  160,
+                              "xMin" :  xmin,
                               "xMax" : 2000,
                               "yMin"       : 0.00002,
                               "yMax"       : 20,
@@ -1242,39 +1260,42 @@ class accxEffPlot:
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
-        # self.samplesRel[files[fileName.name]]["DijetMass_over_bTags"+tag+weight] = {
-        #     "label"      : "m(j,j) / #geq4 b-tags" if tag=='_fourTag' else "m(j,j) / 3 loose b-tags",
-        #     "legend"     : 3,
-        #     "color"      : "ROOT.kGreen+3",
-        #     "drawOptions" : "HIST PC",
-        #     "marker"      : "20"}
-        # self.samplesRel[files[fileName.name]]["MDRs_over_DijetMass"+tag+weight] = {
-        #     "label"      : "#DeltaR(j,j) / m(j,j)",
-        #     "legend"     : 4,
-        #     "color"      : "ROOT.kOrange",
-        #     "drawOptions" : "HIST PC",
-        #     "marker"      : "20"}
-        self.samplesRel[files[fileName.name]]["MDRs_over_bTags"+tag+weight] = {
-            "label"      : "#DeltaR(j,j) / #geq4 b-Tags",
+        self.samplesRel[files[fileName.name]]["DijetMass_over_bTags"+tag+weight] = {
+            "label"      : "m(j,j) / #geq4 b-tags" if tag=='_fourTag' else "m(j,j) / 3 loose b-tags",
             "legend"     : 3,
             "color"      : "ROOT.kGreen+3",
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
-        self.samplesRel[files[fileName.name]]["MDRs_SR_over_MDRs"+tag+weight] = {
-            "label"      : "SR / #DeltaR(j,j)",
+        # self.samplesRel[files[fileName.name]]["MDRs_over_DijetMass"+tag+weight] = {
+        #     "label"      : "#DeltaR(j,j) / m(j,j)",
+        #     "legend"     : 4,
+        #     "color"      : "ROOT.kGreen+3",
+        #     "drawOptions" : "HIST PC",
+        #     'errorBands' : False,
+        #     "marker"      : "20"}
+        # self.samplesRel[files[fileName.name]]["MDRs_over_bTags"+tag+weight] = {
+        #     "label"      : "#DeltaR(j,j) / #geq4 b-Tags",
+        #     "legend"     : 3,
+        #     "color"      : "ROOT.kGreen+3",
+        #     "drawOptions" : "HIST PC",
+        #     'errorBands' : False,
+        #     "marker"      : "20"}
+        self.samplesRel[files[fileName.name]]["DijetMass_SR_over_DijetMass"+tag+weight] = {
+            "label"      : "SR / #m(j,j)",
             "legend"     : 5,
             "color"      : "ROOT.kRed",
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
-        self.samplesRel[files[fileName.name]]["MDRs_SR_HLT_over_MDRs_SR"+tag+weight] = {
+        self.samplesRel[files[fileName.name]]["DijetMass_SR_HLT_over_DijetMass_SR"+tag+weight] = {
             "label"      : "Trigger / SR",
             "legend"     : 6,
             "color"      : "ROOT.kBlack",
             "drawOptions" : "HIST PC",
             'errorBands' : False,
             "marker"      : "20"}
+
 
         self.parametersRel = {"titleLeft"       : "#scale[0.7]{#bf{CMS} Simulation Internal}",
                               #"titleCenter"      : "#scale[0.7]{"+region.title+"}",
@@ -1289,7 +1310,7 @@ class accxEffPlot:
                               "rMargin"    : 0.05,
                               "lMargin"    : 0.12,
                               "yTitleOffset": 1.1,
-                              "xMin" :  160,
+                              "xMin" :  xmin,
                               "xMax" : 2000,
                               "yMin"       : 0.0,
                               "yMax"       : 1.3,
@@ -1297,7 +1318,7 @@ class accxEffPlot:
                               "yleg"       : [0.77,0.92],
                               "labelSize"  : 16,
                               "logY"       : False,
-                              "drawLines"  : [[160,1,2000,1]],
+                              "drawLines"  : [[xmin,1,2000,1]],
                               "outputDir"   : outputPlot+topDir+"/"+year+"/",
                               "outputName" : "relativeAccxEff"+tag+weight,
                               }
@@ -1311,30 +1332,30 @@ class accxEffPlot:
 
 
 if o.doAccxEff:
-    # fileName = nameTitle("ggZH4b"+o.year, "gg#rightarrowZH#rightarrowb#bar{b}b#bar{b}")
-    # region = nameTitle("ZHSR", "X_{ZH} < 1.5")
-    # plots.append(accxEffPlot("ggZH4b", fileName, o.year, region))
-
-    # fileName = nameTitle("ZH4b"+o.year, "ZH#rightarrowb#bar{b}b#bar{b}")
-    # region = nameTitle("ZHSR", "X_{ZH} < 1.5")
-    # plots.append(accxEffPlot("ZH4b", fileName, o.year, region))
-
-    # fileName = nameTitle("bothZH4b"+o.year, "ZH#rightarrowb#bar{b}b#bar{b}")
-    # region = nameTitle("SR", "SR")
-    # plots.append(accxEffPlot("bothZH4b", fileName, o.year, region))
-    # plots.append(accxEffPlot("bothZH4b", fileName, o.year, region, tag='_threeTag'))
-
-    fileName = nameTitle("ZZ4b"+o.year, "ZZ#rightarrowb#bar{b}b#bar{b}")
     region = nameTitle("SR", "SR")
+    fileName = nameTitle("ZZ4b"+o.year, "ZZ#rightarrowb#bar{b}b#bar{b}")
     plots.append(accxEffPlot("ZZ4b", fileName, o.year, region))
     plots.append(accxEffPlot("ZZ4b", fileName, o.year, region, tag='_threeTag'))
     plots.append(accxEffPlot("ZZ4b", fileName, o.year, region, weight='_unitWeight'))
     plots.append(accxEffPlot("ZZ4b", fileName, o.year, region, tag='_threeTag', weight='_unitWeight'))
 
-    # fileName = nameTitle("ZZandZH4b"+o.year, "ZZ, ZH#rightarrowb#bar{b}b#bar{b}")
-    # region = nameTitle("SR", "SR")
-    # plots.append(accxEffPlot("ZZandZH4b", fileName, o.year, region))
-    # plots.append(accxEffPlot("ZZandZH4b", fileName, o.year, region, tag='_threeTag'))
+    fileName = nameTitle("bothZH4b"+o.year, "ZH#rightarrowb#bar{b}b#bar{b}")
+    plots.append(accxEffPlot("bothZH4b", fileName, o.year, region))
+    plots.append(accxEffPlot("bothZH4b", fileName, o.year, region, tag='_threeTag'))
+    plots.append(accxEffPlot("bothZH4b", fileName, o.year, region, weight='_unitWeight'))
+    plots.append(accxEffPlot("bothZH4b", fileName, o.year, region, tag='_threeTag', weight='_unitWeight'))
+
+    fileName = nameTitle("HH4b"+o.year, "HH#rightarrowb#bar{b}b#bar{b}")
+    plots.append(accxEffPlot("HH4b", fileName, o.year, region))
+    plots.append(accxEffPlot("HH4b", fileName, o.year, region, tag='_threeTag'))
+    plots.append(accxEffPlot("HH4b", fileName, o.year, region, weight='_unitWeight'))
+    plots.append(accxEffPlot("HH4b", fileName, o.year, region, tag='_threeTag', weight='_unitWeight'))
+
+    fileName = nameTitle("ZZZHHH4b"+o.year, "ZZ, ZH, HH#rightarrowb#bar{b}b#bar{b}")
+    plots.append(accxEffPlot("ZZZHHH4b", fileName, o.year, region))
+    plots.append(accxEffPlot("ZZZHHH4b", fileName, o.year, region, tag='_threeTag'))
+    plots.append(accxEffPlot("ZZZHHH4b", fileName, o.year, region, weight='_unitWeight'))
+    plots.append(accxEffPlot("ZZZHHH4b", fileName, o.year, region, tag='_threeTag', weight='_unitWeight'))
 
 
 nPlots=len(plots)

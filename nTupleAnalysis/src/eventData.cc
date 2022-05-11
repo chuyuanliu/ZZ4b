@@ -4,7 +4,7 @@
 using namespace nTupleAnalysis;
 
 using std::cout; using std::endl; 
-using std::vector;
+using std::vector; using std::string;
 
 using TriggerEmulator::hTTurnOn;   using TriggerEmulator::jetTurnOn; using TriggerEmulator::bTagTurnOn;
 
@@ -13,6 +13,7 @@ bool sortPt(       std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &
 bool sortDijetPt(  std::shared_ptr<dijet>     &lhs, std::shared_ptr<dijet>     &rhs){ return (lhs->pt        > rhs->pt   );     } // put largest  pt    first in list
 bool sortdR(       std::shared_ptr<dijet>     &lhs, std::shared_ptr<dijet>     &rhs){ return (lhs->dR        < rhs->dR   );     } // 
 bool sortDBB(      std::shared_ptr<eventView> &lhs, std::shared_ptr<eventView> &rhs){ return (lhs->dBB       < rhs->dBB  );     } // put smallest dBB   first in list
+bool sortRandom(   std::shared_ptr<eventView> &lhs, std::shared_ptr<eventView> &rhs){ return (lhs->random    > rhs->random);    } // random sorting, largest value first in list
 bool sortDeepB(    std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->deepB     > rhs->deepB);     } // put largest  deepB first in list
 bool sortCSVv2(    std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->CSVv2     > rhs->CSVv2);     } // put largest  CSVv2 first in list
 bool sortDeepFlavB(std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->deepFlavB > rhs->deepFlavB); } // put largest  deepB first in list
@@ -61,6 +62,10 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   inputBranch(tree, "PV_npvs",         nPVs);
   inputBranch(tree, "PV_npvsGood",     nPVsGood);
 
+  // Testing
+  //inputBranch(tree, "SBtest",     SBTest);
+  //inputBranch(tree, "CRtest",     CRTest);
+
   // if(doTrigEmulation){
   inputBranch(tree, "trigWeight_MC",     trigWeight_MC);
   inputBranch(tree, "trigWeight_Data",   trigWeight_Data);
@@ -107,7 +112,15 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   classifierVariables["SvB_MA_labelBDT_ps" ] = &SvB_MA_labelBDT_ps;
 
   classifierVariables[reweight4bName    ] = &reweight4b;
-  classifierVariables[reweightDvTName   ] = &DvT_raw;
+  classifierVariables[reweightDvTName   ] = &DvT;
+
+  classifierVariables["BDT_kl"] = &BDT_kl;
+
+  for(string weightName : otherWeightsNames){
+    if(debug) cout << " initializing other weightName " << weightName << endl;
+    otherWeights.push_back(Float_t(-1));
+    classifierVariables[weightName] = &otherWeights.back();
+  }
 
   classifierVariables["BDT_kl"] = &BDT_kl;
   //
@@ -475,7 +488,7 @@ void eventData::resetEvent(){
   d12TruthMatch = 0;
   truthMatch = false;
   selectedViewTruthMatch = false;
-  passMDRs = false;
+  // passMDRs = false;
   passXWt = false;
   passMV = false;
   passL1  = false;
@@ -670,6 +683,13 @@ void eventData::update(long int e){
   }
 
 
+  //
+  //  Other weigths
+  //
+  for(float oWeight: otherWeights){
+    if(debug) std::cout << "other weight is "<<  oWeight <<std::endl;
+    weight *= oWeight;
+  }
   
 
   //
@@ -872,24 +892,8 @@ void eventData::buildEvent(){
   //
   //  Apply DvT Reweight
   //
-
-  //  d = m + t 
-  //  
-  //  d + t = 1
-  //  d = 1 - t
-  //  m = d - t = 1 - 2t 
-  //  m + t = 1 - 2t + t  = 1 - t = d
-
-  // t / d   +  m / d = 1/d ( t + 1 - 2t) = 1/d (1 - t) = 1
-  // tot = t + m = d 
-
-
-  DvT_pd = (1 - DvT_raw);
-  DvT_pt = DvT_pd ? (DvT_raw / DvT_pd) : 0 ;   
-  DvT_pm = DvT_pd ? (1 - 2*DvT_raw) / DvT_pd : 0 ;   
-
   if(doDvTReweight){
-    float reweightDvT =  DvT_pm > 0 ? DvT_pm : 0;
+    float reweightDvT =  DvT > 0 ? DvT : 0;
     //cout << "weight was " << weight; 
     weight *= reweightDvT;
     weightNoTrigger *= reweightDvT;  
@@ -1134,6 +1138,7 @@ void eventData::chooseCanJets(){
        }
     }
   }
+  std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
 
   if(canVDijets.size()>0){
     p6jReco = p4j + canVDijets[0]->p;
@@ -1325,6 +1330,7 @@ void eventData::run_SvB_ONNX(){
 #endif
 
 
+
 void eventData::buildViews(){
   if(debug) std::cout<<"buildViews()\n";
   //construct all dijets from the four canJets. 
@@ -1375,17 +1381,30 @@ void eventData::buildViews(){
   dRjjClose = close->dR;
   dRjjOther = other->dR;
 
-  //if( fabs(dRjjClose - weight_dRjjClose) > 0.001)
-  //  cout << "dRjjClose vs weight_dRjjClose " << dRjjClose << " vs " << weight_dRjjClose << " diff " << dRjjClose - weight_dRjjClose << "  passHLT " << passHLT << endl;
-
-  //Check that at least one view has two dijets above mass thresholds
+  random->SetSeed(11*event+5);
   for(auto &view: views){
-    //passDijetMass = passDijetMass || ( (45 < view->leadM->m) && (view->leadM->m < 190) && (45 < view->sublM->m) && (view->sublM->m < 190) );
-    passDijetMass = passDijetMass || (view->leadM->m<250); // want at least one view with both dijet masses under 250 for FvT training
+    view->random = random->Uniform(0.1,0.9); // random float for random sorting
+    if(view->passDijetMass){ view->random += 10; passDijetMass = true; } // add ten so that views passing dijet mass cut are at top of list after random sort
+    if(view->passLeadStMDR){ view->random +=  1; } // add one
+    if(view->passSublStMDR){ view->random +=  1; } // add one again so that views passing MDRs are given preference. 
     truthMatch = truthMatch || view->truthMatch; // check if there is a view which was truth matched to two massive boson decays
   }
+  std::sort(views.begin(), views.end(), sortRandom); // put in random order for random view selection  
+  //for(auto &view: views){ views_passMDRs.push_back(view); }
 
-  std::sort(views.begin(), views.end(), sortDBB);
+  view_selected = views[0];
+  HHSR = view_selected->HHSR;
+  ZHSR = view_selected->ZHSR;
+  ZZSR = view_selected->ZZSR;
+  SB = view_selected->SB; 
+  SR = view_selected->SR;
+  leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
+  selectedViewTruthMatch = view_selected->truthMatch;
+  if(runKlBdt && canVDijets.size() > 0){
+    auto score = bdtModel->getBDTScore(this, view_selected);
+    BDT_kl = score["BDT"];
+  }
+
   return;
 }
 

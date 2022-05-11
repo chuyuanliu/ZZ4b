@@ -239,6 +239,9 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   HLThT   = dir.make<TH1F>("HLThT", (name+"/HLThT; hT [GeV]; Entries").c_str(),  100,0,1000);
   HLThT30 = dir.make<TH1F>("HLThT30", (name+"/HLThT30; hT [GeV] (HLT jet Pt > 30 GeV); Entries").c_str(),  100,0,1000);
   m4j_vs_nViews = dir.make<TH2F>("m4j_vs_nViews", (name+"/m4j_vs_nViews; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 3,0.5,3.5);
+  m4j_vs_nViews_10 = dir.make<TH2F>("m4j_vs_nViews_10", (name+"/m4j_vs_nViews_10; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 3,0.5,3.5);
+  m4j_vs_nViews_11 = dir.make<TH2F>("m4j_vs_nViews_11", (name+"/m4j_vs_nViews_11; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 3,0.5,3.5);
+  m4j_vs_nViews_12 = dir.make<TH2F>("m4j_vs_nViews_12", (name+"/m4j_vs_nViews_12; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 3,0.5,3.5);
 
   if(isMC){
     Double_t bins_m4b[] = {100, 112, 126, 142, 160, 181, 205, 232, 263, 299, 340, 388, 443, 507, 582, 669, 770, 888, 1027, 1190, 1381, 1607, 2000};
@@ -273,7 +276,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   
 } 
 
-void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
+void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view, int nViews, int nViews_10, int nViews_11, int nViews_12){
   //
   // Object Level
   //
@@ -554,7 +557,10 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
     kl_BDT->Fill(event->BDT_kl, event->weight);
   }
 
-  m4j_vs_nViews->Fill(view->m4j, event->views_passMDRs.size(), event->weight);
+  m4j_vs_nViews   ->Fill(view->m4j, nViews,    event->weight);
+  m4j_vs_nViews_10->Fill(view->m4j, nViews_10, event->weight);
+  m4j_vs_nViews_11->Fill(view->m4j, nViews_11, event->weight);
+  m4j_vs_nViews_12->Fill(view->m4j, nViews_12, event->weight);
 
   if(event->truth != NULL){
     truthM4b       ->Fill(event->truth->m4b,            event->weight);
@@ -567,20 +573,20 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   if(weightStudy_os012) weightStudy_os012->Fill(event, view);
   if(weightStudy_e20)   weightStudy_e20  ->Fill(event, view);
 
+  if(DvT_pt){
 
-  DvT_pt     -> Fill(event->DvT_pt, event->weight);
-  DvT_pt_l   -> Fill(event->DvT_pt, event->weight);
 
-  DvT_pm     -> Fill(event->DvT_pm, event->weight);
-  DvT_pm_l   -> Fill(event->DvT_pm, event->weight);
+    // DvT = p_m / p_d = (p_d - p_t) / p_d = (1 - p_t - p_t) / p_d
+    //   =>  p_t = (DvT -1 ) /(DvT -2)
 
-  DvT_raw -> Fill(event->DvT_raw, event->weight);
 
   canJet0BTag->Fill(event->canJet0_btag, event->weight);
   canJet1BTag->Fill(event->canJet1_btag, event->weight);
   canJet2BTag->Fill(event->canJet2_btag, event->weight);
   canJet3BTag->Fill(event->canJet3_btag, event->weight);
   canJet23BTag->Fill(event->canJet2_btag,event->canJet3_btag, event->weight);
+
+  
 
   if(debug) std::cout << "viewHists::Fill done " << std::endl;
   return;
