@@ -94,7 +94,7 @@ o, a = parser.parse_args()
 
 
 bjetSF = "deepjet"+o.era # TODO switch to year
-# year = o.year.replace('_preVFP','').replace('_postVFP','')
+year = o.year.replace('_preVFP','').replace('_postVFP','')
 if o.fastSkim or not o.isMC or not o.bTagSF:
     bjetSF = ""
 btagVariations = "central"

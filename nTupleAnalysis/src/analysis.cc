@@ -474,15 +474,10 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("notCanJet_eta", event->notCanJet_eta, "notCanJet_eta[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_phi", event->notCanJet_phi, "notCanJet_phi[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_m",   event->notCanJet_m,   "notCanJet_m[nAllNotCanJets]/F");
-  // picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); 
-  // picoAODEvents->Branch("ZHSB", &event->ZHSB); picoAODEvents->Branch("ZHCR", &event->ZHCR); 
-  // picoAODEvents->Branch("ZZSB", &event->ZZSB); picoAODEvents->Branch("ZZCR", &event->ZZCR); 
-  picoAODEvents->Branch("HHSR", &event->HHSR);
-  picoAODEvents->Branch("ZHSR", &event->ZHSR);
-  picoAODEvents->Branch("ZZSR", &event->ZZSR);
-  picoAODEvents->Branch("SB", &event->SB);
-  // picoAODEvents->Branch("CR", &event->CR); 
-  picoAODEvents->Branch("SR", &event->SR);
+  picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
+  picoAODEvents->Branch("ZHSB", &event->ZHSB); picoAODEvents->Branch("ZHCR", &event->ZHCR); picoAODEvents->Branch("ZHSR", &event->ZHSR);
+  picoAODEvents->Branch("ZZSB", &event->ZZSB); picoAODEvents->Branch("ZZCR", &event->ZZCR); picoAODEvents->Branch("ZZSR", &event->ZZSR);
+  picoAODEvents->Branch("SB", &event->SB); picoAODEvents->Branch("CR", &event->CR); picoAODEvents->Branch("SR", &event->SR);
   picoAODEvents->Branch("leadStM", &event->leadStM); picoAODEvents->Branch("sublStM", &event->sublStM);
   picoAODEvents->Branch("st", &event->st);
   picoAODEvents->Branch("stNotCan", &event->stNotCan);
@@ -491,7 +486,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("nPSTJets", &event->nPSTJets);
   picoAODEvents->Branch("passHLT", &event->passHLT);
   picoAODEvents->Branch("passDijetMass", &event->passDijetMass);
-  // picoAODEvents->Branch("passMDRs", &event->passMDRs);
+  picoAODEvents->Branch("passMDRs", &event->passMDRs);
   picoAODEvents->Branch("passXWt", &event->passXWt);
   picoAODEvents->Branch("xW", &event->xW);
   picoAODEvents->Branch("xt", &event->xt);
@@ -876,16 +871,17 @@ int analysis::processEvent(){
 
   // Fill picoAOD
   if(writePicoAOD){
+    event->applyMDRs();
     picoAODFillEvents();
   }
 
 
-  // Dijet mass preselection. 
-  if(!event->passDijetMass){
-    if(debug) cout << "Fail dijet mass cut" << endl;
-    return 0;
-  }
-  cutflow->Fill(event, "DijetMass");
+  // // Dijet mass preselection. 
+  // if(!event->passDijetMass){
+  //   if(debug) cout << "Fail dijet mass cut" << endl;
+  //   return 0;
+  // }
+  // cutflow->Fill(event, "DijetMass");
 
   // if(passDijetMass != NULL && event->passHLT) passDijetMass->Fill(event, event->views);
 
@@ -933,22 +929,22 @@ int analysis::processEvent(){
     trigStudy->Fill(event);
 
 
-  // if(passMDRs != NULL && event->passHLT){
-  //   passMDRs->Fill(event, event->views_passMDRs);
+  if(passMDRs != NULL && event->passHLT){
+    passMDRs->Fill(event, event->views_passMDRs);
 
-  //   lumiCounts->FillMDRs(event);
-  // }
+    lumiCounts->FillMDRs(event);
+  }
 
   if(passTTCR != NULL && event->passTTCR && event->passHLT){
-    passTTCR->Fill(event, event->views);
+    passTTCR->Fill(event, event->views_passMDRs);
   }
 
   if(passTTCRe != NULL && event->passTTCRe && event->passHLT){
-    passTTCRe->Fill(event, event->views);
+    passTTCRe->Fill(event, event->views_passMDRs);
   }
 
   if(passTTCRem != NULL && event->passTTCRem && event->passHLT){
-    passTTCRem->Fill(event, event->views);
+    passTTCRem->Fill(event, event->views_passMDRs);
   }
 
 
@@ -1018,17 +1014,17 @@ int analysis::processEvent(){
   //
   if(failrWbW2 != NULL && event->passHLT){
     if(event->t->rWbW < 2){
-      failrWbW2->Fill(event, event->views);
+      failrWbW2->Fill(event, event->views_passMDRs);
     }
   }
 
   if(passMuon != NULL && event->passHLT && event->muons_isoMed25.size()>0){
-    passMuon->Fill(event, event->views);
+    passMuon->Fill(event, event->views_passMDRs);
   }
 
   if(passDvT05 != NULL && event->passHLT){
     if(event->DvT < 0){
-      passDvT05->Fill(event, event->views);
+      passDvT05->Fill(event, event->views_passMDRs);
     }
   }
 

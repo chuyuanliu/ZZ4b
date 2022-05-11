@@ -86,7 +86,6 @@ namespace nTupleAnalysis {
     Float_t   SvB_MA_q_1324 = -99.0;
     Float_t   SvB_MA_q_1423 = -99.0;
     Float_t   SvB_MA_q_score[3] = {-99.0};
-    Float_t   SvB_MA_VHH_ps = -99.0;
     Float_t   reweight4b = 1.0;
     Float_t   DvT = 0.0;
     Float_t   weight_dRjjClose = 1.0;
@@ -274,15 +273,10 @@ namespace nTupleAnalysis {
     float notCanJet_pt[40]; float notCanJet_eta[40]; float notCanJet_phi[40]; float notCanJet_m[40];
     
     bool appliedMDRs;
-    // bool HHSB; bool HHCR;
-    // bool ZHSB; bool ZHCR;
-    // bool ZZSB; bool ZZCR;
-    bool HHSR;
-    bool ZHSR;
-    bool ZZSR;
-    bool SB; 
-    // bool CR; 
-    bool SR;
+    bool HHSB; bool HHCR; bool HHSR;
+    bool ZHSB; bool ZHCR; bool ZHSR;
+    bool ZZSB; bool ZZCR; bool ZZSR;
+    bool SB; bool CR; bool SR;
     float leadStM; float sublStM;
 
     nTupleAnalysis::muonData* treeMuons;
@@ -302,14 +296,14 @@ namespace nTupleAnalysis {
     std::shared_ptr<nTupleAnalysis::dijet> close;
     std::shared_ptr<nTupleAnalysis::dijet> other;
     std::vector< std::shared_ptr<eventView> > views;
-    // std::vector< std::shared_ptr<eventView> > views_passMDRs;
+    std::vector< std::shared_ptr<eventView> > views_passMDRs;
     std::shared_ptr<eventView> view_selected;
     std::shared_ptr<eventView> view_dR_min;
     std::shared_ptr<eventView> view_max_FvT_q_score;
     std::shared_ptr<eventView> view_max_SvB_q_score;
 
     bool passDijetMass;
-    // bool passMDRs;
+    bool passMDRs;
     bool passXWt;
     bool passTTCR = false;
     bool passTTCRe = false;

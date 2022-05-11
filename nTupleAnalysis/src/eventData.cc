@@ -122,7 +122,6 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
     classifierVariables[weightName] = &otherWeights.back();
   }
 
-  classifierVariables["BDT_kl"] = &BDT_kl;
   //
   //  Hack for weight Study
   //
@@ -488,7 +487,7 @@ void eventData::resetEvent(){
   d12TruthMatch = 0;
   truthMatch = false;
   selectedViewTruthMatch = false;
-  // passMDRs = false;
+  passMDRs = false;
   passXWt = false;
   passMV = false;
   passL1  = false;
@@ -1138,7 +1137,6 @@ void eventData::chooseCanJets(){
        }
     }
   }
-  std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
 
   if(canVDijets.size()>0){
     p6jReco = p4j + canVDijets[0]->p;
@@ -1381,30 +1379,31 @@ void eventData::buildViews(){
   dRjjClose = close->dR;
   dRjjOther = other->dR;
 
-  random->SetSeed(11*event+5);
+  // random->SetSeed(11*event+5);
   for(auto &view: views){
-    view->random = random->Uniform(0.1,0.9); // random float for random sorting
-    if(view->passDijetMass){ view->random += 10; passDijetMass = true; } // add ten so that views passing dijet mass cut are at top of list after random sort
-    if(view->passLeadStMDR){ view->random +=  1; } // add one
-    if(view->passSublStMDR){ view->random +=  1; } // add one again so that views passing MDRs are given preference. 
+    passDijetMass = passDijetMass || (view->leadM->m<250); // want at least one view with both dijet masses under 250 for FvT training
+    // view->random = random->Uniform(0.1,0.9); // random float for random sorting
+    // if(view->passDijetMass){ view->random += 10; passDijetMass = true; } // add ten so that views passing dijet mass cut are at top of list after random sort
+    // if(view->passLeadStMDR){ view->random +=  1; } // add one
+    // if(view->passSublStMDR){ view->random +=  1; } // add one again so that views passing MDRs are given preference. 
     truthMatch = truthMatch || view->truthMatch; // check if there is a view which was truth matched to two massive boson decays
   }
-  std::sort(views.begin(), views.end(), sortRandom); // put in random order for random view selection  
-  //for(auto &view: views){ views_passMDRs.push_back(view); }
+  // std::sort(views.begin(), views.end(), sortRandom); // put in random order for random view selection  
+  // //for(auto &view: views){ views_passMDRs.push_back(view); }
 
-  view_selected = views[0];
-  HHSR = view_selected->HHSR;
-  ZHSR = view_selected->ZHSR;
-  ZZSR = view_selected->ZZSR;
-  SB = view_selected->SB; 
-  SR = view_selected->SR;
-  leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
-  selectedViewTruthMatch = view_selected->truthMatch;
-  if(runKlBdt && canVDijets.size() > 0){
-    auto score = bdtModel->getBDTScore(this, view_selected);
-    BDT_kl = score["BDT"];
-  }
-
+  // view_selected = views[0];
+  // HHSR = view_selected->HHSR;
+  // ZHSR = view_selected->ZHSR;
+  // ZZSR = view_selected->ZZSR;
+  // SB = view_selected->SB; 
+  // SR = view_selected->SR;
+  // leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
+  // selectedViewTruthMatch = view_selected->truthMatch;
+  // if(runKlBdt && canVDijets.size() > 0){
+  //   auto score = bdtModel->getBDTScore(this, view_selected);
+  //   BDT_kl = score["BDT"];
+  // }
+   std::sort(views.begin(), views.end(), sortDBB);
   return;
 }
 

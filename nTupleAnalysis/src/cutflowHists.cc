@@ -108,10 +108,10 @@ void cutflowHists::Fill(const std::string& cut, eventData* event){
     BasicFill(cut, event, true);
   }
 
-  if(event->views.size()>0){
+  if(event->views_passMDRs.size()>0){
     
     //Cut+SR
-    if(event->views[0]->SR){
+    if(event->views_passMDRs[0]->SR){
       if(event->doTrigEmulation){
 	BasicFill(cut+"_SR", event, event->weightNoTrigger);
 	BasicFill(cut+"_SR_HLT", event, event->weight);
