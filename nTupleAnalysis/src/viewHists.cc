@@ -273,7 +273,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   
 } 
 
- void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
+void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   //
   // Object Level
   //
@@ -567,20 +567,11 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   if(weightStudy_os012) weightStudy_os012->Fill(event, view);
   if(weightStudy_e20)   weightStudy_e20  ->Fill(event, view);
 
-  if(DvT_pt){
-
-
-    // DvT = p_m / p_d = (p_d - p_t) / p_d = (1 - p_t - p_t) / p_d
-    //   =>  p_t = (DvT -1 ) /(DvT -2)
-
-
   canJet0BTag->Fill(event->canJet0_btag, event->weight);
   canJet1BTag->Fill(event->canJet1_btag, event->weight);
   canJet2BTag->Fill(event->canJet2_btag, event->weight);
   canJet3BTag->Fill(event->canJet3_btag, event->weight);
   canJet23BTag->Fill(event->canJet2_btag,event->canJet3_btag, event->weight);
-
-  
 
   if(debug) std::cout << "viewHists::Fill done " << std::endl;
   return;
