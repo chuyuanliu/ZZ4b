@@ -22,7 +22,7 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['2018']
+years = ['RunII']
 signals = ['VHH']
 hists_filename = {
     'data'    : ['hists_j_r'],
@@ -886,6 +886,8 @@ class plots:
                                     signals[syst] = self.sum_hists(signal_mc[syst], weights)
                                 ploter.add_hist(signals, self.couplings.get_filename(**coupling)[1:-1])
                     ploter.plot()
+    def plot_syst(self, hist, systs):
+        pass
 
     def plot_2d(self): #TEMP
         for year in self.years:
@@ -1216,6 +1218,15 @@ if __name__ == '__main__':
         # producer.save('VhadHH_Syst_{year}_nkl', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_nkl', MC_systs, binning)
         # producer.save('VhadHH_Syst_{year}_kl', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_kl', MC_systs, binning)
 
+        # classifier
+        # producer.save('combine_regionBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps', 4)
+        # producer.save('combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)
+        # producer.save('combine_signalAll_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps', 4)
+        # producer.save('combine_regionBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps_rebin', 1)
+        # producer.save('combine_labelBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
+        # producer.save('combine_signalAll_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps_rebin', 1)
+        # producer.save('combine_loose_', 'passLooseMV/fourTag/mainView/HHmSR/SvB_MA_labelBDT_ps_rebin', 1)
+        # producer.save('combine_tight_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
 
 # UL dataset
 # dataset =/*HHTo4B_CV_*_C2V_*_C3_*_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2*v15*/NANOAODSIM 
