@@ -9,7 +9,6 @@
 #include <boost/any.hpp>
 #include <TChain.h>
 #include <TFile.h>
-#include <TH1F.h>
 #include <TLorentzVector.h>
 #include "nTupleAnalysis/baseClasses/interface/initBranch.h"
 #include "nTupleAnalysis/baseClasses/interface/truthData.h"
@@ -107,6 +106,7 @@ namespace nTupleAnalysis {
     Float_t   mcWeight  =  1;
     Float_t   mcPseudoTagWeight = 1;
     Float_t   bTagSF = 1;
+    Float_t   puIdSF = 1;
     int       nTrueBJets = 0;
 
     // used for hemisphere mixing
@@ -215,18 +215,21 @@ namespace nTupleAnalysis {
 
     uint nSelJetsV;
 
-    std::unique_ptr<bdtInference> bdtModel;
-    Float_t BDT_kl = -99;
     bool runKlBdt;
+    std::unique_ptr<bdtInference> bdtModel;
+    void load_kl_BDT(std::string, std::string);
+    Float_t BDT_kl = -99;
     const float bdtCut = 0.0;
-
-    std::unique_ptr<TH1F> Z_Pt_NNLO_weight = nullptr;
 
     Float_t SvB_MA_signalAll_ps = -99;
     Float_t SvB_MA_regionBDT_signalAll_ps = -99;
     Float_t SvB_MA_regionC3_signalAll_ps = -99;
     Float_t SvB_MA_regionC2V_signalAll_ps = -99;
     Float_t SvB_MA_labelBDT_ps = -99;
+    Float_t SvB_MA_pskl_ONNX = -99;
+    Float_t SvB_MA_plkl_ONNX = -99;
+    Float_t SvB_MA_ptt_ONNX  = -99;
+    Float_t SvB_MA_ps_ONNX  = -99;
 
     TLorentzVector p6jGen;
     TLorentzVector p6jReco;
@@ -235,6 +238,10 @@ namespace nTupleAnalysis {
     float m6jLoose;
     float pVLoose_dR;
     float pVGen_dR;
+
+    bool doZHHNNLOScale = false;
+    std::vector<std::string> zhhNNLOVariations{"central_NNLO", "up_NNLO", "down_NNLO"};
+    std::map<std::string, float> zhhNNLOSFs{{"central_NNLO", 1}, {"up_NNLO", 1}, {"down_NNLO", 1}};
     //
 
     uint nSelJets;
@@ -316,7 +323,7 @@ namespace nTupleAnalysis {
     // Constructors and member functions
     eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _calcTrigWeights = false, bool _useMCTurnOns = false, bool _useUnitTurnOns = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
 	      std::string JECSyst = "", bool _looseSkim = false, bool usePreCalcBTagSFs = false, std::string FvTName="FvT", std::string reweight4bName="MixedToUnmixed", std::string reweightDvTName="weight_DvT3_3b_pt3", bool doWeightStudy = false,
-        std::string bdtWeightFile = "", std::string bdtMethods = "", bool _runKlBdt = false, std::string ZPtNNLOWeight = ""); 
+        bool _runKlBdt = false, bool _doZHHNNLOScale = false, std::string era = "", std::string puIdVariations = "nom"); 
     void setTagger(std::string, float);
     void update(long int);
     void buildEvent();

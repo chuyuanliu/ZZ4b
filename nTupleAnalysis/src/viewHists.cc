@@ -44,15 +44,15 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   //VHH
   nTruVJets = dir.make<TH1F>("nTruVJets", (name+"/nTruVJets; Number of Truth Matched Vector Boson Jets in Other Jets; Entries").c_str(), 16,-0.5,15.5);
   truVJets = new jetHists(name+"/truVJets", fs, "Truth Matched Vector Boson Jets in Other Jets");
-  truVJet0 = new jetHists(name+"/truVJet0", fs, "Truth Matched Vector Boson Jet_{0} in Other Jets");
-  truVJet1 = new jetHists(name+"/truVJet1", fs, "Truth Matched Vector Boson Jet_{1} in Other Jets");
-  lowPtJets = new jetHists(name+"/lowPtJets", fs, "Jets 20 GeV #leq p_{T}<40 GeV");
+  // truVJet0 = new jetHists(name+"/truVJet0", fs, "Truth Matched Vector Boson Jet_{0} in Other Jets");
+  // truVJet1 = new jetHists(name+"/truVJet1", fs, "Truth Matched Vector Boson Jet_{1} in Other Jets");
+  // lowPtJets = new jetHists(name+"/lowPtJets", fs, "Jets 20 GeV #leq p_{T}<40 GeV");
   nCanHTruVJets = dir.make<TH1F>("nCanHTruVJets", (name+"/nCanHTruVJets; Number of Truth Matched Vector Boson Jets in Higgs Candidate Jets; Entries").c_str(), 16,-0.5,15.5);
-  canHTruVJets = new jetHists(name+"/canHTruVJets", fs, "Truth Matched Vector Boson Jets in Higgs Candidate Jets");
+  // canHTruVJets = new jetHists(name+"/canHTruVJets", fs, "Truth Matched Vector Boson Jets in Higgs Candidate Jets");
   nSelTruVJets =dir.make<TH1F>("nSelTruVJets", (name+"/nSelTruVJets; Number of Truth Matched Vector Boson Jets in Selected Jets; Entries").c_str(), 16,-0.5,15.5);
   allDijets   = new dijetHists(name+"/allDijets",   fs,    "All Dijets formed by Other Jets");
-  truVDijets   = new dijetHists(name+"/truVDijets",   fs,    "Truth Matched Vector Boson Dijets");
-  notTruVDijets   = new dijetHists(name+"/notTruVDijets",   fs,    "Not Truth Matched Vector Boson Dijets");
+  // truVDijets   = new dijetHists(name+"/truVDijets",   fs,    "Truth Matched Vector Boson Dijets");
+  // notTruVDijets   = new dijetHists(name+"/notTruVDijets",   fs,    "Not Truth Matched Vector Boson Dijets");
   nAllDijets =dir.make<TH1F>("nAllDijets", (name+"/nAllDijets; Number of All Dijets formed by Other Jets; Entries").c_str(), 16,-0.5,15.5);
   nTruVDijets =dir.make<TH1F>("nTruVDijets", (name+"/nTruVDijets; Number of Truth Matched Vector Boson Dijets; Entries").c_str(), 16,-0.5,15.5);
   nCanVDijets =dir.make<TH1F>("nCanVDijets", (name+"/nCanVDijets; Number of Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
@@ -91,13 +91,11 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
 
   m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
   m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
-  m4j_vs_V_dR = dir.make<TH2F>("m4j_vs_V_dR", (name+"/m4j_vs_V_dR; m_{4j} [GeV]; Vector boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
 
-  m6j_vs_V_dR = dir.make<TH2F>("m6j_vs_V_dR", (name+"/m6j_vs_V_dR; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
-  m6j_vs_V_dR_Gen = dir.make<TH2F>("m6j_vs_V_dR_Gen", (name+"/m6j_vs_V_dR_Gen; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) GEN; Entries").c_str(), 40,100,1400, 25,0,5);
-  m6j_vs_V_dR_matched = dir.make<TH2F>("m6j_vs_V_dR_matched", (name+"/m6j_vs_V_dR_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
-  m6j_vs_V_dR_not_matched = dir.make<TH2F>("m6j_vs_V_dR_not_matched", (name+"/m6j_vs_V_dR_not_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Not Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
-  m6j_vs_V_dR_Loose = dir.make<TH2F>("m6j_vs_V_dR_Loose", (name+"/m6j_vs_V_dR_Loose; m_{6j} [GeV]; Vector boson candidate (Loose) #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
+  // m6j_vs_V_dR = dir.make<TH2F>("m6j_vs_V_dR", (name+"/m6j_vs_V_dR; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
+  // m6j_vs_V_dR_matched = dir.make<TH2F>("m6j_vs_V_dR_matched", (name+"/m6j_vs_V_dR_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
+  // m6j_vs_V_dR_not_matched = dir.make<TH2F>("m6j_vs_V_dR_not_matched", (name+"/m6j_vs_V_dR_not_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Not Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
+  // m6j_vs_V_dR_Loose = dir.make<TH2F>("m6j_vs_V_dR_Loose", (name+"/m6j_vs_V_dR_Loose; m_{6j} [GeV]; Vector boson candidate (Loose) #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
 
   leadM  = new dijetHists(name+"/leadM",  fs,    "Leading mass boson candidate");
   sublM  = new dijetHists(name+"/sublM",  fs, "Subleading mass boson candidate");
@@ -144,74 +142,90 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
 
   FvT = dir.make<TH1F>("FvT", (name+"/FvT; Kinematic Reweight; Entries").c_str(), 100, 0, 5);
   FvTUnweighted = dir.make<TH1F>("FvTUnweighted", (name+"/FvTUnweighted; Kinematic Reweight; Entries").c_str(), 100, 0, 5);
-  FvT_pd4 = dir.make<TH1F>("FvT_pd4", (name+"/FvT_pd4; FvT Regressed P(Four-tag Data) ; Entries").c_str(), 100, 0, 1);
-  FvT_pd3 = dir.make<TH1F>("FvT_pd3", (name+"/FvT_pd3; FvT Regressed P(Three-tag Data) ; Entries").c_str(), 100, 0, 1);
-  FvT_pt4 = dir.make<TH1F>("FvT_pt4", (name+"/FvT_pt4; FvT Regressed P(Four-tag t#bar{t}) ; Entries").c_str(), 100, 0, 1);
-  FvT_pt3 = dir.make<TH1F>("FvT_pt3", (name+"/FvT_pt3; FvT Regressed P(Three-tag t#bar{t}) ; Entries").c_str(), 100, 0, 1);
-  FvT_pm4 = dir.make<TH1F>("FvT_pm4", (name+"/FvT_pm4; FvT Regressed P(Four-tag Multijet) ; Entries").c_str(), 100, 0, 1);
-  FvT_pm3 = dir.make<TH1F>("FvT_pm3", (name+"/FvT_pm3; FvT Regressed P(Three-tag Multijet) ; Entries").c_str(), 100, 0, 1);
-  FvT_pt  = dir.make<TH1F>("FvT_pt",  (name+"/FvT_pt;  FvT Regressed P(t#bar{t}) ; Entries").c_str(), 100, 0, 1);
-  SvB_ps  = dir.make<TH1F>("SvB_ps",  (name+"/SvB_ps;  SvB Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  FvT_std = dir.make<TH1F>("FvT_std",  (name+"/FvT_pt;  FvT Standard Deviation ; Entries").c_str(), 100, 0, 5);
-  FvT_ferr = dir.make<TH1F>("FvT_ferr",  (name+"/FvT_ferr;  FvT std/FvT ; Entries").c_str(), 100, 0, 5);
+  // FvT_pd4 = dir.make<TH1F>("FvT_pd4", (name+"/FvT_pd4; FvT Regressed P(Four-tag Data) ; Entries").c_str(), 100, 0, 1);
+  // FvT_pd3 = dir.make<TH1F>("FvT_pd3", (name+"/FvT_pd3; FvT Regressed P(Three-tag Data) ; Entries").c_str(), 100, 0, 1);
+  // FvT_pt4 = dir.make<TH1F>("FvT_pt4", (name+"/FvT_pt4; FvT Regressed P(Four-tag t#bar{t}) ; Entries").c_str(), 100, 0, 1);
+  // FvT_pt3 = dir.make<TH1F>("FvT_pt3", (name+"/FvT_pt3; FvT Regressed P(Three-tag t#bar{t}) ; Entries").c_str(), 100, 0, 1);
+  // FvT_pm4 = dir.make<TH1F>("FvT_pm4", (name+"/FvT_pm4; FvT Regressed P(Four-tag Multijet) ; Entries").c_str(), 100, 0, 1);
+  // FvT_pm3 = dir.make<TH1F>("FvT_pm3", (name+"/FvT_pm3; FvT Regressed P(Three-tag Multijet) ; Entries").c_str(), 100, 0, 1);
+  // FvT_pt  = dir.make<TH1F>("FvT_pt",  (name+"/FvT_pt;  FvT Regressed P(t#bar{t}) ; Entries").c_str(), 100, 0, 1);
+  // SvB_ps  = dir.make<TH1F>("SvB_ps",  (name+"/SvB_ps;  SvB Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  // FvT_std = dir.make<TH1F>("FvT_std",  (name+"/FvT_pt;  FvT Standard Deviation ; Entries").c_str(), 100, 0, 5);
+  // FvT_ferr = dir.make<TH1F>("FvT_ferr",  (name+"/FvT_ferr;  FvT std/FvT ; Entries").c_str(), 100, 0, 5);
+  // if(event){
+  //   SvB_ps_bTagSysts = new systHists(SvB_ps, event->treeJets->m_btagVariations);
+  // }
+  // SvB_pwhh = dir.make<TH1F>("SvB_pwhh", (name+"/SvB_pwhh; SvB Regressed P(WHH); Entries").c_str(), 100, 0, 1);
+  // SvB_pzhh = dir.make<TH1F>("SvB_pzhh", (name+"/SvB_pzhh; SvB Regressed P(ZHH); Entries").c_str(), 100, 0, 1);
+  // SvB_ptt = dir.make<TH1F>("SvB_ptt", (name+"/SvB_ptt; SvB Regressed P(t#bar{t}); Entries").c_str(), 100, 0, 1);
+  // SvB_ps_zhh = dir.make<TH1F>("SvB_ps_zhh",  (name+"/SvB_ps_zhh;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
+  // SvB_ps_whh = dir.make<TH1F>("SvB_ps_whh",  (name+"/SvB_ps_whh;  SvB Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
+
+  // SvB_MA_ps  = dir.make<TH1F>("SvB_MA_ps",  (name+"/SvB_MA_ps;  SvB_MA Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
+  // if(event){
+  //   SvB_MA_ps_bTagSysts = new systHists(SvB_MA_ps, event->treeJets->m_btagVariations);
+  // }
+  // SvB_MA_pwhh = dir.make<TH1F>("SvB_MA_pwhh", (name+"/SvB_MA_pwhh; SvB_MA Regressed P(WHH); Entries").c_str(), 100, 0, 1);
+  // SvB_MA_pzhh = dir.make<TH1F>("SvB_MA_pzhh", (name+"/SvB_MA_pzhh; SvB_MA Regressed P(ZHH); Entries").c_str(), 100, 0, 1);
+  // SvB_MA_ptt = dir.make<TH1F>("SvB_MA_ptt", (name+"/SvB_MA_ptt; SvB_MA Regressed P(t#bar{t}); Entries").c_str(), 100, 0, 1);
+  // SvB_MA_ps_zhh = dir.make<TH1F>("SvB_MA_ps_zhh",  (name+"/SvB_MA_ps_zhh;  SvB_MA Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
+  // SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
+
+  puIdSF = dir.make<TH1F>("puIdSF",  (name+"/puIdSF;  PU Jet ID SF; Entries").c_str(), 40, 0.8, 1.2);
+  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_nkl  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_nkl",  (name+"/SvB_MA_labelBDT_ps_BDT_nkl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_kl = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl",  (name+"/SvB_MA_labelBDT_ps_BDT_kl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
+  
+  SvB_MA_labelBDT_ps_ONNX  = dir.make<TH1F>("SvB_MA_labelBDT_ps_ONNX",  (name+"/SvB_MA_labelBDT_ps_ONNX;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_nkl_ONNX  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_nkl_ONNX",  (name+"/SvB_MA_labelBDT_ps_BDT_nkl_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_kl_ONNX = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl_ONNX",  (name+"/SvB_MA_labelBDT_ps_BDT_kl_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
+
+
   if(event){
-    SvB_ps_bTagSysts = new systHists(SvB_ps, event->treeJets->m_btagVariations);
+    SvB_MA_labelBDT_ps_bTagSysts = new systHists(SvB_MA_labelBDT_ps, event->treeJets->m_btagVariations);
+    SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->treeJets->m_btagVariations);
+    SvB_MA_labelBDT_ps_BDT_kl_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->treeJets->m_btagVariations);
+
+    if(event->treeJets->m_puIdVariations.size() > 0){
+      SvB_MA_labelBDT_ps_puIdSysts = new systHists(SvB_MA_labelBDT_ps, event->treeJets->m_puIdVariations);
+      SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->treeJets->m_puIdVariations);
+      SvB_MA_labelBDT_ps_BDT_kl_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->treeJets->m_puIdVariations);
+    }
+
+    if(event->doZHHNNLOScale){
+      SvB_MA_labelBDT_ps_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps, event->zhhNNLOVariations);
+      SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->zhhNNLOVariations);
+      SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->zhhNNLOVariations);
+    }
+
+    SvB_MA_labelBDT_ps_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_ONNX, event->treeJets->m_btagVariations);
+    SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl_ONNX, event->treeJets->m_btagVariations);
+    SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl_ONNX, event->treeJets->m_btagVariations);
   }
-  SvB_pwhh = dir.make<TH1F>("SvB_pwhh", (name+"/SvB_pwhh; SvB Regressed P(WHH); Entries").c_str(), 100, 0, 1);
-  SvB_pzhh = dir.make<TH1F>("SvB_pzhh", (name+"/SvB_pzhh; SvB Regressed P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_ptt = dir.make<TH1F>("SvB_ptt", (name+"/SvB_ptt; SvB Regressed P(t#bar{t}); Entries").c_str(), 100, 0, 1);
-  SvB_ps_zhh = dir.make<TH1F>("SvB_ps_zhh",  (name+"/SvB_ps_zhh;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
-  SvB_ps_whh = dir.make<TH1F>("SvB_ps_whh",  (name+"/SvB_ps_whh;  SvB Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
-  SvB_MA_ps  = dir.make<TH1F>("SvB_MA_ps",  (name+"/SvB_MA_ps;  SvB_MA Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  if(event){
-    SvB_MA_ps_bTagSysts = new systHists(SvB_MA_ps, event->treeJets->m_btagVariations);
-  }
-  SvB_MA_pwhh = dir.make<TH1F>("SvB_MA_pwhh", (name+"/SvB_MA_pwhh; SvB_MA Regressed P(WHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_pzhh = dir.make<TH1F>("SvB_MA_pzhh", (name+"/SvB_MA_pzhh; SvB_MA Regressed P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_ptt = dir.make<TH1F>("SvB_MA_ptt", (name+"/SvB_MA_ptt; SvB_MA Regressed P(t#bar{t}); Entries").c_str(), 100, 0, 1);
-  SvB_MA_ps_zhh = dir.make<TH1F>("SvB_MA_ps_zhh",  (name+"/SvB_MA_ps_zhh;  SvB_MA Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
-
-  SvB_MA_signalAll_ps  = dir.make<TH1F>("SvB_MA_signalAll_ps",  (name+"/SvB_MA_signalAll_ps;  SvB_MA (All) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_regionBDT_ps  = dir.make<TH1F>("SvB_MA_regionBDT_ps",  (name+"/SvB_MA_regionBDT_ps;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA (BDT) Regressed P(kl like)+P(not kl like); Entries").c_str(), 100, 0, 1);
-  SvB_MA_signalAll_ps_rebin  = dir.make<TH1F>("SvB_MA_signalAll_ps_rebin",  (name+"/SvB_MA_signalAll_ps_rebin;  SvB_MA (All) Regressed P(WHH)+P(ZHH) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
-  SvB_MA_regionBDT_ps_rebin  = dir.make<TH1F>("SvB_MA_regionBDT_ps_rebin",  (name+"/SvB_MA_regionBDT_ps_rebin;  SvB_MA (BDT) Regressed P(WHH)+P(ZHH) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
-  SvB_MA_labelBDT_ps_rebin  = dir.make<TH1F>("SvB_MA_labelBDT_ps_rebin",  (name+"/SvB_MA_labelBDT_ps_rebin;  SvB_MA (BDT) Regressed P(kl like)+P(not kl like) (Rebinned); Entries").c_str(), SvB_nbins, SvB_bins);
-  SvB_MA_diff_regionBDT_ps = dir.make<TH1F>("SvB_MA_diff_regionBDT_ps",  (name+"/SvB_MA_diff_regionBDT_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH); Entries").c_str(), 100, -1, 1);
-
-  SvB_MA_C3_regionC3_ps  = dir.make<TH1F>("SvB_MA_C3_regionC3_ps",  (name+"/SvB_MA_C3_regionC3_ps;  SvB_MA (C_{3}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, 0, 1);
-  SvB_MA_C2V_regionC3_ps  = dir.make<TH1F>("SvB_MA_C2V_regionC3_ps",  (name+"/SvB_MA_C2V_regionC3_ps;  SvB_MA (C_{2V}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, 0, 1);
-  SvB_MA_C3_regionC2V_ps  = dir.make<TH1F>("SvB_MA_C3_regionC2V_ps",  (name+"/SvB_MA_C3_regionC2V_ps;  SvB_MA (C_{3}) Regressed P(WHH)+P(ZHH) in C_{2V} region; Entries").c_str(), 100, 0, 1);
-  SvB_MA_C2V_regionC2V_ps  = dir.make<TH1F>("SvB_MA_C2V_regionC2V_ps",  (name+"/SvB_MA_C2V_regionC2V_ps;  SvB_MA (C_{2V}) Regressed P(WHH)+P(ZHH) in C_{2V} region; Entries").c_str(), 100, 0, 1);
-  SvB_MA_diff_regionC3_ps  = dir.make<TH1F>("SvB_MA_diff_regionC3_ps",  (name+"/SvB_MA_diff_regionC3_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH) in C_{3} region; Entries").c_str(), 100, -1, 1);
-  SvB_MA_diff_regionC2V_ps  = dir.make<TH1F>("SvB_MA_diff_regionC2V_ps",  (name+"/SvB_MA_diff_regionC2V_ps;  SvB_MA (C_{3}-C_{2V}) Regressed P(WHH)+P(ZHH) in C_{2V} region; Entries").c_str(), 100, -1, 1);
 
   bdt_vs_labelBDT = dir.make<TH2F>("bdt_vs_labelBDT", (name+"/bdt_vs_labelBDT; BDT output; SvB (BDT label) output; Entries").c_str(), 40,-1,1, 40,0,1);
-  bdt_vs_regionBDT = dir.make<TH2F>("bdt_vs_regionBDT", (name+"/bdt_vs_regionBDT; BDT output; SvB (two classifier) output; Entries").c_str(), 40,-1,1, 40,0,1);
-  bdt_vs_simple = dir.make<TH2F>("bdt_vs_simple", (name+"/bdt_vs_simple; BDT output; SvB (one classifier) output; Entries").c_str(), 40,-1,1, 40,0,1);
 
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
-  FvT_q_score_SvB_q_score_max = dir.make<TH1F>("FvT_q_score_SvB_q_score_max", (name+"/FvT_q_score; FvT q_score (max SvB q_score pairing); Entries").c_str(), 100, 0, 1);
-  SvB_q_score = dir.make<TH1F>("SvB_q_score", (name+"/SvB_q_score; SvB q_score; Entries").c_str(), 100, 0, 1);
-  SvB_q_score_FvT_q_score_max = dir.make<TH1F>("SvB_q_score_FvT_q_score_max", (name+"/SvB_q_score; SvB q_score (max FvT q_score pairing); Entries").c_str(), 100, 0, 1);
-  SvB_MA_q_score = dir.make<TH1F>("SvB_MA_q_score", (name+"/SvB_MA_q_score; SvB_MA q_score; Entries").c_str(), 100, 0, 1);
+  // FvT_q_score_SvB_q_score_max = dir.make<TH1F>("FvT_q_score_SvB_q_score_max", (name+"/FvT_q_score; FvT q_score (max SvB q_score pairing); Entries").c_str(), 100, 0, 1);
+  // SvB_q_score = dir.make<TH1F>("SvB_q_score", (name+"/SvB_q_score; SvB q_score; Entries").c_str(), 100, 0, 1);
+  // SvB_q_score_FvT_q_score_max = dir.make<TH1F>("SvB_q_score_FvT_q_score_max", (name+"/SvB_q_score; SvB q_score (max FvT q_score pairing); Entries").c_str(), 100, 0, 1);
+  // SvB_MA_q_score = dir.make<TH1F>("SvB_MA_q_score", (name+"/SvB_MA_q_score; SvB_MA q_score; Entries").c_str(), 100, 0, 1);
 
-  FvT_SvB_q_score_max_same = dir.make<TH1F>("FvT_SvB_q_score_max_same", (name+"/FvT_SvB_q_score_max_same; FvT max q_score pairing == SvB max q_score pairing").c_str(), 2, -0.5, 1.5);
-  //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-  SvB_ps_zhh_0_75 = dir.make<TH1F>("SvB_ps_zhh_0_75",  (name+"/SvB_ps_zhh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zhh_75_150 = dir.make<TH1F>("SvB_ps_zhh_75_150",  (name+"/SvB_ps_zhh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zhh_150_250 = dir.make<TH1F>("SvB_ps_zhh_150_250",  (name+"/SvB_ps_zhh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zhh_250_400 = dir.make<TH1F>("SvB_ps_zhh_250_400",  (name+"/SvB_ps_zhh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-  SvB_ps_zhh_400_inf = dir.make<TH1F>("SvB_ps_zhh_400_inf",  (name+"/SvB_ps_zhh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
+  // FvT_SvB_q_score_max_same = dir.make<TH1F>("FvT_SvB_q_score_max_same", (name+"/FvT_SvB_q_score_max_same; FvT max q_score pairing == SvB max q_score pairing").c_str(), 2, -0.5, 1.5);
+  // //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
+  // SvB_ps_zhh_0_75 = dir.make<TH1F>("SvB_ps_zhh_0_75",  (name+"/SvB_ps_zhh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_zhh_75_150 = dir.make<TH1F>("SvB_ps_zhh_75_150",  (name+"/SvB_ps_zhh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_zhh_150_250 = dir.make<TH1F>("SvB_ps_zhh_150_250",  (name+"/SvB_ps_zhh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_zhh_250_400 = dir.make<TH1F>("SvB_ps_zhh_250_400",  (name+"/SvB_ps_zhh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_zhh_400_inf = dir.make<TH1F>("SvB_ps_zhh_400_inf",  (name+"/SvB_ps_zhh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
 
-  SvB_ps_whh_0_75 = dir.make<TH1F>("SvB_ps_whh_0_75",  (name+"/SvB_ps_whh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-  SvB_ps_whh_75_150 = dir.make<TH1F>("SvB_ps_whh_75_150",  (name+"/SvB_ps_whh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-  SvB_ps_whh_150_250 = dir.make<TH1F>("SvB_ps_whh_150_250",  (name+"/SvB_ps_whh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-  SvB_ps_whh_250_400 = dir.make<TH1F>("SvB_ps_whh_250_400",  (name+"/SvB_ps_whh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-  SvB_ps_whh_400_inf = dir.make<TH1F>("SvB_ps_whh_400_inf",  (name+"/SvB_ps_whh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_whh_0_75 = dir.make<TH1F>("SvB_ps_whh_0_75",  (name+"/SvB_ps_whh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_whh_75_150 = dir.make<TH1F>("SvB_ps_whh_75_150",  (name+"/SvB_ps_whh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_whh_150_250 = dir.make<TH1F>("SvB_ps_whh_150_250",  (name+"/SvB_ps_whh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_whh_250_400 = dir.make<TH1F>("SvB_ps_whh_250_400",  (name+"/SvB_ps_whh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
+  // SvB_ps_whh_400_inf = dir.make<TH1F>("SvB_ps_whh_400_inf",  (name+"/SvB_ps_whh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
 
   xHH = dir.make<TH1F>("xHH", (name+"/xHH; X_{HH}; Entries").c_str(), 100, 0, 10);  
   Double_t bins_mHH[] = {100, 216, 237, 260, 286, 314, 345, 379, 416, 457, 502, 552, 607, 667, 733, 806, 886, 974, 1071, 1178, 1295, 1500};
@@ -254,7 +268,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
 
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"bdtStudy")){
-    bdtScore = dir.make<TH1F>("bdtScore", (name+"/bdtScore; #kappa_{#lambda} BDT Output; Entries").c_str(), 32, -1 , 1); 
+    kl_BDT = dir.make<TH1F>("kl_BDT", (name+"/kl_BDT; #kappa_{#lambda} BDT Output; Entries").c_str(), 32, -1 , 1); 
   }
   
 } 
@@ -307,17 +321,17 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
 
   nTruVJets->Fill(event->truVJets.size(), event->weight);
   for(auto &jet: event->truVJets) truVJets->Fill(jet, event->weight);
-  if(event->truVJets.size()>1){
-    truVJet0->Fill(event->truVJets[0], event->weight);
-    truVJet1->Fill(event->truVJets[1], event->weight);
-  }
-  for(auto &jet: event->lowPtJets) lowPtJets->Fill(jet, event->weight);
+  // if(event->truVJets.size()>1){
+  //   truVJet0->Fill(event->truVJets[0], event->weight);
+  //   truVJet1->Fill(event->truVJets[1], event->weight);
+  // }
+  // for(auto &jet: event->lowPtJets) lowPtJets->Fill(jet, event->weight);
   nCanHTruVJets->Fill(event->canHTruVJets.size(), event->weight);
-  for(auto &jet: event->canHTruVJets) canHTruVJets->Fill(jet, event->weight);
+  // for(auto &jet: event->canHTruVJets) canHTruVJets->Fill(jet, event->weight);
   nSelTruVJets->Fill(event->truVJets.size()+event->canHTruVJets.size(), event->weight);
   for(auto &dijet: event->allDijets) allDijets->Fill(dijet, event->weight);
-  for(auto &dijet: event->truVDijets) truVDijets->Fill(dijet, event->weight);
-  for(auto &dijet: event->notTruVDijets) notTruVDijets->Fill(dijet, event->weight);
+  // for(auto &dijet: event->truVDijets) truVDijets->Fill(dijet, event->weight);
+  // for(auto &dijet: event->notTruVDijets) notTruVDijets->Fill(dijet, event->weight);
   for(auto &dijet: event->canVDijets) canVDijets->Fill(dijet, event->weight);
   for(auto &dijet: event->canVTruVDijets) canVTruVDijets->Fill(dijet, event->weight);
   nAllDijets->Fill(event->allDijets.size(), event->weight);
@@ -365,19 +379,17 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   m4j_vs_leadSt_dR->Fill(view->m4j, view->leadSt->dR, event->weight);
   m4j_vs_sublSt_dR->Fill(view->m4j, view->sublSt->dR, event->weight);
   
-  if(event->canVDijets.size()>0){
-    m6j_vs_V_dR->Fill(event->m6j, event->canVDijets[0]->dR, event->weight);
-    m4j_vs_V_dR->Fill(event->m4j, event->canVDijets[0]->dR, event->weight);
-  }
+  // if(event->canVDijets.size()>0){
+  //   m6j_vs_V_dR->Fill(event->m6j, event->canVDijets[0]->dR, event->weight);
+  // }
   
-  if(event->p6jGen.Pt()>0){
-    m6j_vs_V_dR_Gen->Fill(event->m6jGen, event->pVGen_dR, event->weight);
-    for(auto &dijet: event->truVDijets) m6j_vs_V_dR_matched->Fill(event->m6jGen, dijet->dR, event->weight);
-    for(auto &dijet: event->notTruVDijets) m6j_vs_V_dR_not_matched->Fill(event->m6jGen, dijet->dR, event->weight);
-  }
-  if(event->passLooseMV){
-    m6j_vs_V_dR_Loose->Fill(event->m6jLoose, event->pVLoose_dR, event->weight);
-  }
+  // if(event->p6jGen.Pt()>0){
+  //   for(auto &dijet: event->truVDijets) m6j_vs_V_dR_matched->Fill(event->m6jGen, dijet->dR, event->weight);
+  //   for(auto &dijet: event->notTruVDijets) m6j_vs_V_dR_not_matched->Fill(event->m6jGen, dijet->dR, event->weight);
+  // }
+  // if(event->passLooseMV){
+  //   m6j_vs_V_dR_Loose->Fill(event->m6jLoose, event->pVLoose_dR, event->weight);
+  // }
   leadM ->Fill(view->leadM,  event->weight);
   sublM ->Fill(view->sublM,  event->weight);
   leadM_m_vs_sublM_m->Fill(view->leadM->m, view->sublM->m, event->weight);
@@ -419,100 +431,127 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
 
   FvT->Fill(event->FvT, event->weight);
   FvTUnweighted->Fill(event->FvT, event->weight/event->reweight); // depends only on jet combinatoric model
-  FvT_pd4->Fill(event->FvT_pd4, event->weight);
-  FvT_pd3->Fill(event->FvT_pd3, event->weight);
-  FvT_pt4->Fill(event->FvT_pt4, event->weight);
-  FvT_pt3->Fill(event->FvT_pt3, event->weight);
-  FvT_pm4->Fill(event->FvT_pm4, event->weight);
-  FvT_pm3->Fill(event->FvT_pm3, event->weight);
-  FvT_pt ->Fill(event->FvT_pt,  event->weight);
-  FvT_std->Fill(event->FvT_std, event->weight);
-  if(event->FvT) FvT_ferr->Fill(event->FvT_std/event->FvT, event->weight);
-  SvB_ps ->Fill(event->SvB_ps , event->weight);
-  if(SvB_ps_bTagSysts){
-    SvB_ps_bTagSysts->Fill(event->SvB_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
-  }
-  SvB_pwhh->Fill(event->SvB_pwhh, event->weight);
-  SvB_pzhh->Fill(event->SvB_pzhh, event->weight);
-  SvB_ptt->Fill(event->SvB_ptt, event->weight);
-  if(event->SvB_pwhh<event->SvB_pzhh){
-    SvB_ps_zhh->Fill(event->SvB_ps, event->weight);
-    //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-    if      (view->sublM->pt< 75){
-      SvB_ps_zhh_0_75   ->Fill(event->SvB_ps, event->weight);
-    }else if(view->sublM->pt<150){
-      SvB_ps_zhh_75_150 ->Fill(event->SvB_ps, event->weight);
-    }else if(view->sublM->pt<250){
-      SvB_ps_zhh_150_250->Fill(event->SvB_ps, event->weight);
-    }else if(view->sublM->pt<400){
-      SvB_ps_zhh_250_400->Fill(event->SvB_ps, event->weight);
-    }else{
-      SvB_ps_zhh_400_inf->Fill(event->SvB_ps, event->weight);
-    }
-  }else{
-    SvB_ps_whh->Fill(event->SvB_ps, event->weight);
-    //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-    if      (view->sublM->pt< 75){
-      SvB_ps_whh_0_75   ->Fill(event->SvB_ps, event->weight);
-    }else if(view->sublM->pt<150){
-      SvB_ps_whh_75_150 ->Fill(event->SvB_ps, event->weight);
-    }else if(view->sublM->pt<250){
-      SvB_ps_whh_150_250->Fill(event->SvB_ps, event->weight);
-    }else if(view->sublM->pt<400){
-      SvB_ps_whh_250_400->Fill(event->SvB_ps, event->weight);
-    }else{
-      SvB_ps_whh_400_inf->Fill(event->SvB_ps, event->weight);
-    }
-  }
+  // FvT_pd4->Fill(event->FvT_pd4, event->weight);
+  // FvT_pd3->Fill(event->FvT_pd3, event->weight);
+  // FvT_pt4->Fill(event->FvT_pt4, event->weight);
+  // FvT_pt3->Fill(event->FvT_pt3, event->weight);
+  // FvT_pm4->Fill(event->FvT_pm4, event->weight);
+  // FvT_pm3->Fill(event->FvT_pm3, event->weight);
+  // FvT_pt ->Fill(event->FvT_pt,  event->weight);
+  // FvT_std->Fill(event->FvT_std, event->weight);
+  // if(event->FvT) FvT_ferr->Fill(event->FvT_std/event->FvT, event->weight);
+  // SvB_ps ->Fill(event->SvB_ps , event->weight);
+  // if(SvB_ps_bTagSysts){
+  //   SvB_ps_bTagSysts->Fill(event->SvB_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
+  // }
+  // SvB_pwhh->Fill(event->SvB_pwhh, event->weight);
+  // SvB_pzhh->Fill(event->SvB_pzhh, event->weight);
+  // SvB_ptt->Fill(event->SvB_ptt, event->weight);
+  // if(event->SvB_pwhh<event->SvB_pzhh){
+  //   SvB_ps_zhh->Fill(event->SvB_ps, event->weight);
+  //   //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
+  //   if      (view->sublM->pt< 75){
+  //     SvB_ps_zhh_0_75   ->Fill(event->SvB_ps, event->weight);
+  //   }else if(view->sublM->pt<150){
+  //     SvB_ps_zhh_75_150 ->Fill(event->SvB_ps, event->weight);
+  //   }else if(view->sublM->pt<250){
+  //     SvB_ps_zhh_150_250->Fill(event->SvB_ps, event->weight);
+  //   }else if(view->sublM->pt<400){
+  //     SvB_ps_zhh_250_400->Fill(event->SvB_ps, event->weight);
+  //   }else{
+  //     SvB_ps_zhh_400_inf->Fill(event->SvB_ps, event->weight);
+  //   }
+  // }else{
+  //   SvB_ps_whh->Fill(event->SvB_ps, event->weight);
+  //   //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
+  //   if      (view->sublM->pt< 75){
+  //     SvB_ps_whh_0_75   ->Fill(event->SvB_ps, event->weight);
+  //   }else if(view->sublM->pt<150){
+  //     SvB_ps_whh_75_150 ->Fill(event->SvB_ps, event->weight);
+  //   }else if(view->sublM->pt<250){
+  //     SvB_ps_whh_150_250->Fill(event->SvB_ps, event->weight);
+  //   }else if(view->sublM->pt<400){
+  //     SvB_ps_whh_250_400->Fill(event->SvB_ps, event->weight);
+  //   }else{
+  //     SvB_ps_whh_400_inf->Fill(event->SvB_ps, event->weight);
+  //   }
+  // }
 
-  SvB_MA_ps ->Fill(event->SvB_MA_ps , event->weight);
-  if(SvB_MA_ps_bTagSysts){
-    SvB_MA_ps_bTagSysts->Fill(event->SvB_MA_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
-  }
-  SvB_MA_pwhh->Fill(event->SvB_MA_pwhh, event->weight);
-  SvB_MA_pzhh->Fill(event->SvB_MA_pzhh, event->weight);
-  SvB_MA_ptt->Fill(event->SvB_MA_ptt, event->weight);
+  // SvB_MA_ps ->Fill(event->SvB_MA_ps , event->weight);
+  // if(SvB_MA_ps_bTagSysts){
+  //   SvB_MA_ps_bTagSysts->Fill(event->SvB_MA_ps, event->weight/event->bTagSF, event->treeJets->m_btagSFs);
+  // }
+  // SvB_MA_pwhh->Fill(event->SvB_MA_pwhh, event->weight);
+  // SvB_MA_pzhh->Fill(event->SvB_MA_pzhh, event->weight);
+  // SvB_MA_ptt->Fill(event->SvB_MA_ptt, event->weight);
 
-  if(event->SvB_MA_pwhh<event->SvB_MA_pzhh){
-    SvB_MA_ps_zhh->Fill(event->SvB_MA_ps, event->weight);
-  }else{
-    SvB_MA_ps_whh->Fill(event->SvB_MA_ps, event->weight);
-  }
+  // if(event->SvB_MA_pwhh<event->SvB_MA_pzhh){
+  //   SvB_MA_ps_zhh->Fill(event->SvB_MA_ps, event->weight);
+  // }else{
+  //   SvB_MA_ps_whh->Fill(event->SvB_MA_ps, event->weight);
+  // }
 
 
   FvT_q_score->Fill(view->FvT_q_score, event->weight);
   FvT_q_score_dR_min->Fill(event->view_dR_min->FvT_q_score, event->weight);
-  FvT_q_score_SvB_q_score_max->Fill(event->view_max_SvB_q_score->FvT_q_score, event->weight);
-  SvB_q_score->Fill(view->SvB_q_score, event->weight);
-  SvB_q_score_FvT_q_score_max->Fill(event->view_max_FvT_q_score->SvB_q_score, event->weight);
-  SvB_MA_q_score->Fill(view->SvB_MA_q_score, event->weight);
+  // FvT_q_score_SvB_q_score_max->Fill(event->view_max_SvB_q_score->FvT_q_score, event->weight);
+  // SvB_q_score->Fill(view->SvB_q_score, event->weight);
+  // SvB_q_score_FvT_q_score_max->Fill(event->view_max_FvT_q_score->SvB_q_score, event->weight);
+  // SvB_MA_q_score->Fill(view->SvB_MA_q_score, event->weight);
 
-  FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
+  // FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
 
-  SvB_MA_signalAll_ps->Fill(event->SvB_MA_signalAll_ps , event->weight);
-  SvB_MA_regionBDT_ps->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
+  puIdSF->Fill(event->puIdSF, event->weight);
   SvB_MA_labelBDT_ps->Fill(event->SvB_MA_labelBDT_ps, event->weight);
-  SvB_MA_signalAll_ps_rebin->Fill(event->SvB_MA_signalAll_ps , event->weight);
-  SvB_MA_regionBDT_ps_rebin->Fill(event->SvB_MA_regionBDT_signalAll_ps , event->weight);
-  SvB_MA_labelBDT_ps_rebin->Fill(event->SvB_MA_labelBDT_ps, event->weight);
-
+  SvB_MA_labelBDT_ps_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+  if(SvB_MA_labelBDT_ps_bTagSysts){
+    SvB_MA_labelBDT_ps_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+  }
+  if(SvB_MA_labelBDT_ps_puIdSysts){
+    SvB_MA_labelBDT_ps_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
+  }
+  if(SvB_MA_labelBDT_ps_zhhNNLOSysts){
+    SvB_MA_labelBDT_ps_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+  }
+  if(SvB_MA_labelBDT_ps_ONNX_bTagSysts){
+    SvB_MA_labelBDT_ps_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+  }
+  if(event->BDT_kl<0 && event->BDT_kl>=-1){
+    SvB_MA_labelBDT_ps_BDT_nkl->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+    SvB_MA_labelBDT_ps_BDT_nkl_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+    if(SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts){
+      SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    }
+    if(SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts){
+      SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
+    }
+    if(SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts){
+      SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+    }
+    if(SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts){
+      SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    }
+  }
+  if(event->BDT_kl>=0){
+    SvB_MA_labelBDT_ps_BDT_kl->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+    SvB_MA_labelBDT_ps_BDT_kl_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+    if(SvB_MA_labelBDT_ps_BDT_kl_bTagSysts){
+      SvB_MA_labelBDT_ps_BDT_kl_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    }
+    if(SvB_MA_labelBDT_ps_BDT_kl_puIdSysts){
+      SvB_MA_labelBDT_ps_BDT_kl_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
+    }
+    if(SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts){
+      SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+    }
+    if(SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts){
+      SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    }
+  }
   bdt_vs_labelBDT->Fill(event->BDT_kl, event->SvB_MA_labelBDT_ps, event->weight);
-  bdt_vs_regionBDT->Fill(event->BDT_kl, event->SvB_MA_regionBDT_signalAll_ps, event->weight);
-  bdt_vs_simple->Fill(event->BDT_kl, event->SvB_MA_signalAll_ps, event->weight);
 
-  SvB_MA_diff_regionBDT_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
-  if(bdtScore && event->canVDijets.size() > 0){
-    bdtScore->Fill(event->BDT_kl, event->weight);
-    if(event->BDT_kl >= event->bdtCut){ // C3 region
-      SvB_MA_C3_regionC3_ps->Fill(event->SvB_MA_regionC3_signalAll_ps , event->weight);
-      SvB_MA_C2V_regionC3_ps->Fill(event->SvB_MA_regionC2V_signalAll_ps , event->weight);
-      SvB_MA_diff_regionC3_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
-    }
-    else{ // C2V region
-      SvB_MA_C3_regionC2V_ps->Fill(event->SvB_MA_regionC3_signalAll_ps , event->weight);
-      SvB_MA_C2V_regionC2V_ps->Fill(event->SvB_MA_regionC2V_signalAll_ps , event->weight);
-      SvB_MA_diff_regionC2V_ps->Fill(event->SvB_MA_regionC3_signalAll_ps-event->SvB_MA_regionC2V_signalAll_ps, event->weight);
-    }
+  if(kl_BDT && event->canVDijets.size() > 0){
+    kl_BDT->Fill(event->BDT_kl, event->weight);
   }
 
   m4j_vs_nViews->Fill(view->m4j, event->views_passMDRs.size(), event->weight);

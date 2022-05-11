@@ -15,7 +15,7 @@ namespace nTupleAnalysis {
   class multiClassifierONNX {
   public:
 
-    multiClassifierONNX(std::string modelFile);
+    multiClassifierONNX(std::string modelFile, bool _debug);
     
     std::unique_ptr<cms::Ort::ONNXRuntime> model;
 
@@ -25,8 +25,7 @@ namespace nTupleAnalysis {
     cms::Ort::FloatArrays output;
     std::vector<float> c_score;
     std::vector<float> q_score;
-
-    const std::vector<int> canJetImageIndicies = {0,1,2,3, 0,2,1,3, 0,3,1,2};
+    bool debug;
 
     void clear();
     void loadInput(eventData* event);

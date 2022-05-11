@@ -33,18 +33,18 @@ massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, boo
   }
     
   if(nTupleAnalysis::findSubStr(histDetailLevel,"HHRegions")){
-    HHSR      = new viewHists(name+"/HHSR",      fs, isMC, debug, NULL, histDetailLevel );
+    HHSR      = new viewHists(name+"/HHSR",      fs, isMC, debug, event, histDetailLevel );
     HHCR      = new viewHists(name+"/HHCR",      fs, isMC, debug, NULL, histDetailLevel );
     HHSB      = new viewHists(name+"/HHSB",      fs, isMC, debug, NULL, histDetailLevel );
     HH        = new viewHists(name+"/HH",        fs, isMC, debug, NULL, histDetailLevel );
   }
 
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"HHSR")){
-    HHSR      = new viewHists(name+"/HHSR",      fs, isMC, debug, NULL, histDetailLevel );
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"HHSR") && HHSR == NULL){
+    HHSR      = new viewHists(name+"/HHSR",      fs, isMC, debug, event, histDetailLevel );
   }
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"HHmSR")){
-    HHmSR      = new viewHists(name+"/HHmSR",      fs, isMC, debug, NULL, histDetailLevel );
+    HHmSR      = new viewHists(name+"/HHmSR",      fs, isMC, debug, event, histDetailLevel );
   }
   
   if(!ZH) std::cout << "\t Turning off ZZ Regions " << std::endl;

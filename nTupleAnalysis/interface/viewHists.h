@@ -80,24 +80,28 @@ namespace nTupleAnalysis {
     TH1F* nCanVTruVDijets;
     dijetHists* canVDijets;
     dijetHists* canVTruVDijets;
-    TH1F* bdtScore; //TEMP
-    TH1F* SvB_MA_signalAll_ps;
-    TH1F* SvB_MA_regionBDT_ps;
+    TH1F* kl_BDT;
+
+    TH1F* puIdSF;
     TH1F* SvB_MA_labelBDT_ps;
-    TH1F* SvB_MA_signalAll_ps_rebin;
-    TH1F* SvB_MA_regionBDT_ps_rebin;
-    TH1F* SvB_MA_labelBDT_ps_rebin;
-    TH1F* SvB_MA_diff_regionBDT_ps;
-    const static int SvB_nbins = 13;
-    const Float_t SvB_bins[SvB_nbins + 1] = {0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.78, 0.86, 0.93, 0.97, 0.99, 1.0};
+    TH1F* SvB_MA_labelBDT_ps_BDT_nkl;
+    TH1F* SvB_MA_labelBDT_ps_BDT_kl;
+    systHists* SvB_MA_labelBDT_ps_bTagSysts =NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kl_bTagSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_puIdSysts =NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kl_puIdSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_zhhNNLOSysts =NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = NULL;
 
-    TH1F* SvB_MA_C3_regionC3_ps;
-    TH1F* SvB_MA_C2V_regionC3_ps;
-    TH1F* SvB_MA_C3_regionC2V_ps;
-    TH1F* SvB_MA_C2V_regionC2V_ps;
-    TH1F* SvB_MA_diff_regionC3_ps;
-    TH1F* SvB_MA_diff_regionC2V_ps;
-
+    TH1F* SvB_MA_labelBDT_ps_ONNX;
+    TH1F* SvB_MA_labelBDT_ps_BDT_nkl_ONNX;
+    TH1F* SvB_MA_labelBDT_ps_BDT_kl_ONNX;
+    systHists* SvB_MA_labelBDT_ps_ONNX_bTagSysts =NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts = NULL; 
     //
     trigHists*  allTrigJets = NULL;
 
@@ -126,17 +130,13 @@ namespace nTupleAnalysis {
 
     TH2F* m4j_vs_leadSt_dR;
     TH2F* m4j_vs_sublSt_dR;
-    TH2F* m4j_vs_V_dR;
 
     TH2F* m6j_vs_V_dR;
     TH2F* m6j_vs_V_dR_Loose;
-    TH2F* m6j_vs_V_dR_Gen;
     TH2F* m6j_vs_V_dR_matched;
     TH2F* m6j_vs_V_dR_not_matched;
 
     TH2F* bdt_vs_labelBDT;
-    TH2F* bdt_vs_regionBDT;
-    TH2F* bdt_vs_simple;
 
     dijetHists* leadM;
     dijetHists* sublM;

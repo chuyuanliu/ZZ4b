@@ -22,7 +22,7 @@ bool comp_FvT_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventVi
 bool comp_SvB_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->SvB_q_score < second->SvB_q_score); }
 bool comp_dR_close(   std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->close->dR   < second->close->dR  ); }
 
-eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _useUnitTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, std::string bdtWeightFile, std::string bdtMethods, bool _runKlBdt, std::string ZPtNNLOWeight){
+eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _useUnitTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, bool _runKlBdt, bool _doZHHNNLOScale, std::string era, std::string puIdVariations){
   std::cout << "eventData::eventData()" << std::endl;
   tree  = t;
   isMC  = mc;
@@ -44,17 +44,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   isDataMCMix = _isDataMCMix;
   usePreCalcBTagSFs = _usePreCalcBTagSFs;
   looseSkim = _looseSkim;
-  if (bdtWeightFile != "" && bdtMethods != "" && runKlBdt)
-    bdtModel = std::make_unique<bdtInference>(bdtWeightFile, bdtMethods, debug);
-  if (isMC && ZPtNNLOWeight != ""){
-    auto weightFilePath = utils::splitString(ZPtNNLOWeight, ";");
-    auto weightFileTemp = new TFile(weightFilePath[0].c_str(), "READ");
-    std::cout << "Z pT NNLO weight file " + weightFilePath[0] + " loaded\n";
-    Z_Pt_NNLO_weight = std::unique_ptr<TH1F>(static_cast<TH1F*>(weightFileTemp->Get(weightFilePath[1].c_str())->Clone()));
-    Z_Pt_NNLO_weight->SetDirectory(0);
-    delete weightFileTemp;
-    std::cout << "Z pT NNLO weight histogram " + weightFilePath[1] + " loaded\n";
-  }
+  doZHHNNLOScale = _doZHHNNLOScale;
   // if(looseSkim) {
   //   std::cout << "Using loose pt cut. Needed to produce picoAODs for JEC uncertainties which can change jet pt by a few percent." << std::endl;
   //   jetPtMin = 35;
@@ -402,7 +392,9 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
 
 
   std::cout << "eventData::eventData() Initialize jets" << std::endl;
-  treeJets  = new  jetData(    "Jet", tree, true, isMC, "", "", bjetSF, btagVariations, JECSyst);
+  std::string jetDetailLevel = "";
+  if(puIdVariations != "") jetDetailLevel = "GenJet";
+  treeJets  = new  jetData(    "Jet", tree, true, isMC, jetDetailLevel, "", bjetSF, btagVariations, JECSyst, "", era, puIdVariations);
   std::cout << "eventData::eventData() Initialize muons" << std::endl;
   treeMuons = new muonData(   "Muon", tree, true, isMC);
   std::cout << "eventData::eventData() Initialize elecs" << std::endl;
@@ -507,6 +499,7 @@ void eventData::resetEvent(){
   weightNoTrigger = 1;
   trigWeight = 1;
   bTagSF = 1;
+  puIdSF = 1;
   treeJets->resetSFs();
   nTrueBJets = 0;
   t.reset(); t0.reset(); t1.reset(); //t2.reset();
@@ -519,10 +512,18 @@ void eventData::resetEvent(){
   passTTCRem = false;
 
   if(runKlBdt) BDT_kl = -99;
+  SvB_MA_pskl_ONNX = -99;
+  SvB_MA_plkl_ONNX = -99;
+  SvB_MA_ptt_ONNX  = -99;
+  SvB_MA_ps_ONNX  = -99;
 
   for(const std::string& jcmName : jcmNames){
     pseudoTagWeightMap[jcmName]= 1.0;
     mcPseudoTagWeightMap[jcmName] = 1.0;;
+  }
+
+  if(doZHHNNLOScale){
+    zhhNNLOSFs["central_NNLO"] = 1; zhhNNLOSFs["up_NNLO"] = 1; zhhNNLOSFs["down_NNLO"] = 1;
   }
 }
 
@@ -584,13 +585,16 @@ void eventData::update(long int e){
     weightNoTrigger *= ttbarWeight;  
 
   }
-  if(truth && Z_Pt_NNLO_weight){
+  if(truth && doZHHNNLOScale){
     if(truth->Zqqs.size() == 1){
-      Int_t bin = Z_Pt_NNLO_weight->FindBin(truth->Zqqs[0]->pt);
-      weight *= Z_Pt_NNLO_weight->GetBinContent(bin);
+      float zPt = truth->Zqqs[0]->pt;
+      zhhNNLOSFs["central_NNLO"] = 0.780538 + 0.0023697   * zPt - 3.6377e-06  * zPt * zPt;
+      zhhNNLOSFs["up_NNLO"]      = 1.13151  - 0.000566154 * zPt + 7.02718e-07 * zPt * zPt;
+      zhhNNLOSFs["down_NNLO"]    = 0.452161 + 0.00503546  * zPt - 7.52023e-06 * zPt * zPt;
+      weight *= zhhNNLOSFs["central_NNLO"];
     }
     else if (truth->Zqqs.size() > 1){
-      std::cout << "Found more than one GEN Z in ZHH MC\n";
+      std::cout << "Find more than one GEN Z->qq in ZHH MC\n";
     }
   }
 
@@ -718,13 +722,14 @@ void eventData::buildEvent(){
       bTagSF = inputBTagSF;
     }else{
       //for(auto &jet: selJets) bTagSF *= treeJets->getSF(jet->eta, jet->pt, jet->deepFlavB, jet->hadronFlavour);
-      treeJets->updateSFs(selJets, debug);
+      treeJets->updateSFs(selJets, debug, puIdMin);
       bTagSF = treeJets->m_btagSFs["central"];
+      if(treeJets->m_puIdVariations.size() > 0) puIdSF = treeJets->m_puIdSFs["nom"];
     }
 
     if(debug) std::cout << "eventData buildEvent bTagSF = " << bTagSF << std::endl;
-    weight *= bTagSF;
-    weightNoTrigger *= bTagSF;
+    weight *= bTagSF * puIdSF;
+    weightNoTrigger *= bTagSF * puIdSF;
     for(auto &jet: allJets) nTrueBJets += jet->hadronFlavour == 5 ? 1 : 0;
   }
   
@@ -750,9 +755,6 @@ void eventData::buildEvent(){
     buildViews();
     if(fastSkim) return; // early exit when running fast skim to maximize event loop rate
     buildTops();
-    #if SLC6 == 0 //Defined in ZZ4b/nTupleAnalysis/BuildFile.xml 
-    run_SvB_ONNX(); // will only run if a model was initialized
-    #endif
     //((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/2.5,2)) > 1)&(xW<0.5)) || ((sqrt(pow(xbW/2.5,2)+pow((xW-0.5)/4.0,2)) > 1)&(xW>=0.5)); //(t->xWbW > 2); //(t->xWt > 2) & !( (t->m>173)&(t->m<207) & (t->W->m>90)&(t->W->m<105) );
     passXWt = t->rWbW > 3;
     passTTCR   = (muons_isoMed40.size()>0) && (t->rWbW < 2);
@@ -1290,26 +1292,31 @@ void eventData::computePseudoTagWeight(std::string jcmName){
   return;
 }
 
+void eventData::load_kl_BDT(std::string bdtWeightFile, std::string bdtMethods){
+  if (bdtWeightFile != "" && bdtMethods != "" && runKlBdt)
+    bdtModel = std::make_unique<bdtInference>(bdtWeightFile, bdtMethods, debug);
+}
+
 
 #if SLC6 == 0 //Defined in ZZ4b/nTupleAnalysis/BuildFile.xml 
 void eventData::load_SvB_ONNX(std::string fileName){
   if(fileName=="") return;
   cout << "eventData::load_SvB_ONNX( " << fileName << " )" << endl;
-  SvB_ONNX = new multiClassifierONNX(fileName);
+  SvB_ONNX = new multiClassifierONNX(fileName, debug);
 }
 
 void eventData::run_SvB_ONNX(){
   if(!SvB_ONNX) return;
   SvB_ONNX->run(this);
   if(debug) SvB_ONNX->dump();  
-  this->SvB_pwhh = SvB_ONNX->c_score[0];
-  this->SvB_pzhh = SvB_ONNX->c_score[1];
-  this->SvB_ptt = SvB_ONNX->c_score[2];
-  this->SvB_ps  = SvB_ONNX->c_score[0] + SvB_ONNX->c_score[1];
+  this->SvB_MA_pskl_ONNX = SvB_ONNX->c_score[0];
+  this->SvB_MA_plkl_ONNX = SvB_ONNX->c_score[1];
+  this->SvB_MA_ptt_ONNX = SvB_ONNX->c_score[2];
+  this->SvB_MA_ps_ONNX  = SvB_ONNX->c_score[0] + SvB_ONNX->c_score[1];
 
-  this->SvB_q_score[0] = SvB_ONNX->q_score[0];
-  this->SvB_q_score[1] = SvB_ONNX->q_score[1];
-  this->SvB_q_score[2] = SvB_ONNX->q_score[2];
+  this->SvB_MA_q_score[0] = SvB_ONNX->q_score[0];
+  this->SvB_MA_q_score[1] = SvB_ONNX->q_score[1];
+  this->SvB_MA_q_score[2] = SvB_ONNX->q_score[2];
   // this->SvB_q_1234 = SvB_ONNX->q_score[0];
   // this->SvB_q_1324 = SvB_ONNX->q_score[1];
   // this->SvB_q_1423 = SvB_ONNX->q_score[2];
@@ -1408,7 +1415,7 @@ void eventData::applyMDRs(){
   //   leadStM = 0;  sublStM = 0;
   //   //passDEtaBB = false;
   //   selectedViewTruthMatch = false;
-    if(runKlBdt && passMV){
+    if(runKlBdt && passMV && bdtModel){
       auto score = bdtModel->getBDTScore(this, view_selected);
       BDT_kl = score["BDT"];
     }
@@ -1493,7 +1500,7 @@ void eventData::buildTops(){
   //     }
   //   }
   // }  
-
+  if(debug) cout << "eventData::buildTops()" << endl;
   return;
 }
 

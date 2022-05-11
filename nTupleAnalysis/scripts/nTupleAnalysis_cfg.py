@@ -21,6 +21,7 @@ parser = optparse.OptionParser()
 parser.add_option('-d', '--debug',                dest="debug",         action="store_true", default=False, help="debug")
 parser.add_option('-m', '--isMC',                 dest="isMC",          action="store_true", default=False, help="isMC")
 parser.add_option('-y', '--year',                 dest="year",          default="2016", help="Year specifies trigger (and lumiMask for data)")
+parser.add_option(      '--era',                  dest="era",           default="2016_preVFP", help="era for MC events, specifies PUjetID, bTag SF")
 parser.add_option(      '--firstEvent',           default=0, help="First event in the data set to proccess")
 parser.add_option('-l', '--lumi', type="float",   dest="lumi",          default=1.0,    help="Luminosity for MC normalization: units [pb]")
 #parser.add_option(      '--bTagger',              dest="bTagger",       default="CSVv2", help="bTagging algorithm")
@@ -29,6 +30,8 @@ parser.add_option(      '--bTagger',              dest="bTagger",       default=
 parser.add_option('-b', '--bTag', type="float",   dest="bTag",          default="0.2770", help="bTag cut value: default is medium WP for deepFlavB (DeepJet?) https://twiki.cern.ch/twiki/bin/viewauth/CMS/BtagRecommendation102X")
 parser.add_option(      '--bTagSF',               dest="bTagSF",        action="store_true", default=False, help="Load btagging SFs")
 parser.add_option(      '--bTagSyst',             dest="bTagSyst",      action="store_true", default=False, help="run btagging systematics")
+parser.add_option(      '--puIdSF',               dest="puIdSF",        action="store_true", default=False, help="Load PU jet ID SFs")
+parser.add_option(      '--puIdSyst',             dest="puIdSyst",      action="store_true", default=False, help="run PU jet ID systematics")
 parser.add_option(      '--JECSyst',              dest="JECSyst",       default="", help="Name of JEC Systematic uncertainty, examples: _jerDown, _jesTotalUp")
 parser.add_option('-i', '--input',                dest="input",         default="ZZ4b/fileLists/data2016H.txt", help="Input file(s). If it ends in .txt, will treat it as a list of input files.")
 parser.add_option(      '--friends',              dest="friends",       default=None, help="Extra friend files. comma separated list where each item replaces picoAOD in the input file, ie FvT,SvB for FvT.root stored in same location as picoAOD.root")
@@ -80,12 +83,10 @@ parser.add_option(      '--reweight4bName',    dest="reweight4bName", type="stri
 parser.add_option(      '--reweightDvTName',    dest="reweightDvTName", type="string", default="", help="FVT Name to load FvT+XXX")
 parser.add_option(      '--SvB_ONNX', dest="SvB_ONNX", default="", help="path to ONNX version of SvB model. If none specified, it won't be used.")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="currenty does nothing. Try to keep it that way")
-parser.add_option(   '--SvBScore',   dest='SvBScore', type='float', default='0.0',   help='SvB classifier score cut')
 parser.add_option(      '--klBdtWeightFile',    dest="klBdtWeightFile", type="string", default="ZZ4b/nTupleAnalysis/bdtModels/BDT_c3_20vs0_out.xml", help="path to kl BDT model weight files. /*method*/ will be replaced by kl BDT method")
 parser.add_option(      '--klBdtMethods',    dest="klBdtMethods", type="string", default="BDT", help="Name of kl BDT methods used in evaluation.")
 parser.add_option(      '--runKlBdt',    action="store_true", default=False, help="run kl categorization BDT and store output in picoAODs")
 parser.add_option(      '--doHigherOrderReweight',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
-parser.add_option(      '--ZPtNNLOWeight',    dest="ZPtNNLOWeight", default="ZZ4b/nTupleAnalysis/weights/ZHH_NNLO_vs_LO.root;h_ratio", help="path of NNLO MC ZHH weight")
 parser.add_option(      '--extraOutput',  dest="extraOutput", type ="string", default="", help="extra information stored in a separate root file")
 
 o, a = parser.parse_args()
@@ -95,8 +96,17 @@ bjetSF = "deepjet"+o.year
 if o.fastSkim or not o.isMC or not o.bTagSF:
     bjetSF = ""
 btagVariations = "central"
+if o.JECSyst == "_jesTotalUp":
+    btagVariations = "central up_jes"
+elif o.JECSyst == "_jesTotalDown":
+    btagVariations = "central down_jes"
 if o.bTagSyst:
-    btagVariations = "central down_hfstats2 up_hfstats2"
+    btagVariations = "central down_jes up_jes down_lf up_lf down_hf up_hf down_hfstats2 up_hfstats2 down_lfstats2 up_lfstats2 down_hfstats1 up_hfstats1 down_lfstats1 up_lfstats1"
+puIdVariations = ""
+if o.puIdSF:
+    puIdVariations = "nom"
+if o.puIdSyst:
+    puIdVariations = "nom up down"
 
 #
 # Basic Configuration
@@ -388,6 +398,7 @@ process.nTupleAnalysis = cms.PSet(
     isMC    = cms.bool(o.isMC),
     blind   = cms.bool(blind),
     year    = cms.string(o.year),
+    era     = cms.string(o.era if o.isMC else ""),
     doTrigEmulation = cms.bool(o.doTrigEmulation),
     calcTrigWeights = cms.bool(o.calcTrigWeights),
     useMCTurnOns    = cms.bool(o.useMCTurnOns),
@@ -396,11 +407,11 @@ process.nTupleAnalysis = cms.PSet(
     firstEvent  = cms.int32(int(o.firstEvent)),
     xs      = cms.double(xs),
     fourbkfactor = cms.double(fourbkfactor),
-    SvBScore = cms.double(o.SvBScore),
     bTag    = cms.double(o.bTag),
     bTagger = cms.string(o.bTagger),
     bjetSF  = cms.string(bjetSF),
     btagVariations = cms.string(btagVariations),
+    puIdVariations = cms.string(puIdVariations),
     JECSyst = cms.string(o.JECSyst),
     friendFile = cms.string(fileNames[0].replace(".root","_Friend.root")),
     lumiData= cms.string(lumiData[o.year]),
@@ -434,7 +445,7 @@ process.nTupleAnalysis = cms.PSet(
     klBdtWeightFile = cms.string(o.klBdtWeightFile),
     klBdtMethods = cms.string(o.klBdtMethods),
     runKlBdt = cms.bool(o.runKlBdt),
-    ZPtNNLOWeight = cms.string(o.ZPtNNLOWeight if (o.doHigherOrderReweight and 'ZHH' in sample) else '')
+    doZHHNNLOScale = cms.bool(o.doHigherOrderReweight and 'ZHH' in sample)
     )
 
 print("nTupleAnalysis_cfg.py done")

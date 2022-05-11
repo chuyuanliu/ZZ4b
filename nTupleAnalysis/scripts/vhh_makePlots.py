@@ -1,4 +1,5 @@
 from copy import copy
+from fileinput import filename
 from math import sqrt
 import numpy as np
 import ROOT
@@ -23,9 +24,19 @@ in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
 years = ['2018']
 signals = ['VHH']
-no_background = False #temp
+hists_filename = {
+    'data'    : ['hists_j_r'],
+    'ttbar'   : ['hists_j_r'],
+    # 'signal'  : ['hists', 'hists_jerUp', 'hists_jerDown', 'hists_jesTotalUp', 'hists_jesTotalDown']
+    'signal'  : ['hists']
+}
+no_background = False
+no_multijet = True
+no_signal = True
+mc_only = False
+mc_signals = True
 event_count = True
-signal_scale = 10
+signal_scale = 1
 
 if not os.path.isdir(out_path):
     os.mkdir(out_path)
@@ -42,6 +53,19 @@ def integral_error(hist):
     error = ROOT.Double()
     total = hist.IntegralAndError(0, n_bins + 1, error)
     return total, float(error)
+
+def round_up(value, base):
+    return int(value/base) * base + base
+
+def get_ratio_range(max):
+    diff = abs(1 - max)
+    if diff < 0.05:
+        return round_up(diff, 0.01)
+    elif diff > 0.05: # TODO: smart setting
+        return 0.05
+    else:
+        return round_up(diff, 0.05)
+
 
 class wildcard_match:
     def __init__(self, match_all_dirs = True, ignore_case = False, debug =False, cmd_length = 20):
@@ -176,8 +200,16 @@ class histogram_1d_collection:
         self.y_label = y_label
         self.smooth = smooth
         self.y_range = y_range
+        self.topmid_label = ''
+        self.topright_label = ''
 
-    def add_hist(self, hist, tag, scale = 1, line_color = 1):
+    def set_topright(self, label):
+        self.topright_label = label
+
+    def set_topmid(self, label):
+        self.topmid_label = label
+
+    def add_hist(self, hist, tag, scale = 1.0, line_color = 1):
         if not isinstance(hist, ROOT.TH1F) and not isinstance(hist, ROOT.TH1D):
             return
 
@@ -269,6 +301,8 @@ class histogram_1d_collection:
         for rule in self.rules:
             rule.apply(self)
         canvas_gen = canvas_helper.ROOTCanvas(self.x_min, self.x_max, self.y_min, self.y_max * 1.05)
+        canvas_gen.TopMid.Text = self.set_font(self.topmid_label)
+        canvas_gen.TopRight.Text = self.set_font(self.topright_label)
         canvas_gen.XLabel.Text = self.set_font(self.x_label)
         canvas_gen.YLabel.Text = self.set_font(self.y_label)
         canvas_gen.AllowLegend = True
@@ -298,7 +332,7 @@ class histogram_1d_collection:
             bkgd.Add(self.multijet)
             bkgd_error = bkgd.Clone()
             n_bins = bkgd.GetNbinsX()
-            for i in range(1, n_bins):
+            for i in range(1, n_bins + 1):
                 bkgd.SetBinError(i, 0)
             bkgd_error.Divide(bkgd)
             ratio.Divide(bkgd)
@@ -322,7 +356,116 @@ class histogram_1d_collection:
             bkgd_error.SetMarkerSize(0)
             bkgd_error.Draw('SAME E2')
             ratio.Draw('SAME X0 P E1')
+            canvas_gen.Ratio.RedrawAxis()
+        canvas_gen.MainPad.RedrawAxis()
         canvas.Print(self.path + self.tag + '.pdf')
+
+class histogram_1d_syst:
+    def __init__(self, path, title, tag = '', x_label = '', y_label = '', rules = []):
+        self.path = path
+        self.title = title
+        self.tag = tag
+        self.rules = rules
+
+        self.systs = {} # central, up, down
+
+        self.x_label = x_label
+        self.y_label = y_label
+        self.topmid_label = ''
+        self.topright_label = ''
+
+        self.x_max = {}
+        self.x_min = {}
+        self.y_max = {}
+        self.y_min = {}
+        self.colors = {'up':ROOT.kGreen+2, 'down':ROOT.kOrange-3}
+
+    def set_topright(self, label):
+        self.topright_label = label
+
+    def set_topmid(self, label):
+        self.topmid_label = label
+
+    def set_font(self, text, num = 42):
+        return '#font[' + str(num) + ']{' + text + '}'
+
+    def add_hist(self, systs, tag):
+        self.systs[tag] = systs
+
+        self.x_max[tag] = float('-inf')
+        self.x_min[tag] = float('inf')
+        self.y_max[tag] = float('-inf')
+        self.y_min[tag] = float('inf')
+
+        for hist in systs.values(): 
+            x_axis = hist.GetXaxis()
+            y_axis = hist.GetYaxis()
+
+            if self.x_label == '': self.x_label = x_axis.GetTitle()
+            if self.y_label == '': self.y_label = y_axis.GetTitle()
+
+            self.x_max[tag] = max(x_axis.GetXmax(), self.x_max[tag])
+            self.x_min[tag] = min(x_axis.GetXmin(), self.x_min[tag])
+            self.y_max[tag] = max(hist.GetMaximum(), self.y_max[tag])
+            self.y_min[tag] = min(hist.GetMinimum(), self.y_min[tag])
+
+    def plot(self):
+        for rule in self.rules:
+            rule.apply(self)
+        for tag in self.systs:
+            canvas_gen = canvas_helper.ROOTCanvas(self.x_min[tag], self.x_max[tag], self.y_min[tag], self.y_max[tag] * 1.05)
+            canvas_gen.TopMid.Text = self.set_font(self.topmid_label)
+            canvas_gen.TopRight.Text = self.set_font(self.topright_label)
+            canvas_gen.XLabel.Text = self.set_font(self.x_label)
+            canvas_gen.YLabel.Text = self.set_font(self.y_label)
+            canvas_gen.AllowRatio  = True
+            canvas = canvas_gen.GetCanvas(self.title + tag)
+            canvas_gen.MainPad.cd()
+
+            self.systs[tag]['up'].SetLineColor(self.colors['up'])
+            self.systs[tag]['up'].Draw('SAME HIST')
+            self.systs[tag]['down'].SetLineColor(self.colors['down'])
+            self.systs[tag]['down'].Draw('SAME HIST')
+            self.systs[tag]['central'].SetLineColor(ROOT.kBlack)
+            self.systs[tag]['central'].Draw('SAME HIST')
+            canvas_gen.MainPad.RedrawAxis()
+
+            canvas_gen.Ratio.cd()
+            central = self.systs[tag]['central'].Clone()
+            central_error = central.Clone()
+            for i in range(1, central.GetNbinsX() + 1):
+                central.SetBinError(i, 0)
+            central_error.Divide(central)
+            central_error.SetFillStyle(3125)
+            central_error.SetFillColor(ROOT.kGray)
+            central_error.SetMarkerSize(0)
+            ratio = {}
+            ratio_range = 0
+            for shift in ['up', 'down']:
+                ratio[shift] = self.systs[tag][shift].Clone()
+                ratio[shift].Divide(central)
+                ratio[shift].SetMarkerSize(1)
+                ratio[shift].SetMarkerStyle(8) 
+                ratio[shift].SetMarkerColor(self.colors[shift]) 
+                ratio_range = max(ratio_range, get_ratio_range(ratio[shift].GetMaximum()))
+                ratio_range = max(ratio_range, get_ratio_range(ratio[shift].GetMinimum()))
+            frame = canvas_gen.Ratio.DrawFrame(self.x_min[tag], 1.0 - ratio_range, self.x_max[tag], 1.0 + ratio_range)
+            y_axis = frame.GetYaxis()
+            y_axis.SetLabelSize(0.14)
+            y_axis.SetNdivisions(2, 5, 0, False)
+            x_axis = frame.GetXaxis()
+            x_axis.SetLabelSize(0)
+            canvas_gen.Ratio.SetGridy()
+            label=ROOT.TLatex()
+            label.SetTextSize(0.10)
+            label.SetTextAngle(90)
+            label.SetTextAlign(21)
+            label.DrawLatex(canvas_gen.Var.GetX(-0.08), 1.0, self.set_font('Up(Down)/Central'))
+            central_error.Draw('SAME E2')
+            for shift in ['up', 'down']:
+                ratio[shift].Draw('SAME X0 P E1')
+            canvas.Print(self.path + tag + self.tag + '.pdf')
+
        
 class histogram_2d_collection:
     def __init__(self, path, title, tag = '', x_label = '', y_label = '', z_label = ''):
@@ -385,17 +528,58 @@ class histogram_2d_collection:
             self.hists[tag].Draw('COLZ')
             for curve in self.curves:
                 curve.Draw('SAME')
+            canvas.RedrawAxis()
             canvas.Print(self.path + tag + self.tag + '.pdf')
 
+class datacard:
+    def __init__(self, path, shape_file, datacard_file):
+        pass
+class systematic:
+    def __init__(self, pattern = '', name = '', filename = None):
+        self.pattern  = pattern
+        self.name     = name
+        self.filename = filename
+    def get_name(self):
+        return self.name
+    def get_hist(self, hist):
+        syst_hist = []
+        for op in self.pattern:
+            if isinstance(op, tuple):
+                if isinstance(op[0], int):
+                    if isinstance(op[1], int):
+                        end = op[1] + 1
+                        if op[1] == -1:
+                            end = len(hist)
+                        for i in range(op[0], end):
+                            syst_hist.append(hist[i])
+                    if isinstance(op[1], basestring):
+                        strops = op[1].split('/')
+                        i = 0
+                        syst_hist_last = hist[op[0]]
+                        while i < len(strops):
+                            if strops[i][0] == '+':
+                                syst_hist_last = strops[i][1:].format(syst_hist_last)
+                                i += 1
+                            elif strops[i][0] == '=':
+                                syst_hist_last = syst_hist_last.replace(strops[i+1], strops[i][1:])
+                                i += 2
+                        syst_hist.append(syst_hist_last)
+            elif isinstance(op, list):
+                for i in op:
+                    syst_hist.append(hist[i])
+            elif isinstance(op, basestring):
+                syst_hist.append(op)
+        return self.filename, syst_hist
+
 class plots:
-    def __init__(self, match_all_dirs = True, ignore_case = True, debug = False, cmd_length =20):
-        self.lumi = {'2016':  '36.3e3',#35.8791
-                    '2016_preVFP': '19.5e3',
-                    '2016_postVFP': '16.5e3',
-                    '2017':  '36.7e3',#36.7338
-                    '2018':  '59.8e3',#59.9656
-                    '17+18': '96.7e3',
-                    'RunII':'132.8e3',
+    def __init__(self, basis = [{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0},{'c3':20.0}], match_all_dirs = True, ignore_case = True, debug = False, cmd_length =20):
+        self.lumi = {'2016':  '36.3/fb',#35.8791
+                    '2016_preVFP': '19.5/fb',
+                    '2016_postVFP': '16.5/fb',
+                    '2017':  '36.7/fb',#36.7338
+                    '2018':  '59.8/fb',#59.9656
+                    '17+18': '96.7/fb',
+                    'RunII':'132.8/fb',
                     }
 
         self.debug = debug
@@ -405,7 +589,6 @@ class plots:
         self.output = out_path
         self.years = years
         self.signals = signals
-        self.hists_tag = '_j_r'
 
         self.path = {}
         self.all_hists = {}
@@ -415,11 +598,16 @@ class plots:
         self.signal_files = {}
         self.data_files_4b = {}
         self.data_files_3b = {}
-        self.ttbar_files = {}
+        self.ttbar_files_4b = {}
+        self.ttbar_files_3b = {}
         self.multijet_files = {}
 
+        self.data_filename = hists_filename['data'][0]
+        self.ttbar_filename = hists_filename['ttbar'][0]
+        self.signal_filename = hists_filename['signal']
+
         self.plot_rules = []
-        self.couplings = coupling_weight_generator([{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0},{'c3':20.0}], debug = debug, cmd_length = cmd_length)
+        self.couplings = coupling_weight_generator(basis = basis, debug = debug, cmd_length = cmd_length)
         self.match = wildcard_match(match_all_dirs, ignore_case, debug = debug, cmd_length = cmd_length)
         self.base_path = path_extensions(self.output, clean = True, debug = debug, cmd_length = cmd_length)
 
@@ -427,21 +615,28 @@ class plots:
             self.signal_files[year] = {}
             self.path[year] = {}
             for signal in self.signals:
-                self.signal_files[year][signal] = []
+                self.signal_files[year][signal] = {}
+                for filename in self.signal_filename:
+                    self.signal_files[year][signal][filename] = []
                 self.path[year][signal] = path_extensions(self.output + year + signal + '/', clean = True, debug = debug, cmd_length = cmd_length)
         
         for year in self.years:
-            self.data_files_4b[year] = ROOT.TFile(self.input + 'data' + year + '_4b/hists' + self.hists_tag + '.root')
-            self.data_files_3b[year] = ROOT.TFile(self.input + 'data' + year + '_3b/hists' + self.hists_tag + '.root')
-            self.ttbar_files[year] = ROOT.TFile(self.input + 'TT' + year + '_4b/hists' + self.hists_tag + '.root')
-            for signal in self.signals:
-                for coupling in self.couplings.get_all_filenames():
-                    root_path = self.input + signal + 'To4B' + coupling + year + '/hists.root'
-                    if os.path.isfile(root_path):
-                        self.signal_files[year][signal].append(ROOT.TFile(root_path))
-                    else:
-                        self.signal_files[year][signal].append(None)
-        self.root_dir = self.data_files_4b[self.years[0]].GetDirectory('')
+            self.data_files_4b[year] = ROOT.TFile(self.input + 'data' + year + '_4b/' + self.data_filename + '.root')
+            self.data_files_3b[year] = ROOT.TFile(self.input + 'data' + year + '_3b/' + self.data_filename + '.root')
+            self.ttbar_files_4b[year] = ROOT.TFile(self.input + 'TT' + year + '_4b/' + self.ttbar_filename + '.root')
+            self.ttbar_files_3b[year] = ROOT.TFile(self.input + 'TT' + year + '_3b/' + self.ttbar_filename + '.root')
+            for filename in self.signal_filename:
+                for signal in self.signals:
+                    for coupling in self.couplings.get_all_filenames():
+                        root_path = self.input + signal + 'To4B' + coupling + year + '/' + filename + '.root'
+                        if os.path.isfile(root_path):
+                            self.signal_files[year][signal][filename].append(ROOT.TFile(root_path))
+                        else:
+                            print('Error'.ljust(self.cmd_length) + 'file not found ' + root_path)
+                            self.signal_files[year][signal][filename].append(None)
+        self.root_dir = self.signal_files[self.years[0]][self.signals[0]][self.signal_filename[0]][0].GetDirectory('')
+        if no_signal:
+            self.root_dir = self.ttbar_files_4b[self.years[0]].GetDirectory('')
         self.modify_plot_hists_list_recursive('', self.initialize_hist)
 
         # TODO add intelligent color
@@ -456,29 +651,39 @@ class plots:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, *args):
         os.system('tar -C ' + self.input + ' -cvf ' + self.input + 'plots.tar.gz plots/')
         for year in self.years:
             if self.debug: print('Close'.ljust(self.cmd_length) + self.data_files_4b[year].GetName())
             self.data_files_4b[year].Close()
             if self.debug: print('Close'.ljust(self.cmd_length) + self.data_files_3b[year].GetName())
             self.data_files_3b[year].Close()
-            if self.debug: print('Close'.ljust(self.cmd_length) + self.ttbar_files[year].GetName())
-            self.ttbar_files[year].Close()
+            if self.debug: print('Close'.ljust(self.cmd_length) + self.ttbar_files_4b[year].GetName())
+            self.ttbar_files_4b[year].Close()
             for signal in self.signals:
-                for file in self.signal_files[year][signal]:
-                    if file is not None:
-                        if self.debug: print('Close'.ljust(self.cmd_length) + file.GetName())
-                        file.Close()
+                for filename in self.signal_filename:
+                    for file in self.signal_files[year][signal][filename]:
+                        if file is not None:
+                            if self.debug: print('Close'.ljust(self.cmd_length) + file.GetName())
+                            file.Close()
 
             
     
     # internal methods
-    
-    ## hists operation
+
+    ## path operation
+
+    def get_hist_path(self, hist):
+        if ':' in hist:
+            path = hist.split(':')
+            return path[0], path[1]
+        else:
+            return None, hist
 
     def join_hist_path(self, path):
         return '/'.join(path)
+
+    ## hists operation
 
     def sum_hists(self, hists, weights):
         sum = hists[0].Clone()
@@ -487,30 +692,44 @@ class plots:
             sum.Add(hists[i],weights[i])       
         return sum
 
-    def load_signal_mc_hists(self, year, signal, hist, rebin = 1):
+    def rebin(self, hist, bin):
+        if isinstance(bin, list):
+            nbins = len(bin) - 1
+            bins = array.array('d', bin)
+            bin_width = hist.GetBinWidth(1)
+            new_hist = hist.Rebin(nbins, hist.GetTitle()+'_rebinned', bins)
+            bin_norm = new_hist.Clone()
+            for i in range(1, nbins + 1):
+                new_bin_width = bin_norm.GetBinWidth(i)
+                bin_norm.SetBinContent(i, new_bin_width/bin_width)
+                bin_norm.SetBinError(i, 0)
+            new_hist.Divide(bin_norm)
+            return new_hist
+        elif isinstance(bin, int):
+            return hist.Rebin(bin, hist.GetTitle()+'_rebinned')
+
+    def load_signal_mc_hists(self, year, signal, hist, rebin = 1, filename = None):
         hists = []
-        for file in self.signal_files[year][signal]:
+        if filename is None:
+            filename = self.signal_filename[0]
+        for file in self.signal_files[year][signal][filename]:
             if file is None:
                 return None
             else:
-                signal = file.Get(hist).Clone()
-                if not rebin == 1:
-                    signal.Rebin(rebin) #rebin
+                signal = self.rebin(file.Get(hist), rebin)
                 hists.append(signal)
         return hists
 
     def load_ttbar_mc_hists(self, year, hist, rebin = 1):
-        if self.ttbar_files[year] is None:
+        if self.ttbar_files_4b[year] is None:
             return None
-        ttbar = self.ttbar_files[year].Get(hist).Clone()
-        ttbar.Rebin(rebin) #rebin
+        ttbar = self.rebin(self.ttbar_files_4b[year].Get(hist), rebin)
         return ttbar
 
     def load_data_hists(self, year, hist, rebin = 1):
         if self.data_files_4b[year] is None:
             return None
-        data = self.data_files_4b[year].Get(hist).Clone()
-        data.Rebin(rebin) #rebin
+        data = self.rebin(self.data_files_4b[year].Get(hist), rebin)
         return data
 
     def load_multijet_hists(self, year, hist, rebin = 1):
@@ -519,15 +738,14 @@ class plots:
         path = copy(self.all_hists[hist])
         path[1] = 'threeTag'
         path = self.join_hist_path(path)
-        if self.hists_tag == '_j':
+        if self.data_filename == 'hists_j':
             hist_multijet = self.data_files_3b[year].Get(path).Clone()
-            hist_ttbar = self.ttbar_files[year].Get(path).Clone()
+            hist_ttbar = self.ttbar_files_4b[year].Get(path).Clone()
             hist_multijet.Add(hist_ttbar, -1)
-            hist_multijet.rebin(rebin)
+            hist_multijet = self.rebin(hist_multijet, rebin)
             return hist_multijet
         else:
-            multijet = self.data_files_3b[year].Get(path).Clone()
-            multijet.Rebin(rebin)
+            multijet = self.rebin(self.data_files_3b[year].Get(path), rebin)
             return multijet
 
     ## hists list
@@ -610,18 +828,63 @@ class plots:
                             rules.append(rule)
                     path = self.path[year][signal].mkdir(self.all_hists[hist][:-1])
                     path += self.all_hists[hist][-1]
-                    signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
-                    if not isinstance(signal_mc[0], ROOT.TH1F) and not isinstance(signal_mc[0], ROOT.TH1D):
-                        continue
                     ploter = histogram_1d_collection(path, title=hist, normalize = self.plot_hists[hist],y_label='Events',rules=rules)
-                    if not no_background:
+                    if not no_background and not mc_only:
                         ploter.add_hist(self.load_data_hists(year, hist, rebin), 'Data ' + self.lumi[year] + ' ' + year)
-                        ploter.add_hist(self.load_multijet_hists(year, hist, rebin), 'Multijet Model')
+                        if not no_multijet:
+                            ploter.add_hist(self.load_multijet_hists(year, hist, rebin), 'Multijet Model')
+                    if not no_background:
                         ploter.add_hist(self.load_ttbar_mc_hists(year, hist, rebin), 't#bar{t}')
+                    if not no_signal:
+                        signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
+                    else:
+                        signal_mc = None
                     if signal_mc is not None:
-                        for coupling in self.plot_couplings:
-                            weights = self.couplings.generate_weight(**coupling)
-                            ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), signal_scale)
+                        if mc_signals: 
+                            for i,coupling in enumerate(self.couplings.basis):
+                                ploter.add_hist(signal_mc[i], self.couplings.get_caption(**coupling), signal_scale)
+                        else:
+                            for coupling in self.plot_couplings:
+                                weights = self.couplings.generate_weight(**coupling)
+                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), signal_scale)
+                    ploter.plot()
+
+    def plot_syst(self, pattern, systs, tag = '', rebin = 1):
+        hists = []
+        def add_syst_hist(path, norm):
+            hists.append(path)
+        self.modify_plot_hists_list(pattern, add_syst_hist)
+        for hist in hists:
+            for year in self.years:
+                for signal in self.signals:
+                    self.all_hists
+                    rules = []
+                    for rule in self.plot_rules:
+                        if rule.check(self.all_hists[hist]):
+                            rules.append(rule)
+                    if self.debug: print('Plot'.ljust(self.cmd_length) + hist) 
+                    signal_mc = {}
+                    for syst in systs:
+                        syst_hist_file, syst_hist = systs[syst].get_hist(self.all_hists[hist])
+                        signal_mc[syst] = self.load_signal_mc_hists(year, signal, self.join_hist_path(syst_hist), rebin, syst_hist_file)
+                    hist_path = copy(self.all_hists[hist])
+                    hist_path[-1] = hist_path[-1]+tag
+                    path = self.path[year][signal].mkdir(hist_path)
+                    ploter = histogram_1d_syst(path, title=hist,rules=rules)           
+                    if signal_mc is not None:
+                        if mc_signals: 
+                            for i,coupling in enumerate(self.couplings.basis):
+                                signals = {}
+                                for syst in systs:
+                                    signals[syst] = signal_mc[syst][i]
+                                ploter.add_hist(signals, self.couplings.get_filename(**coupling)[1:-1])
+                        else:
+                            for coupling in self.plot_couplings:
+                                signals = {}
+                                weights = self.couplings.generate_weight(**coupling)
+                                for syst in systs:
+                                    signals[syst] = self.sum_hists(signal_mc[syst], weights)
+                                ploter.add_hist(signals, self.couplings.get_filename(**coupling)[1:-1])
                     ploter.plot()
 
     def plot_2d(self): #TEMP
@@ -629,82 +892,76 @@ class plots:
             for signal in self.signals:
                 for hist in self.plot_hists:
                     if self.debug: print('Plot'.ljust(self.cmd_length) + hist) 
-                    signal_mc = self.load_signal_mc_hists(year, signal, hist)
                     if not isinstance(signal_mc[0], ROOT.TH2F) and not isinstance(signal_mc[0], ROOT.TH2D):
                         continue
                     path = self.path[year][signal].mkdir(self.all_hists[hist])
                     ploter = histogram_2d_collection(path, title=hist)
                     if not no_background:
                         ploter.add_hist(self.load_data_hists(year, hist), 'Data')
-                        ploter.add_hist(self.load_multijet_hists(year, hist), 'Multijet')
                         ploter.add_hist(self.load_ttbar_mc_hists(year, hist), 'TTbar')
+                        if not no_multijet:
+                            ploter.add_hist(self.load_multijet_hists(year, hist), 'Multijet')
+                    if not no_signal:
+                        signal_mc = self.load_signal_mc_hists(year, signal, hist)
+                    else:
+                        signal_mc = None
                     if signal_mc is not None:
-                        for coupling in self.plot_couplings:
-                            weights = self.couplings.generate_weight(**coupling)
-                            ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_filename(**coupling)[1:-1])
+                        if mc_signals: 
+                            for i,coupling in enumerate(self.couplings.basis):
+                                ploter.add_hist(signal_mc[i], self.couplings.get_filename(**coupling)[1:-1])
+                        else:
+                            for coupling in self.plot_couplings:
+                                weights = self.couplings.generate_weight(**coupling)
+                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_filename(**coupling)[1:-1])
                     if 'm4j' in hist and 'leadSt_dR' in hist:
                         ploter.add_curve('650.0/x+0.5', range=[None, 650])
                         ploter.add_curve('360.0/x-0.5')
                         ploter.add_curve('1.5', range = [650, None])
-                        ploter.add_curve('840.0/x-0.1',range = [None, 525], color=ROOT.kGreen)
-                        ploter.add_curve('1.5',range = [525, None], color=ROOT.kGreen)
-                        ploter.add_curve('250.0/x-0.5',color=ROOT.kGreen)
+                        ploter.add_curve('840.0/x-0.1',range = [None, 525], color=ROOT.kGreen+2)
+                        ploter.add_curve('1.5',range = [525, None], color=ROOT.kGreen+2)
+                        ploter.add_curve('250.0/x-0.5',color=ROOT.kGreen+2)
                     if 'm4j' in hist and 'sublSt_dR' in hist:
                         ploter.add_curve('650.0/x+0.7', range=[None, 812.5])
                         ploter.add_curve('235.0/x')
                         ploter.add_curve('1.5', range=[812.5, None])
                     if 'm6j' in hist and 'V_dR' in hist:
-                        ploter.add_curve('650.0/x+0.3', range=[None, 650], color=ROOT.kGreen)
-                        ploter.add_curve('1.3', range=[650, None], color=ROOT.kGreen)
+                        ploter.add_curve('650.0/x+0.3', range=[None, 650], color=ROOT.kGreen+2)
+                        ploter.add_curve('1.3', range=[650, None], color=ROOT.kGreen+2)
                     if 'leadSt_m' in hist and 'sublSt_m' in hist:
                         ploter.add_curve('(((x-125*1.02)/(0.1*x))**2+((y-125*0.98)/(0.1*y))**2)',[1.9**2])
-                        ploter.add_curve('(((x+y-245)/1.2)**2+(x-y-5)**2)',[2*22**2], color=ROOT.kGreen)
+                        ploter.add_curve('(((x+y-245)/1.2)**2+(x-y-5)**2)',[2*22**2], color=ROOT.kGreen+2)
                     ploter.plot()
 
-    def compare(self, hists, rebin = 1, normalize = False):
+    def save(self, filename, hist, MC_systs = [], rebin = 1):
         for year in self.years:
-            for signal in self.signals:
-                signal_mcs = {}
-                for hist in hists:
-                    signal_mcs[hist] = self.load_signal_mc_hists(year, signal, hist, rebin)
-                filename = '_vs_'.join([self.all_hists[hist][-1] for hist in hists])
-                for coupling in self.plot_couplings:
-                    path = self.path[year][signal].mkdir(['compare']) + filename + self.couplings.get_filename(**coupling)[:-1]
-                    weights = self.couplings.generate_weight(**coupling)
-                    ploter = histogram_1d_collection(path, title = filename, normalize = normalize, x_label = 'value')
-                    for hist in hists:
-                        ploter.add_hist(self.sum_hists(signal_mcs[hist], weights), self.all_hists[hist][-1])
-                    ploter.plot()
-
-
-    def save(self, filename, hist, rebin = 1):
-        for year in self.years:
-            signal_mc = self.load_signal_mc_hists(year, 'VHH', hist)
-            multijet = self.load_multijet_hists(year, hist).Clone()
-            multijet.Rebin(rebin)
+            output_file = ROOT.TFile(self.input + filename.format(year = year) + '.root','recreate')
+            current = output_file
+            current.cd()
+            # current = output_file.mkdir(year)
+            multijet = self.load_multijet_hists(year, hist, rebin)
             multijet.SetNameTitle('multijet_background','multijet_background_'+year)
-            ttbar = self.load_ttbar_mc_hists(year, hist).Clone()
-            ttbar.Rebin(rebin)
+            ttbar = self.load_ttbar_mc_hists(year, hist, rebin)
             ttbar.SetNameTitle('ttbar_background','ttbar_background'+year)
-            output_file = ROOT.TFile(self.input + filename + year + '.root','recreate')
+            multijet.Write()
+            ttbar.Write()
+            signal_systs = {}
+            for syst in MC_systs:
+                syst_hist_file, syst_hist = syst.get_hist(self.all_hists[hist])
+                signal_systs[syst.get_name()] = self.load_signal_mc_hists(year, 'VHH', self.join_hist_path(syst_hist), rebin, syst_hist_file)
+            signal_mc = self.load_signal_mc_hists(year, 'VHH', hist, rebin)
             for i,coupling in enumerate(self.couplings.basis):
                 name = 'VHH' + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl') + '_hbbhbb'
                 name = name.replace('p0_','_')
-                signal = signal_mc[i].Clone()
-                signal.Rebin(rebin)
+                signal = signal_mc[i]
                 signal.SetNameTitle(name,name+"_"+year)
-                output_file.cd()
                 signal.Write()
-            output_file.cd()
-            multijet.Write()
-            output_file.cd()
-            ttbar.Write()
+                for syst in MC_systs:
+                    signal_systs[syst.get_name()][i].SetNameTitle(name+'_'+syst.get_name().format(year = year),name+"_"+syst.get_name().format(year = year))
+                    signal_systs[syst.get_name()][i].Write()
             x_axis = ttbar.GetXaxis()
             data = ROOT.TH1F('data_obs','data_obs'+year+'; '+x_axis.GetTitle()+'; Events', ttbar.GetNbinsX(), x_axis.GetXmin(), x_axis.GetXmax() )
-            output_file.cd()
             data.Write()
-            output_file.Close()        
-
+        output_file.Close()
 
     def optimize(self, hist, steps = None, bound = None, step_to_x = None):
             for year in self.years:
@@ -865,18 +1122,30 @@ def fix_y_SvB(hist_collection):
     hist_collection.y_max = 20
 
 if __name__ == '__main__':
+    # basis = [{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0},{'c3':20.0}]
     with plots() as producer:
         producer.debug_mode(True)
         # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
-        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/nSel*'])
-        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/SvB_MA*_ps*'])
-        producer.add_dir(['pass*/fourTag/mainview/[HHSR|HHmSR]/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
+        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR]/nSel*'])
+        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR]/SvB_MA_labelBDT_ps_[down|up|central]*'])
+        # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR]/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/lead*subl*','pass*/fourTag/*view*/[HHSR|inclusive]/bdt_vs*'])
+        producer.add_dir(['pass*/fourTag/mainView/[HHSR|inclusive|notSR]/puIdSF'])
+        producer.add_dir(['pass*/fourTag/mainView/[notSR]/*Jet*/puId'])
+
+        # producer.add_plot_rule(plot_rule([(0,'passMV')],[lambda hist: hist.set_topright('Pass m_{V_{jj}}')]))
+        # producer.add_plot_rule(plot_rule([(0,'passMDRs')],[lambda hist: hist.set_topright('Pass #Delta R(j,j)')]))
+        # producer.add_plot_rule(plot_rule([(3,'HHSR')],[lambda hist: hist.set_topmid('HH Signal Region')]))
+        # producer.add_plot_rule(plot_rule([(3,'SR')],[lambda hist: hist.set_topmid('Inclusive Signal Region')]))
+        # producer.add_plot_rule(plot_rule([(3,'CR')],[lambda hist: hist.set_topmid('Control Region')]))
+
+        # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps')],[fix_y_SvB]))
+        # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps_rebin')],[fix_y_SvB_rebin]))
+
+        # POI
         producer.add_couplings(cv=1.0,c2v=1.0, c3=[-20,20])
         producer.add_couplings(cv=1.0,c2v=[-20,20], c3=1.0)
         producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
-        # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps')],[fix_y_SvB]))
-        # producer.add_plot_rule(plot_rule([(4,'SvB_MA*_ps_rebin')],[fix_y_SvB_rebin]))
         # MC
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=2.0, c3=1.0)
@@ -885,6 +1154,7 @@ if __name__ == '__main__':
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=0.0)
         # producer.add_couplings(cv=1.5,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=0.5,c2v=1.0, c3=1.0)
+        # producer.add_couplings(cv=1.0,c2v=1.0, c3=20.0)
 
         # producer.optimize('passNjOth/fourTag/mainView/HHSR/canJet3BTag')
         # producer.optimize('passMV/fourTag/mainView/HHSR/canJet3BTag')
@@ -893,10 +1163,58 @@ if __name__ == '__main__':
         # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('LooseMDRs','Loose #Delta R_{jj}'), ('LooseMV','Loose m_{V}'),('LooseMV_HHmSR','modified SR'),('LooseMV_HHmSR_HLT','HLT')]
         # producer.AccxEff(cuts)
         # producer.plot_2d()
-        producer.plot_1d(1)
-        # producer.save('VhadHH_combine_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_signalAll_ps', 4)
-        # producer.save('VhadHH_combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)
+        binning = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.78, 0.86, 0.93, 0.97, 0.99, 1.0]
 
+# systematics
+# CMS_btag_<x> x = jes, lf, hf, lfstats1, lfstats2, hfstats1, hfstats2, cferr1, cferr2
+# CMS_res_<x>  x = e, m, t, g, j, met(, b) for electrons, muons, hadronic taus, photons, jets, missing energy (and b-jets if you have something specific for those)
+# CMS_scale_<x>  x = e, m, t, g, j, met(, b)
+# CMS_eff_<x> x = e, m, t, g, j, b for electrons, muons, hadronic taus, photons, jets and b-tagging  trigger efficiencies
+        MC_systs = [
+            # btag
+            systematic([(0,3), (4, '+{}_down_jes')], 'CMS_btag_jesDown'),
+            systematic([(0,3), (4, '+{}_up_jes')],   'CMS_btag_jesUp'),
+            systematic([(0,3), (4, '+{}_down_lf')],  'CMS_btag_LF_2016_2017_2018Down'),
+            systematic([(0,3), (4, '+{}_up_lf')],    'CMS_btag_LF_2016_2017_2018Up'),
+            systematic([(0,3), (4, '+{}_down_hf')],  'CMS_btag_HF_2016_2017_2018Down'),
+            systematic([(0,3), (4, '+{}_up_hf')],    'CMS_btag_HF_2016_2017_2018Up'),
+            systematic([(0,3), (4, '+{}_down_hfstats2')],    'CMS_btag_hfstats2_{year}Down'),
+            systematic([(0,3), (4, '+{}_up_hfstats2')],    'CMS_btag_hfstats2_{year}Up'),
+            systematic([(0,3), (4, '+{}_down_lfstats2')],    'CMS_btag_lfstats2_{year}Down'),
+            systematic([(0,3), (4, '+{}_up_lfstats2')],    'CMS_btag_lfstats2_{year}Up'),
+            systematic([(0,3), (4, '+{}_down_hfstats1')],    'CMS_btag_hfstats1_{year}Down'),
+            systematic([(0,3), (4, '+{}_up_hfstats1')],    'CMS_btag_hfstats1_{year}Up'),
+            systematic([(0,3), (4, '+{}_down_lfstats1')],    'CMS_btag_lfstats1_{year}Down'),
+            systematic([(0,3), (4, '+{}_up_lfstats1')],    'CMS_btag_lfstats1_{year}Up'),
+            #  JEC
+            systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
+            systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
+            systematic([(0,3), (4, '+{}_ONNX_up_jes')],    'CMS_scale_j_{year}Up',   'hists_jesTotalUp'),
+            systematic([(0,3), (4, '+{}_ONNX_down_jes')],    'CMS_scale_j_{year}Down',   'hists_jesTotalDown')
+
+        ]
+        # for tag in ['_jes', '_lf', '_hf', '_hfstats2', '_lfstats2']:
+        #     producer.plot_syst('passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_central', 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'=down{tag}/central'.format(tag = tag))]),'up':systematic([(0,3), (4,'=up{tag}/central'.format(tag = tag))])},
+        #     tag, binning)
+        # for tag in ['_jer']:
+        #     producer.plot_syst('passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_ONNX')], filename = 'hists'+ tag + 'Down'),'up':systematic([(0,3), (4,'+{}_ONNX')], filename = 'hists'+ tag + 'Up')},
+        #     tag, binning)
+        # for tag in ['_jesTotal']:
+        #     producer.plot_syst('passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_ONNX_down_jes')], filename = 'hists'+ tag + 'Down'),'up':systematic([(0,3), (4,'+{}_ONNX_up_jes')], filename = 'hists'+ tag + 'Up')},
+        #     tag, binning)
+        # for tag in ['_jer', '_jesTotal']:
+        #     producer.plot_syst(['pass*/fourTag/mainView/[inclusive|HHSR]/[sel|can|oth]Jet*/*GenDiff'], 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,-1),], filename = 'hists'+ tag + 'Down'),'up':systematic([(0,-1)], filename = 'hists'+ tag + 'Up')},
+        #     tag)
+        # producer.plot_syst(['passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_nom'], 
+        # {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'=down/nom')], filename = 'hists'),'up':systematic([(0,3), (4,'=up/nom')], filename = 'hists')},'_puId')
+        producer.plot_1d(1)
+        
+        # producer.save('VhadHH_Syst_{year}_nkl', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_nkl', MC_systs, binning)
+        # producer.save('VhadHH_Syst_{year}_kl', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_kl', MC_systs, binning)
 
 
 # UL dataset

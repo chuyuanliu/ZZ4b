@@ -58,6 +58,7 @@ int main(int argc, char * argv[]){
   float xs   = parameters.getParameter<double>("xs");
   float fourbkfactor   = parameters.getParameter<double>("fourbkfactor");
   std::string year = parameters.getParameter<std::string>("year");
+  std::string era  = parameters.getParameter<std::string>("era");
   bool    doTrigEmulation = parameters.getParameter<bool>("doTrigEmulation");
   bool    calcTrigWeights = parameters.getParameter<bool>("calcTrigWeights");
   bool    useMCTurnOns    = parameters.getParameter<bool>("useMCTurnOns");
@@ -67,6 +68,7 @@ int main(int argc, char * argv[]){
   std::string bTagger = parameters.getParameter<std::string>("bTagger");
   std::string bjetSF  = parameters.getParameter<std::string>("bjetSF");
   std::string btagVariations = parameters.getParameter<std::string>("btagVariations");
+  std::string puIdVariations = parameters.getParameter<std::string>("puIdVariations");
   std::string JECSyst = parameters.getParameter<std::string>("JECSyst");
   std::string friendFile = parameters.getParameter<std::string>("friendFile");
   bool looseSkim = parameters.getParameter<bool>("looseSkim");
@@ -81,10 +83,8 @@ int main(int argc, char * argv[]){
   std::string klBdtWeightFile = parameters.getParameter<std::string>("klBdtWeightFile");
   std::string klBdtMethods = parameters.getParameter<std::string>("klBdtMethods");
   bool runKlBdt = parameters.getParameter<bool>("runKlBdt");
-  // NNLO ZHH MC reweight
-  std::string ZPtNNLOWeight = parameters.getParameter<std::string>("ZPtNNLOWeight");
-
-  float SvBScore = parameters.getParameter<double>("SvBScore");
+  // NNLO ZHH MC scale
+  bool doZHHNNLOScale = parameters.getParameter<bool>("doZHHNNLOScale");
 
   //lumiMask
   const edm::ParameterSet& inputs = process.getParameter<edm::ParameterSet>("inputs");   
@@ -213,7 +213,7 @@ int main(int argc, char * argv[]){
 			bjetSF, btagVariations,
 			JECSyst, friendFile,
 			looseSkim, FvTName, reweight4bName,reweightDvTName,
-      SvBScore, klBdtWeightFile, klBdtMethods, runKlBdt, ZPtNNLOWeight, extraOutput);
+      runKlBdt, doZHHNNLOScale, extraOutput, era, puIdVariations);
 
   a.event->setTagger(bTagger, bTag);
   a.makePSDataFromMC = makePSDataFromMC;
@@ -271,8 +271,11 @@ int main(int argc, char * argv[]){
   //a.storeReweight(reweight);
 
   std::string SvB_ONNX = parameters.getParameter<std::string>("SvB_ONNX");
+  #if SLC6 == 0 
   a.event->load_SvB_ONNX(SvB_ONNX);
-  
+  #endif
+  a.event->load_kl_BDT(klBdtWeightFile, klBdtMethods);
+
   a.writeOutEventNumbers = writeOutEventNumbers;
 
 

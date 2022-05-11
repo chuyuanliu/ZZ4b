@@ -100,7 +100,6 @@ namespace nTupleAnalysis {
     double kFactor = 1;
     double xs = 1;
     double fourbkfactor = 1;
-    double SvBScore = 0;
 
     bool writePicoAOD = false;
     bool fastSkim = false;
@@ -220,7 +219,7 @@ namespace nTupleAnalysis {
 	     std::string bjetSF = "", std::string btagVariations = "central",
 	     std::string JECSyst = "", std::string friendFile = "",
 	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "",std::string reweightDvTName = "",
-       float _SvBScore = 0.0, std::string bdtWeightFile = "", std::string bdtMethods = "", bool runKlBdt = false, std::string ZPtNNLOWeight = "", std::string extraOutput = "");
+       bool runKlBdt = false, bool doZHHNNLOScale = false, std::string extraOutput = "", std::string era = "", std::string puIdVariations = "nom");
 
 
     void createPicoAOD(std::string fileName, bool copyInputPicoAOD = true);

@@ -17,7 +17,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
 		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
-       float _SvBScore, std::string bdtWeightFile, std::string bdtMethods, bool runKlBdt, std::string ZPtNNLOWeight, std::string extraOutput){
+       bool runKlBdt, bool doZHHNNLOScale, std::string extraOutput, std::string era, std::string puIdVariations){
 
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
@@ -28,7 +28,6 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   year       = _year;
   events     = _events;
   looseSkim  = _looseSkim;
-  SvBScore   = _SvBScore;
   calcTrigWeights = _calcTrigWeights;
   events->SetBranchStatus("*", 0);
 
@@ -86,7 +85,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, bdtWeightFile, bdtMethods, runKlBdt, ZPtNNLOWeight);  
+  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, runKlBdt, doZHHNNLOScale, era, puIdVariations);  
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
@@ -106,7 +105,6 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("MDRs");
   cutflow->AddCut("NjOth");
   cutflow->AddCut("MV");
-  cutflow->AddCut("SvB");
 
   
   lumiCounts    = new lumiHists("lumiHists", fs, year, false, debug);
@@ -119,7 +117,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passLooseMV"))   passLooseMV   = new   tagHists("passLooseMV",    fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passNjOth"))     passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMV"))        passMV        = new   tagHists("passMV",    fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMV"))        passMV        = new   tagHists("passMV",    fs, true,  isMC, blind, histDetailLevel, debug, event);
   //if(nTupleAnalysis::findSubStr(histDetailLevel,"passXWt"))       passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"failrWbW2"))     failrWbW2     = new   tagHists("failrWbW2",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMuon"))      passMuon      = new   tagHists("passMuon",      fs, true,  isMC, blind, histDetailLevel, debug);
@@ -498,20 +496,9 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("nOthJets", &event->nOthJets);
   picoAODEvents->Branch("ttbarWeight", &event->ttbarWeight);
   //VHH
-  picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
   picoAODEvents->Branch("nSelJetsV", &event->nSelJetsV);
 
   //classifier variables
-  picoAODEvents->Branch("FvT"    , &event->FvT);
-  picoAODEvents->Branch("FvT_q_1234", &event->FvT_q_score[0]); //&FvT_q_1234;
-  picoAODEvents->Branch("FvT_q_1324", &event->FvT_q_score[1]); //&FvT_q_1324;
-  picoAODEvents->Branch("FvT_q_1423", &event->FvT_q_score[2]); //&FvT_q_1423;
-
-  picoAODEvents->Branch("FvT"    , &event->FvT);
-  picoAODEvents->Branch("SvB_MA_signalAll_ps"    , &event->SvB_MA_signalAll_ps);
-  picoAODEvents->Branch("SvB_MA_regionC3_signalAll_ps"    , &event->SvB_MA_regionC3_signalAll_ps);
-  picoAODEvents->Branch("SvB_MA_regionC2V_signalAll_ps"    , &event->SvB_MA_regionC2V_signalAll_ps);
-  picoAODEvents->Branch("SvB_MA_labelBDT_ps"    , &event->SvB_MA_labelBDT_ps);
   picoAODEvents->Branch("BDT_kl", &event->BDT_kl);
 
   cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
@@ -903,6 +890,12 @@ int analysis::processEvent(){
   //
   if(!event->appliedMDRs) event->applyMDRs();
 
+  #if SLC6 == 0
+  if(event->fourTag && event->passMV && event->HHSR){ // for JEC systematic, only run if event pass all selections
+    event->run_SvB_ONNX(); // will only run if a model was initialized
+  }
+  #endif
+
   // Fill picoAOD
   if(writePicoAOD){//for regular picoAODs, keep them small by filling after dijetMass cut
     picoAODFillEvents();
@@ -952,12 +945,6 @@ int analysis::processEvent(){
   if(passTTCRem != NULL && event->passTTCRem && event->passHLT){
     passTTCRem->Fill(event, event->views_passMDRs);
   }
-
-
-  if(passSvB != NULL &&  (event->SvB_ps > 0.9) && event->passHLT){ 
-    passSvB->Fill(event, event->views_passMDRs);
-  }    
-
 
 
   //

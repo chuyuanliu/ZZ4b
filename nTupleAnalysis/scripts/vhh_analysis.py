@@ -42,6 +42,7 @@ parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      d
 parser.add_option('-j',            action="store_true", dest="useJetCombinatoricModel",       default=False, help="Use the jet combinatoric model")
 parser.add_option('-r',            action="store_true", dest="reweight",       default=False, help="Do reweighting with nJetClassifier TSpline")
 parser.add_option('--bTagSyst',    action="store_true", dest="bTagSyst",       default=False, help="run btagging systematics")
+parser.add_option('--puIdSyst',    action="store_true", dest="puIdSyst",       default=False, help="run PU jet ID systematics")
 parser.add_option('--plot',        action="store_true", dest="doPlots",        default=False, help="Make Plots")
 parser.add_option('-p', '--createPicoAOD',              dest="createPicoAOD",  type="string", help="Create picoAOD with given name")
 parser.add_option(      '--root2h5',                    dest="root2h5",        default=False, action="store_true", help="convert picoAOD.h5 to .root")
@@ -50,7 +51,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passPreSel.passLooseMDRs.passLooseNjOth.passLooseMV.passMDRs.passNjOth.passMV.HHSR.HHmSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passTTCR.passMV.HHSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
 parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -61,15 +62,15 @@ parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagE
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
 parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
+parser.add_option(   '--friends', dest = 'friends',default='SvB_MA_labelBDT,FvT_Nominal', help = 'friend root files')
 # for VHH study
 parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'set signal coupling')
-parser.add_option(   '--SvBScore ', dest = 'SvBScore', default = '0.8', help = 'set cut on SvB classifier score')
 parser.add_option(   '--higherOrder',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
 parser.add_option(   '--ttbarProcesses', dest = 'ttbarProcesses', default = 'TTToHadronic,TTToSemiLeptonic,TTTo2L2Nu', help = 'select ttbar processes')
-parser.add_option(   '--separate', dest = 'separate', action="store_true", default=False, help = 'run 4b, 3b separately and apply weights from other root files')
 parser.add_option(   '--separate3b4b', dest = 'separate3b4b', action="store_true", default=False, help = 'run 4b, 3b separately')
 parser.add_option(   '--debug', dest = 'debug', action="store_true", default=False, help = 'enable debug mode')
 parser.add_option(   '--extraOutput', dest = 'extraOutput', action="store_true", default=False, help = 'make extra root file')
+parser.add_option(   '--histsTag', dest = 'histsTag', default='', help = 'extra tags in hists.root filename')
 parser.add_option(   '--runKlBdt', dest = 'runKlBdt', action="store_true", default=False, help = 'run kl BDT')
 o, a = parser.parse_args()
 
@@ -149,6 +150,10 @@ if o.fastSkim and fromNANOAOD:
 nWorkers   = 3
 script     = "ZZ4b/nTupleAnalysis/scripts/nTupleAnalysis_cfg.py"
 years      = o.year.split(",")
+eras   = copy(years)
+if '2016' in eras:
+    eras.remove('2016')
+    eras += ['2016_preVFP', '2016_postVFP']
 ttbarProcesses = o.ttbarProcesses.split(',')
 lumiDict   = {'2016':  '36.3e3',#35.8791
               '2016_preVFP': '19.5e3',
@@ -185,8 +190,8 @@ def dataFiles(year):
         for period in periods[year]:
             files += glob('ZZ4b/fileLists/data%s%s_chunk*.txt'%(year,period))
         return files
-    elif o.separate or o.separate3b4b:
-        return ["closureTests/UL/fileLists/data" + year + "_" + tag + ".txt " for tag in ["3b", "4b"]]
+    elif o.separate3b4b:
+        return ["closureTests/ULTrig/fileLists/data" + year + "_" + tag + ".txt " for tag in ["3b", "4b"]]
     else:
         return ["ZZ4b/fileLists/data" + year + period + ".txt" for period in periods[year]]
 
@@ -199,7 +204,7 @@ def jetCombinatoricModel(year):
     return gitRepoBase+"dataRunII/jetCombinatoricModel_"+JCMRegion+"_"+JCMVersion+".txt"
 #reweight = gitRepoBase+"data"+year+"/reweight_"+JCMRegion+"_"+JCMVersion+".root"
 
-SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/SvB_ResNet_8_8_8_np1391_lr0.01_epochs20_epoch20.onnx"
+SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/labelBDT/SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset0_epoch20.onnx"
 
 def signalFiles(signals, year):
     if year == '2016':
@@ -216,16 +221,13 @@ def ttbarFiles(year):
         for process in ttbarProcesses:
             files+= glob('ZZ4b/fileLists/%s%s*_chunk*.txt'%(process, year))
         return files
-    elif o.separate or o.separate3b4b:
+    elif o.separate3b4b:
+        ttYears = [year]
         if year == '2016':
-            files = []
-            for ttYear in ['2016_preVFP', '2016_postVFP']:
-                files += ["closureTests/UL/fileLists/" + process + ttYear + "_4b.txt" for process in ttbarProcesses]
-            return files
-        else:
-            return ["closureTests/UL/fileLists/" + process + year + "_4b.txt" for process in ttbarProcesses]
+            ttYears = ['2016_preVFP', '2016_postVFP']
+        return ['closureTests/ULTrig/fileLists/' + process + ttYear + tag + '.txt' for process in ttbarProcesses for ttYear in ttYears for tag in ['_3b', '_4b']]
     else:
-        return ["ZZ4b/fileLists/" + process + year + ".txt" for process in ttbarProcesses]
+        return ['ZZ4b/fileLists/' + process + year + '.txt' for process in ttbarProcesses]
 
 def accxEffFiles(signals, year):
     return [outputBase + signal + year + "/hists.root" for signal in signals]
@@ -233,17 +235,20 @@ DAG = None
 if o.condor:
     DAG = dag(fileName="analysis.dag")
 
-# def makeJECSyst():
-#     cmds=[]
-#     for year in years:
-#         for process in ['ZZ4b', 'ZH4b', 'ggZH4b']:
-#             cmd  = 'python PhysicsTools/NanoAODTools/scripts/nano_postproc.py '
-#             cmd += outputBase+process+year+'/ '
-#             cmd += outputBase+process+year+'/picoAOD.root '
-#             cmd += '--friend '
-#             cmd += '-I nTupleAnalysis.baseClasses.jetmetCorrectors jetmetCorrector'+year # modules are defined in https://github.com/patrickbryant/nTupleAnalysis/blob/master/baseClasses/python/jetmetCorrectors.py
-#             cmds.append(cmd)
-#     babySit(cmds, o.execute, maxJobs=nWorkers)
+def makeJECSyst():
+    basePath = EOSOUTDIR if o.condor else outputBase
+    cmds=[]
+    for signals in couplings:
+        for year in eras:
+            for process in signals[:2]:
+                cmd  = 'python PhysicsTools/NanoAODTools/scripts/nano_postproc.py '
+                cmd += basePath+process+year+'/ '
+                cmd += basePath+process+year+'/picoAOD.root '
+                cmd += '--friend '
+                cmd += '-I nTupleAnalysis.baseClasses.jetmetCorrectors jetmetCorrectorUL'+year # modules are defined in https://github.com/patrickbryant/nTupleAnalysis/blob/master/baseClasses/python/jetmetCorrectors.py
+                cmds.append(cmd)
+
+    execute(cmds, o.execute, condor_dag=DAG)
 
 def makeTARBALL():
     base="/uscms/home/"+USER+"/nobackup/"
@@ -276,26 +281,28 @@ def doSignal():
 
     cmds=[]
     JECSysts = [""]
-    # if o.doJECSyst: 
-    #     JECSysts = JECSystList
+    if o.doJECSyst: 
+        JECSysts = JECSystList
 
     for JECSyst in JECSysts:
-        histFile = "hists"+JECSyst+".root" #+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
+        histFile = "hists"+JECSyst+o.histsTag+".root"
         if o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none": histFile = "histsFromNanoAOD"+JECSyst+".root"
         
         for signals in couplings:
             for year in years:
-                lumi = lumiDict[year]
                 for fileList in signalFiles(signals[0:2],year):
+                    era = year
+                    if '2016' in fileList:
+                        if 'preVFP' in fileList:
+                            era = '2016_preVFP'
+                        elif 'postVFP' in fileList: 
+                            era = '2016_postVFP'
+                    lumi = lumiDict[era]
                     cmd  = "nTupleAnalysis "+script
                     cmd += " -i "+fileList
                     cmd += " -o "+basePath
                     cmd += " -y "+year
-                    if '2016' in fileList:
-                        if 'preVFP' in fileList:
-                            lumi = lumiDict['2016_preVFP']
-                        else: 
-                            lumi = lumiDict['2016_postVFP']
+                    cmd += " --era "+era
                     cmd += " -l "+lumi
                     cmd += " --histDetailLevel "+o.detailLevel
                     cmd += " --histFile "+histFile
@@ -307,14 +314,16 @@ def doSignal():
                     cmd += " --isMC"
                     cmd += " --doTrigEmulation" if o.trigger else ""
                     cmd += " --doHigherOrderReweight" if o.higherOrder else ""
-                    cmd += " --SvBScore "+o.SvBScore
                     cmd += " --bTag "+bTagDict[year]
                     cmd += " --bTagSF"
+                    # cmd += " --puIdSF"
                     cmd += " --bTagSyst" if o.bTagSyst else ""
+                    cmd += " --puIdSyst" if o.puIdSyst else ""
                     cmd += " --nevents "+o.nevents
                     cmd += " --looseSkim" if (o.createPicoAOD or o.looseSkim) else "" # For signal samples we always want the picoAOD to be loose skim
-                    cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
+                    cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX or o.doJECSyst else ""
                     cmd += " --JECSyst "+JECSyst if JECSyst else ""
+                    cmd += " --friends " + o.friends if o.friends else ""
                     cmd += " --debug" if o.debug else ""
                     cmd += " --extraOutput bosonKinematics" if o.extraOutput else ""
                     # if o.createPicoAOD and o.createPicoAOD != "none":
@@ -386,19 +395,26 @@ def doDataTT():
 
     # run event loop
     cmds=[]
-    histFile = "hists"+("_j" if o.useJetCombinatoricModel or o.separate or o.separate3b4b else "")+("_r" if o.reweight else "")+".root"
+    histFile = "hists"+("_j" if o.useJetCombinatoricModel or o.separate3b4b else "")+("_r" if o.reweight else "")+o.histsTag+".root"
     if o.createPicoAOD == "picoAOD.root": histFile = "histsFromNanoAOD.root"
 
     for year in years:
-        lumi = lumiDict[year]
         files = []
         if o.doData: files += dataFiles(year)
         if o.doTT:   files += ttbarFiles(year)
         for fileList in files:
+            era = year
+            if '2016' in fileList:
+                if 'preVFP' in fileList:
+                    era = '2016_preVFP'
+                elif 'postVFP' in fileList: 
+                    era = '2016_postVFP'
+            lumi = lumiDict[era]
             cmd  = "nTupleAnalysis "+script
             cmd += " -i "+fileList
             cmd += " -o "+basePath
             cmd += " -y "+year
+            cmd += " --era "+era
             cmd += " --histDetailLevel "+o.detailLevel
             cmd += " --histFile "+histFile
             cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
@@ -406,22 +422,18 @@ def doDataTT():
             cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
             cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
             cmd += " -f " if o.fastSkim else ""
-            cmd += " --SvBScore "+o.SvBScore
             cmd += " --bTag "+bTagDict[year]
             cmd += " --nevents "+o.nevents
-            cmd += " --jcmNameLoad Nominal" if o.separate or o.separate3b4b else ""
-            cmd += " --FvTName FvT_Nominal --inputWeightFiles " + fileList.replace(".txt ", "_SvB_FvT.txt ") if o.separate else ""
+            cmd += " --jcmNameLoad Nominal"
+            cmd += " --FvTName FvT_Nominal"
+            cmd += (" --friends " + o.friends) if o.friends else ""
             cmd += " --debug" if o.debug else ""
             cmd += " --extraOutput bosonKinematics" if o.extraOutput else ""
             if fileList in ttbarFiles(year):
-                if '2016' in fileList:
-                    if 'preVFP' in fileList:
-                        lumi = lumiDict['2016_preVFP']
-                    else: 
-                        lumi = lumiDict['2016_postVFP']
                 cmd += " -l "+lumi
                 cmd += " --bTagSF"
-            #cmd += " --bTagSyst" if o.bTagSyst else ""
+                # cmd += " --puIdSF"
+                cmd += " --bTagSyst" if o.bTagSyst else ""
                 cmd += " --isMC "
                 cmd += " --doTrigEmulation" if o.trigger else ""
             if o.createHemisphereLibrary  and fileList not in ttbarFiles:
@@ -563,7 +575,7 @@ def h52root():
 
 def subtractTT():
     basePath = EOSOUTDIR if o.condor else outputBase
-    histFile = "hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
+    histFile = "hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+o.histsTag+".root"
     if o.createPicoAOD == "picoAOD.root": histFile = "histsFromNanoAOD.root"
     cmds=[]
     for year in years:
@@ -605,7 +617,7 @@ def doWeights():
         weightYears = years
     for year in weightYears:
         mkdir(gitRepoBase+"data"+year, o.execute)
-        histFile = "hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+".root"
+        histFile = "hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+o.histsTag+".root"
         cmd  = "python ZZ4b/nTupleAnalysis/scripts/makeWeights.py"
         cmd += " -d   "+basePath+"data"+year+"/"+histFile
         cmd += " --tt "+basePath+  "TT"+year+"/"+histFile
@@ -742,10 +754,12 @@ if o.condor:
 if o.h52root:
     h52root()
 
-# if o.makeJECSyst:
-#     makeJECSyst()
+if o.makeJECSyst:
+    makeJECSyst()
+
 if (o.doSignal or o.doData or o.doTT) and o.condor:
     startEventLoopGeneration = copy( DAG.iG )
+    
 if o.doSignal:
     doSignal()
 

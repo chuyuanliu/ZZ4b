@@ -4,9 +4,8 @@
 
 using namespace nTupleAnalysis;
 
-multiClassifierONNX::multiClassifierONNX(std::string modelFile) {
-  std::cout << "multiClassifierONNX( "<<modelFile<<" )" << std::endl;
-  
+multiClassifierONNX::multiClassifierONNX(std::string modelFile, bool _debug) {
+  debug = _debug;
   Ort::SessionOptions* session_options = new Ort::SessionOptions();
   session_options->SetIntraOpNumThreads(1);
 
@@ -14,23 +13,21 @@ multiClassifierONNX::multiClassifierONNX(std::string modelFile) {
 
   model->getOutputNames();
 
-  input_names = {"J","O","D","Q"};
-  output_names= {"c_score", "q_score"};//model->getOutputNames();//{"Output", "q_score"};
-  //for(auto name: output_names) std::cout << name << std::endl;
+  std::cout << "multiClassifierONNX( "<<modelFile<<" )" << std::endl;
+
+  input_names = {"J","O","A"};
+  output_names= {"c_logits", "q_logits"};
 
   this->clear();
 
   // canJets
-  input.emplace_back(12*4,1);
+  input.emplace_back(4*4,1);
 
   // othJets
-  input.emplace_back(12*5,1);
+  input.emplace_back(5*8,-1);
   
-  // dijets
-  input.emplace_back(6*2,1);
-  
-  // quadjets
-  input.emplace_back(3*6,1);
+  // ancillary features
+  input.emplace_back(4,1);
 
   this->run();
   this->dump();
@@ -38,68 +35,46 @@ multiClassifierONNX::multiClassifierONNX(std::string modelFile) {
 } 
 
 void multiClassifierONNX::clear(){
-  input.clear();
-  output.clear();
-  c_score.clear();
-  q_score.clear();
+  if(debug) std::cout << "multiClassifierONNX::clear()" << std::endl;
 }
 
 void multiClassifierONNX::loadInput(eventData* event){
+  if(debug) std::cout << "multiClassifierONNX::loadInput()" << std::endl;
   // canJets
-  input.emplace_back(12*4,0);
-  int j = 0;
-  for(int i: canJetImageIndicies){
-    input[0][   j] = event->canJets[i]->pt;
-    input[0][12+j] = event->canJets[i]->eta;
-    input[0][24+j] = event->canJets[i]->phi;
-    input[0][36+j] = event->canJets[i]->m;
-    j++;
+  for(uint i = 0; i < 4; i++){
+    input[0][   i] = event->canJets[i]->pt;
+    input[0][4+i] = event->canJets[i]->eta;
+    input[0][8+i] = event->canJets[i]->phi;
+    input[0][12+i] = event->canJets[i]->m;
   };
 
   // othJets
-  input.emplace_back(12*5,0);
-  for(uint i=0; i<event->nAllNotCanJets; i++){
+  for(uint i = 0; i < event->nAllNotCanJets && i < 8; i++){
     input[1][   i] = event->allNotCanJets[i]->pt;
-    input[1][12+i] = event->allNotCanJets[i]->eta;
-    input[1][24+i] = event->allNotCanJets[i]->phi;
-    input[1][36+i] = event->allNotCanJets[i]->m;
+    input[1][8+i]  = event->allNotCanJets[i]->eta;
+    input[1][16+i] = event->allNotCanJets[i]->phi;
+    input[1][24+i] = event->allNotCanJets[i]->m;
     bool isSelJet = (event->allNotCanJets[i]->pt>40) & (fabs(event->allNotCanJets[i]->eta)<2.4);
-    input[1][48+i] = isSelJet ? 1 : 0; 
+    input[1][32+i] = isSelJet ? 1 : 0; 
   };
-  for(uint i=event->nAllNotCanJets; i<12; i++){
-    input[1][48+i] = -1;
-  };
-
-  // dijets
-  input.emplace_back(6*2,0);
-  for(int i=0; i<6; i++){
-    input[2][  i] = event->dijets[i]->m;
-    input[2][6+i] = event->dijets[i]->dR;
+  for(uint i =  event->nAllNotCanJets; i < 8; i++){
+    input[1][   i] = -1;
+    input[1][8+i]  = -1;
+    input[1][16+i] = -1;
+    input[1][24+i] = -1;
+    input[1][32+i] = -1; 
   };
 
-  // self.quadjetAncillaryFeatures=['dR0123', 'dR0213', 'dR0312',
-  // 	          		    'm4j',    'm4j',    'm4j',
-  // 				    'xW',     'xW',     'xW',
-  // 			  	    'xbW',    'xbW',    'xbW',
-  // 				    'nSelJets', 'nSelJets', 'nSelJets',
-  // 				    'year',   'year',   'year',
-  //                                ]
-  // quadjets
-  input.emplace_back(3*6,0);
-  input[3][0] = event->dR0123;
-  input[3][1] = event->dR0213;
-  input[3][2] = event->dR0312;
-  for(int i=0; i<3; i++){
-    input[3][ 3+i] = event->m4j;
-    input[3][ 6+i] = event->xW;
-    input[3][ 9+i] = event->xbW;
-    input[3][12+i] = event->nSelJets;
-    input[3][15+i] = event->year;
-  };
-  
+  // ancillary features
+  input[2][0] = event->year - 2010;
+  input[2][1] = event->nSelJets;
+  input[2][2] = event->xW;
+  input[2][3] = event->xbW;
+
 }
 
 void multiClassifierONNX::run(){
+  if(debug) std::cout << "multiClassifierONNX::run()" << std::endl;
   output = model->run(input_names, input, output_names, 1);
   c_score = output[0];
   q_score = output[1];

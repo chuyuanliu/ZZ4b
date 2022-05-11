@@ -38,6 +38,12 @@ def acosh(x):
 def atanh(x):
     return 0.5*torch.log((1+x)/(1-x))
 
+def sinh(x):
+    return (torch.exp(x) - torch.exp(-x))/2.0
+
+def isinf(x):
+    return (x == float('inf')) | (x == float('-inf')) | (x == float('nan'))
+
 # some basic four-vector operations
 def PxPyPzE(v): # need this to be able to add four-vectors
     pt  = v[:,0:1]
@@ -45,7 +51,7 @@ def PxPyPzE(v): # need this to be able to add four-vectors
     phi = v[:,2:3]
     m   = v[:,3:4]
     
-    Px, Py, Pz = pt*phi.cos(), pt*phi.sin(), pt*eta.sinh()
+    Px, Py, Pz = pt*phi.cos(), pt*phi.sin(), pt*sinh(eta) # sinh unsupported by ONNX
     E = (pt**2 + Pz**2 + m**2).sqrt()
 
     return torch.cat( (Px,Py,Pz,E), 1 )
@@ -56,7 +62,7 @@ def PxPyPzM(v):
     phi = v[:,2:3]
     m   = v[:,3:4]
     
-    Px, Py, Pz = pt*phi.cos(), pt*phi.sin(), pt*eta.sinh()
+    Px, Py, Pz = pt*phi.cos(), pt*phi.sin(), pt*sinh(eta) # sinh unsupported by ONNX
     #E = (pt**2 + Pz**2 + m**2).sqrt()
 
     return torch.cat( (Px,Py,Pz,m), 1 )
@@ -71,10 +77,10 @@ def PtEtaPhiM(v):
     ysign = py.sign()
     ysign = ysign + (ysign==0.0).float() # if py==0, px==Pt and acos(1)=pi/2 so we need zero protection on py.sign()
     Phi = (px/(Pt+0.00001)).acos() * ysign
-    try:
-        Eta = (pz/(Pt+0.00001)).asinh()
-    except:
-        Eta = asinh(pz/(Pt+0.00001))
+    # try:
+    #     Eta = (pz/(Pt+0.00001)).asinh()
+    # except:
+    Eta = asinh(pz/(Pt+0.00001)) # asinh not supported by ONNX
 
     M = F.relu(e**2 - px**2 - py**2 - pz**2).sqrt()
 
@@ -330,7 +336,8 @@ class GhostBatchNorm1d(nn.Module): #https://arxiv.org/pdf/1705.08741v2.pdf has w
     def forward(self, x, mask=None, debug=False):
         batch_size = x.shape[0]
         pixels = x.shape[2]
-        pixel_groups = pixels//self.stride
+        # pixel_groups = pixels//self.stride
+        pixel_groups = torch.div(pixels, self.stride, rounding_mode='trunc')
 
         if self.training and self.nGhostBatches!=0 and not self.PCC:
             self.ghost_batch_size = batch_size // self.nGhostBatches.abs()
@@ -1318,20 +1325,22 @@ class InputEmbed(nn.Module):
             ooMdPhi = matrixMdPhi(o, o, v1PxPyPzE=oPxPyPzE, v2PxPyPzE=oPxPyPzE)
             ooMdPhi = torch.cat([ooMdPhi, torch.zeros((n,1,self.osl,self.osl), dtype=torch.float).to(device)], 1) # flag with zeros to signify dijet quantities
 
-            mask_oo = mask.view(n,1,self.osl) | mask.view(n,self.osl,1) # mask of 2d matrix of otherjets (i,j) is True if mask[i] | mask[j]
-            mask_oo = mask_oo.masked_fill(self.mask_oo_same.to(device), 1)
+            mask_oo = (mask.view(n,1,self.osl) | mask.view(n,self.osl,1)).int() # mask of 2d matrix of otherjets (i,j) is True if mask[i] | mask[j]
+            mask_oo = mask_oo.masked_fill(self.mask_oo_same.to(device), 1).bool() # bug in onnx when bool
+            # mask_oo[self.mask_oo_same] = True # also bug in onnx when bool
             # ooMdPhi = ooMdPhi.masked_fill(mask_oo.view(n,1,self.osl,self.osl), 1e6)
             
             # compute matrix of trijet masses and opening angles between dijets and other jets
             doMdPhi = matrixMdPhi(d, o, v1PxPyPzE=dPxPyPzE, v2PxPyPzE=oPxPyPzE)
             doMdPhi = torch.cat([doMdPhi, torch. ones((n,1,self.dsl,self.osl), dtype=torch.float).to(device)], 1) # flag with ones to signify trijet quantities
 
-            mask_do = mask.view(n, 1, self.osl).repeat(1,self.dsl,1) # repeat so we can change mask for each dijet
-            mask_do = mask_do.masked_fill(self.mask_do_same.to(device), 1)
+            mask_do = mask.view(n, 1, self.osl).repeat(1,self.dsl,1).int() # repeat so we can change mask for each dijet
+            mask_do = mask_do.masked_fill(self.mask_do_same.to(device), 1).bool() # bug in onnx when bool
+            # mask_do[self.mask_do_same] = True # also bug in onnx when bool
             # doMdPhi = doMdPhi.masked_fill(mask_do.view(n,1,self.dsl,self.osl), 1e6)
 
             o[:,(0,3),:] = torch.log(1+o[:,(0,3),:])
-            o[o.isinf()] = -1
+            o[isinf(o)] = -1 # isinf not supported by ONNX
 
             o = torch.cat( (o[:,:2,:],o[:,3:,:]) , 1 ) # remove phi from othJet features
 
