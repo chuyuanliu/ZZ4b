@@ -267,8 +267,9 @@ def hadd_lpc():
                     hadd(['VHH/TT'+year +nTag+filename for year in haddYears], 'VHH/TTRunII'+nTag+filename)
         for filename in histFile(True):
             for cps in signals:
-                lpcmkdir('VHH/'+cps[2]+'RunII')
-                hadd(['VHH/'+cps[2]+year+filename for year in haddYears], 'VHH/'+cps[2]+'RunII'+filename)
+                for boson in cps:
+                    lpcmkdir('VHH/'+boson+'RunII')
+                    hadd(['VHH/'+boson+year+filename for year in haddYears], 'VHH/'+boson+'RunII'+filename)
 def initialize():
     # load_skims()
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests')

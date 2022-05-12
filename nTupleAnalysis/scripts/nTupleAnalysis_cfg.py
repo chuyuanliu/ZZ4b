@@ -93,7 +93,7 @@ parser.add_option(      '--extraOutput',  dest="extraOutput", type ="string", de
 o, a = parser.parse_args()
 
 
-bjetSF = "deepjet"+o.era # TODO switch to year
+bjetSF = "deepjet"+o.year
 year = o.year.replace('_preVFP','').replace('_postVFP','')
 if o.fastSkim or not o.isMC or not o.bTagSF:
     bjetSF = ""

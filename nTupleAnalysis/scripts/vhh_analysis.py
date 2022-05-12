@@ -191,7 +191,7 @@ def dataFiles(year):
             files += glob('ZZ4b/fileLists/data%s%s_chunk*.txt'%(year,period))
         return files
     elif o.separate3b4b:
-        return ["closureTests/ULTrig/fileLists/data" + year + "_" + tag + ".txt " for tag in ["3b", "4b"]]
+        return ["closureTests/ULTrig/fileLists/data" + year + tag + ".txt " for tag in ['_3b', '_4b']]
     else:
         return ["ZZ4b/fileLists/data" + year + period + ".txt" for period in periods[year]]
 
@@ -225,7 +225,7 @@ def ttbarFiles(year):
         ttYears = [year]
         if year == '2016':
             ttYears = ['2016_preVFP', '2016_postVFP']
-        return ['closureTests/ULTrig/fileLists/' + process + ttYear + tag + '.txt' for process in ttbarProcesses for ttYear in ttYears for tag in ['_3b', '_4b']]
+        return ['closureTests/ULTrig/fileLists/' + process + ttYear + tag + '.txt' for process in ttbarProcesses for ttYear in ttYears for tag in ['_4b']]# ['_3b', '_4b']]
     else:
         return ['ZZ4b/fileLists/' + process + year + '.txt' for process in ttbarProcesses]
 

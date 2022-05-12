@@ -116,11 +116,11 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
 
   classifierVariables["BDT_kl"] = &BDT_kl;
 
-  for(string weightName : otherWeightsNames){
-    if(debug) cout << " initializing other weightName " << weightName << endl;
-    otherWeights.push_back(Float_t(-1));
-    classifierVariables[weightName] = &otherWeights.back();
-  }
+  // for(string weightName : otherWeightsNames){
+  //   if(debug) cout << " initializing other weightName " << weightName << endl;
+  //   otherWeights.push_back(Float_t(-1));
+  //   classifierVariables[weightName] = &otherWeights.back();
+  // }
 
   //
   //  Hack for weight Study

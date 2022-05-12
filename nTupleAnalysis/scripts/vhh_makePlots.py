@@ -22,19 +22,21 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['RunII']
-signals = ['VHH']
+# years = ['2016', '2017', '2018']
+# signals = ['ZHH', 'WHH', 'VHH']
+years = ['2016','2017','2018']
+signals = ['ZHH']
 hists_filename = {
     'data'    : ['hists_j_r'],
     'ttbar'   : ['hists_j_r'],
-    # 'signal'  : ['hists', 'hists_jerUp', 'hists_jerDown', 'hists_jesTotalUp', 'hists_jesTotalDown']
-    'signal'  : ['hists']
+    'signal'  : ['hists', 'hists_jerUp', 'hists_jerDown', 'hists_jesTotalUp', 'hists_jesTotalDown']
+    # 'signal'  : ['hists']
 }
-no_background = False
+no_background = True
 no_multijet = True
-no_signal = True
+no_signal = False
 mc_only = False
-mc_signals = True
+mc_signals = False
 event_count = True
 signal_scale = 1
 
@@ -61,8 +63,6 @@ def get_ratio_range(max):
     diff = abs(1 - max)
     if diff < 0.05:
         return round_up(diff, 0.01)
-    elif diff > 0.05: # TODO: smart setting
-        return 0.05
     else:
         return round_up(diff, 0.05)
 
@@ -535,10 +535,14 @@ class datacard:
     def __init__(self, path, shape_file, datacard_file):
         pass
 class systematic:
-    def __init__(self, pattern = '', name = '', filename = None):
+    def __init__(self, pattern = '', name = '', filename = None, signal = None):
         self.pattern  = pattern
         self.name     = name
         self.filename = filename
+        self.signal   = signal
+    def check_signal(self, signal):
+        if self.signal is None: return True
+        return signal == self.signal
     def get_name(self):
         return self.name
     def get_hist(self, hist):
@@ -886,8 +890,6 @@ class plots:
                                     signals[syst] = self.sum_hists(signal_mc[syst], weights)
                                 ploter.add_hist(signals, self.couplings.get_filename(**coupling)[1:-1])
                     ploter.plot()
-    def plot_syst(self, hist, systs):
-        pass
 
     def plot_2d(self): #TEMP
         for year in self.years:
@@ -935,35 +937,37 @@ class plots:
                     ploter.plot()
 
     def save(self, filename, hist, MC_systs = [], rebin = 1):
-        for year in self.years:
-            output_file = ROOT.TFile(self.input + filename.format(year = year) + '.root','recreate')
-            current = output_file
-            current.cd()
-            # current = output_file.mkdir(year)
-            multijet = self.load_multijet_hists(year, hist, rebin)
-            multijet.SetNameTitle('multijet_background','multijet_background_'+year)
-            ttbar = self.load_ttbar_mc_hists(year, hist, rebin)
-            ttbar.SetNameTitle('ttbar_background','ttbar_background'+year)
-            multijet.Write()
-            ttbar.Write()
-            signal_systs = {}
-            for syst in MC_systs:
-                syst_hist_file, syst_hist = syst.get_hist(self.all_hists[hist])
-                signal_systs[syst.get_name()] = self.load_signal_mc_hists(year, 'VHH', self.join_hist_path(syst_hist), rebin, syst_hist_file)
-            signal_mc = self.load_signal_mc_hists(year, 'VHH', hist, rebin)
-            for i,coupling in enumerate(self.couplings.basis):
-                name = 'VHH' + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl') + '_hbbhbb'
-                name = name.replace('p0_','_')
-                signal = signal_mc[i]
-                signal.SetNameTitle(name,name+"_"+year)
-                signal.Write()
+        for signal in self.signals:
+            for year in self.years:
+                format_args = {'year': year, 'signal': signal}
+                output_file = ROOT.TFile(self.input + filename.format(**format_args) + '.root','recreate')                
+                current = output_file
+                current.cd()
+                multijet = self.load_multijet_hists(year, hist, rebin)
+                multijet.SetNameTitle('multijet_background','multijet_background_'+year)
+                ttbar = self.load_ttbar_mc_hists(year, hist, rebin)
+                ttbar.SetNameTitle('ttbar_background','ttbar_background'+year)
+                multijet.Write()
+                ttbar.Write()
+                signal_systs = {}
                 for syst in MC_systs:
-                    signal_systs[syst.get_name()][i].SetNameTitle(name+'_'+syst.get_name().format(year = year),name+"_"+syst.get_name().format(year = year))
-                    signal_systs[syst.get_name()][i].Write()
-            x_axis = ttbar.GetXaxis()
-            data = ROOT.TH1F('data_obs','data_obs'+year+'; '+x_axis.GetTitle()+'; Events', ttbar.GetNbinsX(), x_axis.GetXmin(), x_axis.GetXmax() )
-            data.Write()
-        output_file.Close()
+                    if syst.check_signal(signal):
+                        syst_hist_file, syst_hist = syst.get_hist(self.all_hists[hist])
+                        signal_systs[syst.get_name()] = self.load_signal_mc_hists(year, signal, self.join_hist_path(syst_hist), rebin, syst_hist_file)
+                signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
+                for i,coupling in enumerate(self.couplings.basis):
+                    name = 'VHH' + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl') + '_hbbhbb'
+                    name = name.replace('p0_','_')
+                    signal_hist = signal_mc[i]
+                    signal_hist.SetNameTitle(name,name+"_"+year)
+                    signal_hist.Write()
+                    for syst in signal_systs.keys():
+                        signal_systs[syst][i].SetNameTitle(name+'_'+syst.format(**format_args),name+"_"+syst.format(**format_args))
+                        signal_systs[syst][i].Write()
+                x_axis = ttbar.GetXaxis()
+                data = ROOT.TH1F('data_obs','data_obs'+year+'; '+x_axis.GetTitle()+'; Events', ttbar.GetNbinsX(), x_axis.GetXmin(), x_axis.GetXmax() )
+                data.Write()
+                output_file.Close()
 
     def optimize(self, hist, steps = None, bound = None, step_to_x = None):
             for year in self.years:
@@ -1132,8 +1136,8 @@ if __name__ == '__main__':
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR]/SvB_MA_labelBDT_ps_[down|up|central]*'])
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR]/[can*|*dijet*|lead*|subl*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/[m4j|m6j]*','pass*/fourTag/*view*/[HHSR|HHmSR|inclusive]/lead*subl*','pass*/fourTag/*view*/[HHSR|inclusive]/bdt_vs*'])
-        producer.add_dir(['pass*/fourTag/mainView/[HHSR|inclusive|notSR]/puIdSF'])
-        producer.add_dir(['pass*/fourTag/mainView/[notSR]/*Jet*/puId'])
+        # producer.add_dir(['pass*/fourTag/mainView/[HHSR|inclusive|notSR]/puIdSF'])
+        # producer.add_dir(['pass*/fourTag/mainView/[notSR]/*Jet*/puId'])
 
         # producer.add_plot_rule(plot_rule([(0,'passMV')],[lambda hist: hist.set_topright('Pass m_{V_{jj}}')]))
         # producer.add_plot_rule(plot_rule([(0,'passMDRs')],[lambda hist: hist.set_topright('Pass #Delta R(j,j)')]))
@@ -1174,8 +1178,8 @@ if __name__ == '__main__':
 # CMS_eff_<x> x = e, m, t, g, j, b for electrons, muons, hadronic taus, photons, jets and b-tagging  trigger efficiencies
         MC_systs = [
             # btag
-            systematic([(0,3), (4, '+{}_down_jes')], 'CMS_btag_jesDown'),
-            systematic([(0,3), (4, '+{}_up_jes')],   'CMS_btag_jesUp'),
+            # systematic([(0,3), (4, '+{}_down_jes')], 'CMS_btag_jesDown'),
+            # systematic([(0,3), (4, '+{}_up_jes')],   'CMS_btag_jesUp'),
             systematic([(0,3), (4, '+{}_down_lf')],  'CMS_btag_LF_2016_2017_2018Down'),
             systematic([(0,3), (4, '+{}_up_lf')],    'CMS_btag_LF_2016_2017_2018Up'),
             systematic([(0,3), (4, '+{}_down_hf')],  'CMS_btag_HF_2016_2017_2018Down'),
@@ -1192,8 +1196,10 @@ if __name__ == '__main__':
             systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
             systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
             systematic([(0,3), (4, '+{}_ONNX_up_jes')],    'CMS_scale_j_{year}Up',   'hists_jesTotalUp'),
-            systematic([(0,3), (4, '+{}_ONNX_down_jes')],    'CMS_scale_j_{year}Down',   'hists_jesTotalDown')
-
+            systematic([(0,3), (4, '+{}_ONNX_down_jes')],    'CMS_scale_j_{year}Down',   'hists_jesTotalDown'),
+            # ZHH NNLO
+            systematic([(0,3), (4, '+{}_up_NNLO')],    'CMS_scale_ZHH_NNLOUp',   'hists', 'ZHH'),
+            systematic([(0,3), (4, '+{}_down_NNLO')],    'CMS_scale_ZHH_NNLODown', 'hists', 'ZHH'),
         ]
         # for tag in ['_jes', '_lf', '_hf', '_hfstats2', '_lfstats2']:
         #     producer.plot_syst('passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_central', 
@@ -1213,20 +1219,16 @@ if __name__ == '__main__':
         #     tag)
         # producer.plot_syst(['passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_nom'], 
         # {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'=down/nom')], filename = 'hists'),'up':systematic([(0,3), (4,'=up/nom')], filename = 'hists')},'_puId')
-        producer.plot_1d(1)
-        
-        # producer.save('VhadHH_Syst_{year}_nkl', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_nkl', MC_systs, binning)
-        # producer.save('VhadHH_Syst_{year}_kl', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_kl', MC_systs, binning)
+        # # producer.plot_1d(1)
 
-        # classifier
-        # producer.save('combine_regionBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps', 4)
-        # producer.save('combine_labelBDT_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps', 4)
-        # producer.save('combine_signalAll_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps', 4)
-        # producer.save('combine_regionBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_regionBDT_ps_rebin', 1)
-        # producer.save('combine_labelBDT_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
-        # producer.save('combine_signalAll_rebin_', 'passMV/fourTag/mainView/HHSR/SvB_MA_signalAll_ps_rebin', 1)
-        # producer.save('combine_loose_', 'passLooseMV/fourTag/mainView/HHmSR/SvB_MA_labelBDT_ps_rebin', 1)
-        # producer.save('combine_tight_', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_rebin', 1)
+        # producer.plot_syst(['passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps'], 
+        # {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_down_NNLO')], filename = 'hists'),'up':systematic([(0,3), (4,'+{}_up_NNLO')], filename = 'hists')},'_ZHH_NNLO_reweight', binning)
+
+        # kVV enhanced region
+        producer.save('shapefile_VhadHH_{signal}_{year}_kVV', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_nkl', MC_systs, binning)
+        # kl  enhanced region
+        producer.save('shapefile_VhadHH_{signal}_{year}_kl', 'passMV/fourTag/mainView/HHSR/SvB_MA_labelBDT_ps_BDT_kl', MC_systs, binning)
+
 
 # UL dataset
 # dataset =/*HHTo4B_CV_*_C2V_*_C3_*_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL18NanoAODv2*v15*/NANOAODSIM 
