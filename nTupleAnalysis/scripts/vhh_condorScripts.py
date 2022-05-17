@@ -12,30 +12,29 @@ USER = getUSER()
 runCount = 0 # TEMP
 
 parser = optparse.OptionParser()
-parser.add_option('-d', '--data', action="store_true", dest = 'data', default =  False, help = 'operate on data root files')
-parser.add_option('-s', '--signal', action="store_true", dest = 'signal', default =  False, help = 'operate on signal root files')
-parser.add_option('-t', '--ttbar', action="store_true", dest = 'ttbar', default =  False, help = 'operate on ttbar root files')
-parser.add_option('--mv', action="store_true", dest = 'move', default =  False, help = 'move files')
-parser.add_option('--rm', action="store_true", dest = 'remove', default =  False, help = 'remove files')
-parser.add_option('--lpc', action="store_true", dest = 'lpc', default =  False, help = 'operate on lpc')
-parser.add_option('--eos', action="store_true", dest = 'eos', default =  False, help = 'operate on eos')
+parser.add_option('-d', '--data', action="store_true", dest = 'data', default =  False, help = 'Operate on data root files')
+parser.add_option('-s', '--signal', action="store_true", dest = 'signal', default =  False, help = 'Operate on signal root files')
+parser.add_option('-t', '--ttbar', action="store_true", dest = 'ttbar', default =  False, help = 'Operate on ttbar root files')
+parser.add_option('--mv', action="store_true", dest = 'move', default =  False, help = 'Move files')
+parser.add_option('--rm', action="store_true", dest = 'remove', default =  False, help = 'Remove files')
+parser.add_option('--lpc', action="store_true", dest = 'lpc', default =  False, help = 'Operate on lpc')
+parser.add_option('--eos', action="store_true", dest = 'eos', default =  False, help = 'Operate on eos')
 parser.add_option('--hadd', action="store_true", dest = 'hadd', default =  False, help = 'hadd hists')
-parser.add_option('-y', '--year', dest = 'years', default =  '2017,2018', help = 'set years')
-parser.add_option('--tag', dest = 'tag', default ='', help = 'set tag of picoAOD and hists')
-parser.add_option('--oldTag', dest = 'oldTag', default ='', help = 'set old tag of picoAOD')
-parser.add_option('--newTag', dest = 'newTag', default ='', help = 'set new tag of picoAOD')
-parser.add_option('-j', action="store_true", dest = 'jcm', default = False, help = 'use JCM')
-parser.add_option('-r', action="store_true", dest = 'reweight', default = False, help = 'use reweight')
-parser.add_option('--debug', action="store_true", dest = 'debug', default = False, help = 'enable debug mode')
-parser.add_option('--picoAOD', action="store_true", dest = 'picoAOD', default = False, help = 'operate on picoAOD')
-parser.add_option('--hists', action="store_true", dest = 'hists', default = False, help = 'operate on hists')
-parser.add_option('--hdf5', action="store_true", dest = 'hdf5', default = False, help = 'operate on hdf5')
-parser.add_option('--cp', action="store_true", dest = 'cp', default = False, help = 'copy files')
-parser.add_option('--init', action="store_true", dest = 'init', default = False, help = 'initialize dirs and files')
-parser.add_option('--coupling', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'coupling for signal')
-parser.add_option('--classifiers', dest = 'classifiers', default = '', help = 'classifier outputs')
+parser.add_option('-y', '--year', dest = 'years', default =  '2017,2018', help = 'Comma separated list of years')
+parser.add_option('--tag', dest = 'tag', default ='', help = 'Set tag of picoAOD and hists')
+parser.add_option('--oldTag', dest = 'oldTag', default ='', help = 'Set old tag of picoAOD')
+parser.add_option('--newTag', dest = 'newTag', default ='', help = 'Set new tag of picoAOD')
+parser.add_option('-j', action="store_true", dest = 'jcm', default = False, help = 'Use JCM')
+parser.add_option('-r', action="store_true", dest = 'reweight', default = False, help = 'Use reweight')
+parser.add_option('--debug', action="store_true", dest = 'debug', default = False, help = 'Enable debug mode')
+parser.add_option('--picoAOD', action="store_true", dest = 'picoAOD', default = False, help = 'Operate on picoAOD')
+parser.add_option('--hists', action="store_true", dest = 'hists', default = False, help = 'Operate on hists')
+parser.add_option('--cp', action="store_true", dest = 'cp', default = False, help = 'Copy files')
+parser.add_option('--init', action="store_true", dest = 'init', default = False, help = 'Initialize dirs and files')
+parser.add_option('--coupling', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'Couplings of signals')
+parser.add_option('--classifiers', dest = 'classifiers', default = '', help = 'Classifier outputs')
 parser.add_option('--nTags', dest = 'nTags', default = '_3b,_4b', help = 'nTag events for ttbar')
-parser.add_option('--group', dest = 'group', default = '', help = 'group text files by content')
+parser.add_option('--group', dest = 'group', default = '', help = 'Group text files by content')
 
 o, a = parser.parse_args()
 classifierFiles = o.classifiers.split(',')
@@ -56,9 +55,6 @@ def picoAOD(isSignal = False, tags = file_tags):
 
 def classifier(isSignal = False):
     return ['/' + variable + '.root' for variable in classifierFile(isSignal)]
-
-def hdf5(isSignal = False):
-    return ['/picoAOD'+tag+'.h5' for tag in file_tags]
 
 nTags = o.nTags.split(',')
 signals = []
@@ -132,8 +128,8 @@ def load_skims():
     newAOD = picoAOD(tag='')
     for year in years:
         for cps in signals:
-            for cp in cps[0:2]:
-                eoscp('VHHSkims/'+cp+year+oldAOD,'VHH/'+cp+year+newAOD)
+            for boson in cps[0:2]:
+                eoscp('VHHSkims/'+boson+year+oldAOD,'VHH/'+boson+year+newAOD)
         # for tt in tts:
         #     eoscp('skims/'+tt+year+oldAOD,'VHH/'+tt+year+newAOD)
         # for data in datas:
@@ -147,8 +143,8 @@ def move_eos():
     for year in years:
         if year not in ['2016']:
             for cps in signals:
-                for cp in cps[0:2]:
-                    eosmv('VHH/'+cp+year+oldAOD,'VHH/'+cp+year+newAOD)
+                for boson in cps[0:2]:
+                    eosmv('VHH/'+boson+year+oldAOD,'VHH/'+boson+year+newAOD)
             for tt in tts:
                 for nTag in nTags:
                     eosmv('VHH/'+tt+year+nTag+oldAOD,'VHH/'+tt+year+nTag+newAOD)
@@ -163,7 +159,6 @@ def remove_eos():
     rm_files = []
     if o.hists: rm_files += [histFile]
     if o.picoAOD: rm_files += [picoAOD]
-    if o.hdf5: rm_files += [hdf5]
     if o.classifiers: rm_files += [classifier]
 
     if not rm_files: return
@@ -173,9 +168,9 @@ def remove_eos():
         for cp_file in rm_files:
             if year not in ['2016']:
                 for cps in signals:
-                    for cp in cps[0:2]:
+                    for boson in cps[0:2]:
                         for filename in cp_file(True):
-                            file = base + cp+year+filename
+                            file = base + boson + year + filename
                             print(file)
                             eosrm(file)
                 for tt in tts:
@@ -191,6 +186,9 @@ def remove_eos():
                         print(file)
                         eosrm(file)
 
+# TODO cp hadded from eos
+# TODO hadd use condor
+
 def cp():
     if o.lpc: 
         from_area = lpc
@@ -203,7 +201,6 @@ def cp():
     cp_files = []
     if o.hists: cp_files += [histFile]
     if o.picoAOD: cp_files += [picoAOD]
-    if o.hdf5: cp_files += [hdf5]
     if o.classifiers: cp_files += [classifier]
 
     if not cp_files: return
@@ -213,9 +210,9 @@ def cp():
         for cp_file in cp_files:
             if year not in ['2016']:
                 for cps in signals:
-                    for cp in cps[0:2]:
+                    for boson in cps[0:2]:
                         for filename in cp_file(True):
-                            file = base + cp+year+filename
+                            file = base + boson+year+filename
                             print(file)
                             xrdcp(full_path(file, from_area), full_path(file, to_area))
                 for tt in tts:
@@ -252,7 +249,7 @@ def hadd_lpc():
                     hadd(['VHH/TT'+year +nTag+filename for year in haddYears], 'VHH/TT2016'+nTag+filename)
         for filename in histFile(True):
             for cps in signals:
-                for boson in cps:
+                for boson in cps[0:3]:
                     lpcmkdir('VHH/'+boson+'2016')
                     hadd(['VHH/'+boson+year+filename for year in haddYears], 'VHH/'+boson+'2016'+filename)
     if '2016' in years and '2017' in years and '2018' in years:
@@ -267,7 +264,7 @@ def hadd_lpc():
                     hadd(['VHH/TT'+year +nTag+filename for year in haddYears], 'VHH/TTRunII'+nTag+filename)
         for filename in histFile(True):
             for cps in signals:
-                for boson in cps:
+                for boson in cps[0:3]:
                     lpcmkdir('VHH/'+boson+'RunII')
                     hadd(['VHH/'+boson+year+filename for year in haddYears], 'VHH/'+boson+'RunII'+filename)
 def initialize():

@@ -192,11 +192,9 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
       SvB_MA_labelBDT_ps_BDT_kl_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->treeJets->m_puIdVariations);
     }
 
-    if(event->doZHHNNLOScale){
-      SvB_MA_labelBDT_ps_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps, event->zhhNNLOVariations);
-      SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->zhhNNLOVariations);
-      SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->zhhNNLOVariations);
-    }
+    SvB_MA_labelBDT_ps_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps, event->zhhNNLOVariations);
+    SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->zhhNNLOVariations);
+    SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->zhhNNLOVariations);
 
     SvB_MA_labelBDT_ps_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_ONNX, event->treeJets->m_btagVariations);
     SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl_ONNX, event->treeJets->m_btagVariations);
