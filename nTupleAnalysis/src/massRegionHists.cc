@@ -8,7 +8,7 @@ massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, boo
   blind = _blind;
   debug = _debug;
 
-  inclusive = new viewHists(name+"/inclusive", fs, isMC, debug, NULL, histDetailLevel);
+  inclusive = new viewHists(name+"/inclusive", fs, isMC, debug, event, histDetailLevel);
   notSR     = new viewHists(name+"/notSR", fs, isMC, debug, NULL, histDetailLevel);
   SR        = new viewHists(name+"/SR", fs, isMC, debug, event, histDetailLevel);
   SRNoZZ    = new viewHists(name+"/SRNoZZ", fs, isMC, debug, event, histDetailLevel);
@@ -44,6 +44,10 @@ massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, boo
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"HHmSR")){
     HHmSR      = new viewHists(name+"/HHmSR",      fs, isMC, debug, event, histDetailLevel );
+  }
+
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"TTCR")){
+    TTCR      = new viewHists(name+"/TTCR",      fs, isMC, debug, event, histDetailLevel );
   }
   
   if(!ZH) std::cout << "\t Turning off ZZ Regions " << std::endl;
@@ -90,6 +94,7 @@ void massRegionHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   }
   if(HHmSR && view->HHmSR) HHmSR->Fill(event, view);
 
+  if(TTCR && event->passTTCR) TTCR->Fill(event, view);
 
   if(view->SR) SR->Fill(event, view);
   if(view->SR && !view->HHSR) SRNoHH->Fill(event, view);

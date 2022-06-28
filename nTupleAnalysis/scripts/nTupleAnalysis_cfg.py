@@ -89,6 +89,7 @@ parser.add_option(      '--klBdtMethods',    dest="klBdtMethods", type="string",
 parser.add_option(      '--runKlBdt',    action="store_true", default=False, help="run kl categorization BDT and store output in picoAODs")
 parser.add_option(      '--doHigherOrderReweight',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
 parser.add_option(      '--extraOutput',  dest="extraOutput", type ="string", default="", help="extra information stored in a separate root file")
+parser.add_option(      '--calcPuIdSF',    action="store_true", default=False, help="calculate PU jet ID SF")
 
 o, a = parser.parse_args()
 
@@ -103,12 +104,12 @@ if o.JECSyst == "_jesTotalUp":
 elif o.JECSyst == "_jesTotalDown":
     btagVariations = "central down_jes"
 if o.bTagSyst:
-    btagVariations = "central down_jes up_jes down_lf up_lf down_hf up_hf down_hfstats2 up_hfstats2 down_lfstats2 up_lfstats2 down_hfstats1 up_hfstats1 down_lfstats1 up_lfstats1"
+    btagVariations = "central down_jes up_jes down_lf up_lf down_hf up_hf down_hfstats2 up_hfstats2 down_lfstats2 up_lfstats2 down_hfstats1 up_hfstats1 down_lfstats1 up_lfstats1 up_cferr1 down_cferr1 up_cferr2 down_cferr2"
 puIdVariations = ""
 if o.puIdSF:
-    puIdVariations = "nom"
+    puIdVariations = "central"
 if o.puIdSyst:
-    puIdVariations = "nom up down"
+    puIdVariations = "central up down"
 
 #
 # Basic Configuration
@@ -466,7 +467,8 @@ process.nTupleAnalysis = cms.PSet(
     klBdtWeightFile = cms.string(o.klBdtWeightFile),
     klBdtMethods = cms.string(o.klBdtMethods),
     runKlBdt = cms.bool(o.runKlBdt),
-    doZHHNNLOScale = cms.bool(o.doHigherOrderReweight and 'ZHH' in sample)
+    doZHHNNLOScale = cms.bool(o.doHigherOrderReweight and 'ZHH' in sample),
+    calcPuIdSF = cms.bool(o.calcPuIdSF)
     )
 
 print("nTupleAnalysis_cfg.py done")

@@ -35,11 +35,11 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   selJetsV = new jetHists(name+"/selJetsV", fs, "Selected Jets for Vector Boson", "", debug);
   selJets = new jetHists(name+"/selJets", fs, "Selected Jets for Higgs Boson", "", debug);
   tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
-  canJets = new jetHists(name+"/canJets", fs, "Boson Candidate Jets");
-  canJet0 = new jetHists(name+"/canJet0", fs, "Boson Candidate Jet_{0}");
-  canJet1 = new jetHists(name+"/canJet1", fs, "Boson Candidate Jet_{1}");
-  canJet2 = new jetHists(name+"/canJet2", fs, "Boson Candidate Jet_{2}");
-  canJet3 = new jetHists(name+"/canJet3", fs, "Boson Candidate Jet_{3}");
+  canJets = new jetHists(name+"/canJets", fs, "Higgs Boson Candidate Jets");
+  canJet0 = new jetHists(name+"/canJet0", fs, "Higgs Boson Candidate Jet_{0}");
+  canJet1 = new jetHists(name+"/canJet1", fs, "Higgs Boson Candidate Jet_{1}");
+  canJet2 = new jetHists(name+"/canJet2", fs, "Higgs Boson Candidate Jet_{2}");
+  canJet3 = new jetHists(name+"/canJet3", fs, "Higgs Boson Candidate Jet_{3}");
   othJets = new jetHists(name+"/othJets", fs, "Other Selected Jets");
   //VHH
   nTruVJets = dir.make<TH1F>("nTruVJets", (name+"/nTruVJets; Number of Truth Matched Vector Boson Jets in Other Jets; Entries").c_str(), 16,-0.5,15.5);
@@ -57,6 +57,9 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   nTruVDijets =dir.make<TH1F>("nTruVDijets", (name+"/nTruVDijets; Number of Truth Matched Vector Boson Dijets; Entries").c_str(), 16,-0.5,15.5);
   nCanVDijets =dir.make<TH1F>("nCanVDijets", (name+"/nCanVDijets; Number of Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
   nCanVTruVDijets =dir.make<TH1F>("nCanVTruVDijets", (name+"/nCanVTruVDijets; Number of Truth Matched Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
+  canVJets = new jetHists(name+"/canVJets", fs, "Vector Boson Candidate Jets");
+  canVJet0 = new jetHists(name+"/canVJet0", fs, "Vector Boson Candidate Jet_{0}");
+  canVJet1 = new jetHists(name+"/canVJet1", fs, "Vector Boson Candidate Jet_{1}"); 
   canVDijets   = new dijetHists(name+"/canVDijets",   fs,    "Vector Boson Candidate Dijets");
   canVTruVDijets   = new dijetHists(name+"/canVTruVDijets",   fs,    "Truth Matched Vector Boson Candidate Dijets");
   //
@@ -105,6 +108,28 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   other  = new dijetHists(name+"/other",  fs, "Complement of Minimum #DeltaR(j,j) Dijet");
   close_m_vs_other_m = dir.make<TH2F>("close_m_vs_other_m", (name+"/close_m_vs_other_m; Minimum #DeltaR(j,j) Dijet Mass [GeV]; Complement of Minimum #DeltaR(j,j) Dijet Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
     
+  // PU jet ID SF
+  if(event){
+    if(event->calcPuIdSF){
+      allBJets = dir.make<TH2F>("allBJets", (name+"/allBJets; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+      allNotBJets = dir.make<TH2F>("allNotBJets", (name+"/allNotBJets; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+      allBJetsPassPuId = dir.make<TH2F>("allBJetsPassPuId", (name+"/allBJetsPassPuId; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+      allNotBJetsPassPuId = dir.make<TH2F>("allNotBJetsPassPuId", (name+"/allNotBJetsPassPuId; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+
+      allPUBJets = dir.make<TH2F>("allPUBJets", (name+"/allPUBJets; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+      allPUBJetsPassPuId = dir.make<TH2F>("allPUBJetsPassPuId", (name+"/allPUBJetsPassPuId; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+      allPUNotBJets = dir.make<TH2F>("allPUNotBJets", (name+"/allPUNotBJets; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+      allPUNotBJetsPassPuId = dir.make<TH2F>("allPUNotBJetsPassPuId", (name+"/allPUNotBJetsPassPuId; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
+    }
+  }
+
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"bTagSFStudy")){
+    bJetBTagSF = dir.make<TH1F>("bJetBTagSF", (name+"/bJetBTagSF; b-tagging SF for b jets; Entries").c_str(), 50, -0.5, 0.5);
+    cJetBTagSF = dir.make<TH1F>("cJetBTagSF", (name+"/cJetBTagSF; b-tagging SF for c jets; Entries").c_str(), 50, -0.5, 0.5);
+    udsgJetBTagSF = dir.make<TH1F>("udsgJetBTagSF", (name+"/udsgJetBTagSF; b-tagging SF for udsg jets; Entries").c_str(), 50, -0.5, 0.5);
+    eventBTagSF = dir.make<TH1F>("eventBTagSF", (name+"/eventBTagSF; b-tagging SF for event; Entries").c_str(), 50, -0.5, 0.5);
+  }
+  
   //
   // Event  Level
   //
@@ -173,31 +198,31 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
 
   puIdSF = dir.make<TH1F>("puIdSF",  (name+"/puIdSF;  PU Jet ID SF; Entries").c_str(), 40, 0.8, 1.2);
   SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps_BDT_nkl  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_nkl",  (name+"/SvB_MA_labelBDT_ps_BDT_nkl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_kVV  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kVV",  (name+"/SvB_MA_labelBDT_ps_BDT_kVV;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
   SvB_MA_labelBDT_ps_BDT_kl = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl",  (name+"/SvB_MA_labelBDT_ps_BDT_kl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
   
   SvB_MA_labelBDT_ps_ONNX  = dir.make<TH1F>("SvB_MA_labelBDT_ps_ONNX",  (name+"/SvB_MA_labelBDT_ps_ONNX;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps_BDT_nkl_ONNX  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_nkl_ONNX",  (name+"/SvB_MA_labelBDT_ps_BDT_nkl_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_labelBDT_ps_BDT_kVV_ONNX  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kVV_ONNX",  (name+"/SvB_MA_labelBDT_ps_BDT_kVV_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
   SvB_MA_labelBDT_ps_BDT_kl_ONNX = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl_ONNX",  (name+"/SvB_MA_labelBDT_ps_BDT_kl_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
 
 
   if(event){
     SvB_MA_labelBDT_ps_bTagSysts = new systHists(SvB_MA_labelBDT_ps, event->treeJets->m_btagVariations);
-    SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->treeJets->m_btagVariations);
+    SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV, event->treeJets->m_btagVariations);
     SvB_MA_labelBDT_ps_BDT_kl_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->treeJets->m_btagVariations);
 
     if(event->treeJets->m_puIdVariations.size() > 0){
       SvB_MA_labelBDT_ps_puIdSysts = new systHists(SvB_MA_labelBDT_ps, event->treeJets->m_puIdVariations);
-      SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->treeJets->m_puIdVariations);
+      SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV, event->treeJets->m_puIdVariations);
       SvB_MA_labelBDT_ps_BDT_kl_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->treeJets->m_puIdVariations);
     }
 
     SvB_MA_labelBDT_ps_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps, event->zhhNNLOVariations);
-    SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl, event->zhhNNLOVariations);
+    SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV, event->zhhNNLOVariations);
     SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->zhhNNLOVariations);
 
     SvB_MA_labelBDT_ps_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_ONNX, event->treeJets->m_btagVariations);
-    SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_nkl_ONNX, event->treeJets->m_btagVariations);
+    SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV_ONNX, event->treeJets->m_btagVariations);
     SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl_ONNX, event->treeJets->m_btagVariations);
   }
 
@@ -316,6 +341,11 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   canJet2->Fill(event->canJets[2], event->weight);
   canJet3->Fill(event->canJets[3], event->weight);
   for(auto &jet: event->othJets) othJets->Fill(jet, event->weight);
+  for(auto &jet: event->canVJets) canVJets->Fill(jet, event->weight);
+  if(event->canVJets.size() == 2){
+    canVJet0->Fill(event->canVJets[0], event->weight);
+    canVJet1->Fill(event->canVJets[1], event->weight);
+  }
 
   nTruVJets->Fill(event->truVJets.size(), event->weight);
   for(auto &jet: event->truVJets) truVJets->Fill(jet, event->weight);
@@ -395,6 +425,18 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   close ->Fill(event->close,  event->weight);
   other ->Fill(event->other,  event->weight);
   close_m_vs_other_m->Fill(event->close->m, event->other->m, event->weight);
+
+  if(allBJets){
+    for(auto& jet:event->allBJets) allBJets->Fill(jet->pt, jet->eta, 1);
+    for(auto& jet:event->allNotBJets) allNotBJets->Fill(jet->pt, jet->eta, 1);
+    for(auto& jet:event->allBJetsPassPuId) allBJetsPassPuId->Fill(jet->pt, jet->eta, 1);
+    for(auto& jet:event->allNotBJetsPassPuId) allNotBJetsPassPuId->Fill(jet->pt, jet->eta, 1);
+
+    for(auto& jet:event->allPUBJets) allPUBJets->Fill(jet->pt, jet->eta, 1);
+    for(auto& jet:event->allPUBJetsPassPuId) allPUBJetsPassPuId->Fill(jet->pt, jet->eta, 1);
+    for(auto& jet:event->allPUNotBJets) allPUNotBJets->Fill(jet->pt, jet->eta, 1);
+    for(auto& jet:event->allPUNotBJetsPassPuId) allPUNotBJetsPassPuId->Fill(jet->pt, jet->eta, 1);
+  }
 
   //
   // Event Level
@@ -515,19 +557,19 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
     SvB_MA_labelBDT_ps_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
   }
   if(event->BDT_kl<0 && event->BDT_kl>=-1){
-    SvB_MA_labelBDT_ps_BDT_nkl->Fill(event->SvB_MA_labelBDT_ps, event->weight);
-    SvB_MA_labelBDT_ps_BDT_nkl_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
-    if(SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts){
-      SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    SvB_MA_labelBDT_ps_BDT_kVV->Fill(event->SvB_MA_labelBDT_ps, event->weight);
+    SvB_MA_labelBDT_ps_BDT_kVV_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+    if(SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts){
+      SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
-    if(SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts){
-      SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
+    if(SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts){
+      SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
     }
-    if(SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts){
-      SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+    if(SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts){
+      SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
     }
-    if(SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts){
-      SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    if(SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts){
+      SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
   }
   if(event->BDT_kl>=0){

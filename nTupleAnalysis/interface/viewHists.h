@@ -68,6 +68,9 @@ namespace nTupleAnalysis {
     jetHists* truVJet0;
     jetHists* truVJet1;
     jetHists* lowPtJets;
+    jetHists* canVJets;
+    jetHists* canVJet0;
+    jetHists* canVJet1;
     TH1F* nCanHTruVJets;
     jetHists* canHTruVJets;
     TH1F* nSelTruVJets;
@@ -81,26 +84,30 @@ namespace nTupleAnalysis {
     dijetHists* canVDijets;
     dijetHists* canVTruVDijets;
     TH1F* kl_BDT;
+    TH1F* bJetBTagSF = NULL;
+    TH1F* cJetBTagSF = NULL;
+    TH1F* udsgJetBTagSF = NULL;
+    TH1F* eventBTagSF = NULL;
 
     TH1F* puIdSF;
     TH1F* SvB_MA_labelBDT_ps;
-    TH1F* SvB_MA_labelBDT_ps_BDT_nkl;
+    TH1F* SvB_MA_labelBDT_ps_BDT_kVV;
     TH1F* SvB_MA_labelBDT_ps_BDT_kl;
     systHists* SvB_MA_labelBDT_ps_bTagSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_nkl_bTagSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts = NULL;
     systHists* SvB_MA_labelBDT_ps_BDT_kl_bTagSysts = NULL;
     systHists* SvB_MA_labelBDT_ps_puIdSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_nkl_puIdSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts = NULL;
     systHists* SvB_MA_labelBDT_ps_BDT_kl_puIdSysts = NULL;
     systHists* SvB_MA_labelBDT_ps_zhhNNLOSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_nkl_zhhNNLOSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts = NULL;
     systHists* SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = NULL;
 
     TH1F* SvB_MA_labelBDT_ps_ONNX;
-    TH1F* SvB_MA_labelBDT_ps_BDT_nkl_ONNX;
+    TH1F* SvB_MA_labelBDT_ps_BDT_kVV_ONNX;
     TH1F* SvB_MA_labelBDT_ps_BDT_kl_ONNX;
     systHists* SvB_MA_labelBDT_ps_ONNX_bTagSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_nkl_ONNX_bTagSysts = NULL;
+    systHists* SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts = NULL;
     systHists* SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts = NULL; 
     //
     trigHists*  allTrigJets = NULL;
@@ -145,6 +152,18 @@ namespace nTupleAnalysis {
     dijetHists* close;
     dijetHists* other;
     TH2F* close_m_vs_other_m;
+
+    // PU jet ID SF
+
+    TH2F* allBJets = NULL;
+    TH2F* allNotBJets = NULL;
+    TH2F* allBJetsPassPuId = NULL;
+    TH2F* allNotBJetsPassPuId = NULL;
+
+    TH2F* allPUBJets = NULL;
+    TH2F* allPUBJetsPassPuId = NULL;
+    TH2F* allPUNotBJets = NULL;
+    TH2F* allPUNotBJetsPassPuId = NULL;
 
     // Event Level
     TH1F* nPVs;

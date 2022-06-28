@@ -14,6 +14,7 @@ from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
 import optparse
 from glob import glob
+import array
 #import mpl_toolkits
 #from mpl_toolkits.axes_grid1 import make_axes_locatable
 plt.rc('text', usetex=True)
@@ -23,17 +24,21 @@ USER = getUSER()
 CMSSW = getCMSSW()
 
 parser = optparse.OptionParser()
-parser.add_option('-s', '--signalPaths', dest = 'signalPaths', default = '/uscms/home/%s/nobackup/ZZ4b/ZZ4bRunII/hists.root'%(USER), help = 'Path for signal templates used in spurious signal fit')
-parser.add_option('--hist', dest = 'hist', default = 'passMDRs/fourTag/mainView/{region}/{classifier}_ps_{channel}', help = 'Name of histogram in signal template')
+parser.add_option('-s', '--signalPaths', dest = 'signalPaths', default = '/uscms/home/%s/nobackup/VHH/VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_RunII/hists.root'%(USER), help = 'Path for signal templates used in spurious signal fit')
+parser.add_option('--hist', dest = 'hist', default = 'passMV/fourTag/mainView/{region}/{classifier}_labelBDT_ps_{channel}', help = 'Name of histogram in signal template')
 parser.add_option('--years', dest = 'years', default = '2016,2017,2018', help = 'Comma separated list of years')
-parser.add_option('--channels', dest = 'channels', default = 'zz,zh,hh', help = 'Comma separated list of channels')
-parser.add_option('--rebin', dest = 'rebin', default = '5', help = 'ngroup or bin edges')
-parser.add_option('--basePath',  dest="basePath",    default='/uscms/home/%s/nobackup/%s/src'%(USER, CMSSW), help="Path to output")
+parser.add_option('--channels', dest = 'channels', default = 'VHH_ps_sbdt,VHH_ps_lbdt', help = 'Comma separated list of channels')
+parser.add_option('--rebin', dest = 'rebin', default = '0.0,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.78,0.86,0.93,0.97,0.99,1.0', help = 'ngroup or bin edges')
+parser.add_option('--basePath',  dest="basePath",    default='/uscms/home/%s/nobackup/%s/src/closureFits'%(USER, CMSSW), help="Path to output")
+parser.add_option('--ver',       dest="version",    default='nominal', help="tag of fit template")
 parser.add_option('--mixName',   dest="mixName",     default='3bDvTMix4bDvT', help="Name of mix data")
 parser.add_option('--nMixes',    dest="nMixes",     default=10,  help="Number of mix samples")
 parser.add_option('--region',    dest="region",     default='HHSR',  help="Region to fit")
-parser.add_option('--classifier',  dest="classifier",     default='SvB',  help="Name of classifier")
+parser.add_option('--classifier',  dest="classifier",     default='SvB_MA',  help="Name of classifier")
 parser.add_option('--doTTAverage', action="store_true", dest="doTTAverage", default=False, help="")
+parser.add_option('--legendre', action="store_true", dest="legendre", default=False, help="use Legendre polynomials are basis instead of Fourier")
+parser.add_option('--hidePValue', action="store_true", dest="hidePValue", default=False, help="hide p-value in Pearson r plot")
+parser.add_option('--loadStage1', dest="loadStage1", default="", help="path of stage1 fit")
 
 o, a = parser.parse_args()
 
@@ -43,44 +48,67 @@ ROOT.gROOT.SetBatch(True)
 sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTools
 import PlotTools
 
+def customized_rebin(hist, bin):
+    if isinstance(bin, list):
+        nbins = len(bin) - 1
+        bins = array.array('d', bin)
+        new_hist = hist.Rebin(nbins, hist.GetTitle()+'_rebin', bins)
+        return new_hist
+    elif isinstance(bin, int):
+        return hist.Rebin(bin, hist.GetTitle()+'_rebin')
+
 rebin = o.rebin.split(',')
 if len(rebin) == 1: rebin = int(rebin[0])
 else: rebin = list(map(float, rebin))
+
 lumi = 132.6
 closure_fit_x_min = 0#0.01
-maxBasisEnsemble = 6
-maxBasisClosure  = 6
 channels = o.channels.split(',')
 
 mixName = o.mixName
 nMixes  = o.nMixes
 region =  o.region
 classifier = o.classifier
+tag = '_'.join([o.version, 'legendre' if o.legendre else 'fourier',
+                # mixname, classifier, region,
+                '{:d}bins'.format(len(rebin)) if isinstance(rebin, list) else 'rebin{:d}'.format(rebin), 
+                o.signalPaths.split('/')[-1].replace('.root', ''),
+                ])
+basePath = o.basePath + ('/'+ tag if tag else '')
+hidePValue = o.hidePValue
 
-# BEs = [                                                '1',
-#                                                    '2*x-1',
-#                                             '6*x^2 -6*x+1',
-#                                    '20*x^3 -30*x^2+12*x-1',
-#                           '70*x^4 -140*x^3 +90*x^2-20*x+1',
-#                 '252*x^5 -630*x^4 +560*x^3-210*x^2+30*x-1',
-#        '924*x^6-2772*x^5+3150*x^4-1680*x^3+420*x^2-42*x+1',
-#                                           '3432*x^7-  12012*x^6+ 16632*x^5- 11550*x^4+ 4200*x^3- 756*x^2+ 56*x-1',
-#                              '12870*x^8-  51480*x^7+  84084*x^6- 72072*x^5+ 34650*x^4- 9240*x^3+1260*x^2- 72*x+1',
-#                  '48620*x^9- 218790*x^8+ 411840*x^7- 420420*x^6+252252*x^5- 90090*x^4+18480*x^3-1980*x^2+ 90*x-1',
-#     '184756*x^10-923780*x^9+1969110*x^8-2333760*x^7+1681680*x^6-756756*x^5+210210*x^4-34320*x^3+2970*x^2-110*x+1',
-#        ]
-BEs = ['1',           # 0
-       'cos(1*pi*x)', # 1
-       'sin(1*pi*x)', # 2
-       'cos(2*pi*x)', # 3
-       'sin(2*pi*x)', # 4
-       'cos(3*pi*x)', # 5
-       'sin(3*pi*x)', # 6
-       'cos(4*pi*x)', # 7
-       'sin(4*pi*x)', # 8
-       'cos(5*pi*x)', # 9
-       'sin(5*pi*x)', #10
+BEs = ['1',        # 0
+    'cos(1*pi*x)', # 1
+    'sin(1*pi*x)', # 2
+    'cos(2*pi*x)', # 3
+    'sin(2*pi*x)', # 4
+    'cos(3*pi*x)', # 5
+    'sin(3*pi*x)', # 6
+    'cos(4*pi*x)', # 7
+    'sin(4*pi*x)', # 8
+    'cos(5*pi*x)', # 9
+    'sin(5*pi*x)', #10
 ]
+basisStep =2 
+maxBasisEnsemble = 8
+maxBasisClosure  = maxBasisEnsemble
+
+if o.legendre:
+    BEs = [                                            '1',
+                                                   '2*x-1',
+                                            '6*x^2 -6*x+1',
+                                   '20*x^3 -30*x^2+12*x-1',
+                          '70*x^4 -140*x^3 +90*x^2-20*x+1',
+                '252*x^5 -630*x^4 +560*x^3-210*x^2+30*x-1',
+       '924*x^6-2772*x^5+3150*x^4-1680*x^3+420*x^2-42*x+1',
+                                          '3432*x^7-  12012*x^6+ 16632*x^5- 11550*x^4+ 4200*x^3- 756*x^2+ 56*x-1',
+                             '12870*x^8-  51480*x^7+  84084*x^6- 72072*x^5+ 34650*x^4- 9240*x^3+1260*x^2- 72*x+1',
+                 '48620*x^9- 218790*x^8+ 411840*x^7- 420420*x^6+252252*x^5- 90090*x^4+18480*x^3-1980*x^2+ 90*x-1',
+    '184756*x^10-923780*x^9+1969110*x^8-2333760*x^7+1681680*x^6-756756*x^5+210210*x^4-34320*x^3+2970*x^2-110*x+1',
+    ]
+    basisStep = 1
+    maxBasisEnsemble = 6
+    maxBasisClosure  = maxBasisEnsemble
 BE = []
 for i, s in enumerate(BEs): 
     BE.append( ROOT.TF1('BE%i'%i, s, 0, 1) )
@@ -89,7 +117,7 @@ for i, s in enumerate(BEs):
 #hists_closure_MixedToUnmixed_3bMix4b_rWbW2_b0p60p3_SRNoHH.root
 #closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_MixedToUnmixed_'+mixName+'_b0p60p3_'+region+'.root'
 #closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_b0p60p3_'+region+'.root'
-closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_' + mixName + '_' + region + '_weights_nf8_HH' + ('_MA' if 'MA' in classifier else '') + '.root'
+closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_' + mixName + '_' + region + '_weights_nf8_HH.root'
 
 print(closureFileName)
 f=ROOT.TFile(closureFileName, 'UPDATE')
@@ -102,7 +130,14 @@ regionName = {'SB': 'Sideband',
               'SR': 'Signal Region',
               'notSR': 'Sideband',
               'SRNoHH': 'Signal Region (Veto HH)',
+              'HHSR': 'HH Signal Region'
           }
+
+channelHistName = {'VHH_ps_lbdt': 'BDT_kl',
+                   'VHH_ps_sbdt': 'BDT_nkl'
+                }
+
+eventSelection = 'Pass #m_{V}'
 
         
 def addYears(directory, processes=['ttbar','multijet','data_obs']):
@@ -173,7 +208,7 @@ for signalPath in o.signalPaths.split(','):
 
 print('Getting signal templates')
 for channel in channels:
-    histPath = o.hist.format(channel = channel, region = region, classifier = classifier)
+    histPath = o.hist.format(channel = channelHistName[channel], region = region, classifier = classifier)
     signal = None
     for signalPath in signalPaths:
         signalFile = ROOT.TFile(signalPath, 'READ')
@@ -184,9 +219,10 @@ for channel in channels:
             signal.Add(signalFile.Get(histPath))
         signalFile.Close()
         print('Add %s from %s'%(histPath, signalPath))
-    signal.SetName('signal')
-    f.cd(channel)
-    signal.Write()
+    if signal is not None:
+        signal.SetName('signal')
+        f.cd(channel)
+        signal.Write()
 f.Close()
 f=ROOT.TFile(closureFileName, 'UPDATE')
 
@@ -241,11 +277,12 @@ def fTest(chi2_1, chi2_2, ndf_1, ndf_2):
 class multijetEnsemble:
     def __init__(self, channel):
         self.channel = channel
+        self.channel_label = self.channel.upper().replace('_',' ')
         self.data_minus_ttbar = f.Get('%s/ttbar'%self.channel)
         self.data_minus_ttbar.SetName('%s_average_%s'%('data_minus_ttbar', self.channel))
         self.data_minus_ttbar.Scale(-1)
         self.data_minus_ttbar.Add(f.Get('%s/data_obs'%self.channel))
-        self.data_minus_ttbar.Rebin(rebin)
+        self.data_minus_ttbar = customized_rebin(self.data_minus_ttbar, rebin)
         self.average = f.Get('%s/multijet'%self.channel)
         self.average.SetName('%s_average_%s'%(self.average.GetName(), self.channel))
         self.models  = [f.Get('%s/%s/multijet'%(mix, self.channel)) for mix in mixes]
@@ -260,24 +297,18 @@ class multijetEnsemble:
 
         f.cd(self.channel)
 
-        self.average_rebin = self.average.Clone()
-        self.average_rebin.SetName('%s_rebin'%self.average.GetName())
-        self.average_rebin.Rebin(rebin)
+        self.average_rebin = customized_rebin(self.average, rebin)        
 
-        self.models_rebin = [model.Clone() for model in self.models]
-        for model in self.models_rebin: model.SetName('%s_rebin'%model.GetName())
-        for model in self.models_rebin: model.Rebin(rebin)
+        self.models_rebin = [customized_rebin(model, rebin) for model in self.models]
         self.nBins_rebin = self.average_rebin.GetSize()-2
 
         if self.allMixFvT is not None:
-            self.allMixFvT_rebin = self.allMixFvT.Clone()
-            self.allMixFvT_rebin.SetName('%s_rebin'%self.allMixFvT.GetName())
-            self.allMixFvT_rebin.Rebin(rebin)
+            self.allMixFvT_rebin = customized_rebin(self.allMixFvT, rebin)
         else:
             self.allMixFvT_rebin = None
 
 
-        self.bases = range(0, maxBasisEnsemble+1, 2)
+        self.bases = range(0, maxBasisEnsemble+1, basisStep)
         # Make kernel for basis orthogonalization
         h = np.array([self.average_rebin.GetBinContent(bin) for bin in range(1,self.nBins_rebin+1)])
         # Make matrix of initial basis
@@ -350,7 +381,7 @@ class multijetEnsemble:
         self.cUp, self.cDown = {}, {}
         self.fProb = {}
         self.basis = None
-        self.exit_message = ['--- None (%s) --- Multijet Ensemble'%self.channel.upper()]
+        self.exit_message = ['--- None (%s) --- Multijet Ensemble'%self.channel_label]
         for i, basis in enumerate(self.bases):
             self.makeFitFunction(basis)
             self.fit(basis)
@@ -366,7 +397,7 @@ class multijetEnsemble:
                 self.basis = basis # store first basis to satisfy min threshold. Will be used in closure fits
                 self.exit_message = []
                 self.exit_message.append('-'*50)
-                self.exit_message.append('%s channel'%self.channel.upper())
+                self.exit_message.append('%s channel'%self.channel_label)
                 self.exit_message.append('Satisfied adjacent bin de-correlation p-value for multijet ensemble variance at basis %d:'%self.basis)
                 self.exit_message.append('>> p-value, r-value = %2.0f%%, %0.2f '%(100*self.pearsonr[self.basis]['total'][1], self.pearsonr[self.basis]['total'][0]))
                 self.exit_message.append('-'*50)
@@ -541,7 +572,7 @@ class multijetEnsemble:
         ax.set_xlim(xlim[0],xlim[1])
         ax.set_xticks(np.arange(0,1.1,0.1))
 
-        ax.set_title('%s Basis (%s)'%(name[0].upper()+name[1:], self.channel.upper()))
+        ax.set_title('%s Basis (%s)'%(name[0].upper()+name[1:], self.channel_label))
 
         ax.plot(xlim, [0,0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         for i, y in enumerate(self.basis_element[:basis+1]):
@@ -550,10 +581,7 @@ class multijetEnsemble:
         ax.set_xlabel('P(Signal)')
         ax.set_ylabel('Multijet Scale')
 
-        if type(rebin) is list:
-            name = 'closureFits/%s/%s/variable_rebin/%s/%s/%s_basis%i.pdf'%(mixName, classifier, region, self.channel, name, basis)
-        else:
-            name = 'closureFits/%s/%s/rebin%i/%s/%s/%s_basis%i.pdf'%(mixName, classifier, rebin, region, self.channel, name, basis)
+        name = '%s/%s/%s_basis%i.pdf'%(basePath, self.channel, name, basis)
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -568,7 +596,7 @@ class multijetEnsemble:
         plt.yscale('log')
 
         y = [self.pvalue[o] for o in x]
-        ax.set_title('Multijet Self-Consistency Fit (%s)'%self.channel.upper())
+        ax.set_title('Multijet Self-Consistency Fit (%s)'%self.channel_label)
         ax.plot(x, y, label='Multijet Model Self-Consistency', color='b', linewidth=2)
         
         ax.plot([0,self.bases[-1]], [probThreshold,probThreshold], color='k', alpha=0.5, linestyle='--', linewidth=1)
@@ -577,10 +605,7 @@ class multijetEnsemble:
         ax.set_ylabel('Fit p-value')
         #ax.legend(loc='best', fontsize='small')
 
-        if type(rebin) is list:
-            name = 'closureFits/%s/%s/variable_rebin/%s/%s/pvalues_multijet_self_consistency.pdf'%(mixName, classifier, region, self.channel)
-        else:
-            name = 'closureFits/%s/%s/rebin%i/%s/%s/pvalues_multijet_self_consistency.pdf'%(mixName, classifier, rebin, region, self.channel)
+        name = '%s/%s/pvalues_multijet_self_consistency.pdf'%(basePath, self.channel)
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -592,14 +617,18 @@ class multijetEnsemble:
         #ax.set_ylim(0.001,1)
         #plt.yscale('log')
         x = sorted(self.pearsonr.keys())
-        ax.set_ylim(0,1)
+        if not hidePValue:
+            ax.set_ylim(0,1)
+        else:
+            ax.set_ylim(-1,1)
         ax.set_xticks(x)
 
         r = [self.pearsonr[o]['total'][0] for o in x]
         p = [self.pearsonr[o]['total'][1] for o in x]
-        ax.set_title('Multijet Self-Consistency Fit (%s)'%self.channel.upper())
+        ax.set_title('Multijet Self-Consistency Fit (%s)'%self.channel_label)
         ax.plot(x, r, label='r-value', color='red', linewidth=2, linestyle='dotted')
-        ax.plot(x, p, label='p-value', color='red', linewidth=2)
+        if not hidePValue:
+            ax.plot(x, p, label='p-value', color='red', linewidth=2)
 
         if self.basis is not None:
             ax.scatter(self.basis, p[x.index(self.basis)], color='k', marker='*', zorder=10)
@@ -611,7 +640,8 @@ class multijetEnsemble:
             p = [self.pearsonr[o]['mixes'][m][1] for o in x]
             label = 'v$_%d$'%m
             ax.plot(x, r, color=colors[m], linewidth=1, alpha=0.3, linestyle='dotted', label='_'+label)#underscore tells pyplot to not show this in the legend
-            ax.plot(x, p, color=colors[m], linewidth=1, alpha=0.3, label=label)
+            if not hidePValue:
+                ax.plot(x, p, color=colors[m], linewidth=1, alpha=0.3, label=label)
         
         ax.plot([0,self.bases[-1]], [probThreshold,probThreshold], color='r', alpha=0.5, linestyle='--', linewidth=1)
 
@@ -619,10 +649,7 @@ class multijetEnsemble:
         ax.set_ylabel('Adjacent Bin Pearson r-test')
         plt.legend(fontsize='small', loc='best')
 
-        if type(rebin) is list:
-            name = 'closureFits/%s/%s/variable_rebin/%s/%s/stage0_pearsonr_multijet_self_consistency.pdf'%(mixName, classifier, region, self.channel)
-        else:
-            name = 'closureFits/%s/%s/rebin%i/%s/%s/stage0_pearsonr_multijet_self_consistency.pdf'%(mixName, classifier, rebin, region, self.channel)
+        name = '%s/%s/stage0_pearsonr_multijet_self_consistency.pdf'%(basePath, self.channel)
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -670,17 +697,18 @@ class multijetEnsemble:
 
         fig, (ax) = plt.subplots(nrows=1, figsize=(7,6)) if n>2 else plt.subplots(nrows=1, figsize=(6,6))
         ax.set_aspect(1)
-        ax.set_title('Multijet Self-Consistency Fit Parameters (%s)'%self.channel.upper())
+        ax.set_title('Multijet Self-Consistency Fit Parameters (%s)'%self.channel_label)
         ax.set_xlabel('c$_0$ (\%)')
         ax.set_ylabel('c$_1$ (\%)')
 
-        xlim, ylim = [-8,8], [-8,8]
+        axis_range = 16
+        xlim, ylim = [-axis_range,axis_range], [-axis_range,axis_range]
         ax.plot(xlim, [0,0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         ax.plot([0,0], ylim, color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
-        xticks = np.arange(-6, 8, 2)
-        yticks = np.arange(-6, 8, 2)
+        xticks = np.arange(-axis_range + 2, axis_range, 2)
+        yticks = np.arange(-axis_range + 2, axis_range, 2)
         ax.set_xticks(xticks)
         ax.set_yticks(yticks)
 
@@ -744,7 +772,7 @@ class multijetEnsemble:
         plt.tight_layout()
 
         for m in range(nMixes):
-            x_offset, y_offset = maxr[0,m]+minr[0,m], maxr[1,m]+minr[1,m]
+            x_offset, y_offset = +0.2, -0.2
             bbox = dict(boxstyle='round', facecolor='w', alpha=0.8, linewidth=0, pad=0)
             ax.annotate('v$_%d$'%m, (x[m]+x_offset, y[m]+y_offset), bbox=bbox)
 
@@ -774,10 +802,7 @@ class multijetEnsemble:
                              title='c$_3$ (\%)', 
                              scatterpoints = 1)
         
-        if type(rebin) is list:
-            name = 'closureFits/%s/%s/variable_rebin/%s/%s/stage0_parameters_basis%d_multijet_self_consistency.pdf'%(mixName, classifier, region, self.channel, basis)
-        else:
-            name = 'closureFits/%s/%s/rebin%i/%s/%s/stage0_parameters_basis%d_multijet_self_consistency.pdf'%(mixName, classifier, rebin, region, self.channel, basis)            
+        name = '%s/%s/stage0_parameters_basis%d_multijet_self_consistency.pdf'%(basePath, self.channel, basis)
         print('fig.savefig( '+name+' )')
         fig.savefig( name )
         plt.close(fig)
@@ -801,7 +826,7 @@ class multijetEnsemble:
 
         fig, (ax) = plt.subplots(nrows=1, figsize=(6,6))
         ax.set_aspect(1)
-        ax.set_title('Adjacent Bin Pulls (%s, %d basis elements)'%(self.channel.upper(), basis))
+        ax.set_title('Adjacent Bin Pulls (%s, %d basis elements)'%(self.channel_label, basis))
         ax.set_xlabel('Bin$_{i}$, Pull')
         ax.set_ylabel('Bin$_{i+1}$ Pull')
         # ax.set_xlabel('Bin$_{2i}$, Pull')
@@ -837,10 +862,7 @@ class multijetEnsemble:
     
         plt.legend(fontsize='small', loc='upper left', ncol=2, title='Overall r=%0.2f (%2.0f%s)'%(r,p*100,'\%'))
         
-        if type(rebin) is list:
-            name = 'closureFits/%s/%s/variable_rebin/%s/%s/stage0_pull_correlation_basis%d_multijet_self_consistency.pdf'%(mixName, classifier, region, self.channel, basis)
-        else:
-            name = 'closureFits/%s/%s/rebin%i/%s/%s/stage0_pull_correlation_basis%d_multijet_self_consistency.pdf'%(mixName, classifier, rebin, region, self.channel, basis)            
+        name = '%s/%s/stage0_pull_correlation_basis%d_multijet_self_consistency.pdf'%(basePath, self.channel, basis)
         print('fig.savefig( '+name+' )')
         fig.savefig( name )
         plt.close(fig)
@@ -879,11 +901,11 @@ class multijetEnsemble:
         #     'ratio' : 'numer A',
         #     'color' : 'ROOT.kGray+2'}
 
-        xTitle = 'P_{Signal} #%s + #%s#%s #cbar P%s is largest'%(PlotTools.subscript('Bin'), PlotTools.subscript('Mix'), PlotTools.subscript('Bins'), PlotTools.subscript(self.channel.upper()))
+        xTitle = 'P_{Signal} #%s + #%s#%s #cbar P%s is largest'%(PlotTools.subscript('Bin'), PlotTools.subscript('Mix'), PlotTools.subscript('Bins'), PlotTools.subscript(self.channel_label))
             
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
                       'titleCenter' : regionName[region],
-                      'titleRight'  : 'Pass #DeltaR(j,j)',
+                      'titleRight'  : eventSelection,
                       'maxDigits'   : 4,
                       'drawLines'   : [[self.nBins_rebin*m+0.5,  0,self.nBins_rebin*m+0.5,self.ymax[0]*1.1] for m in range(1,nMixes+1)],
                       'ratioErrors': False,
@@ -913,10 +935,7 @@ class multijetEnsemble:
 
         parameters['ratioLines'] = [[self.nBins_rebin*m+0.5, parameters['rMin'], self.nBins_rebin*m+0.5, parameters['rMax']] for m in range(1,nMixes+1)]
 
-        if type(rebin) is list:
-            parameters['outputDir'] = 'closureFits/%s/%s/variable_rebin/%s/%s/'%(mixName, classifier, region, self.channel)
-        else:
-            parameters['outputDir'] = 'closureFits/%s/%s/rebin%i/%s/%s/'%(mixName, classifier, rebin, region, self.channel)
+        parameters['outputDir'] = '%s/%s/'%(basePath, self.channel)
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         PlotTools.plot(samples, parameters, debug=False)
@@ -927,6 +946,7 @@ class multijetEnsemble:
 class closure:
     def __init__(self, channel, multijet):
         self.channel = channel
+        self.channel_label = self.channel.upper().replace('_',' ')
         self.multijet = multijet
         self.ttbar = f.Get('%s/ttbar'%self.channel)
         self.ttbar.SetName('%s_average_%s'%(self.ttbar.GetName(), self.channel))
@@ -939,16 +959,12 @@ class closure:
         self.spuriousSignalError = {}
         self.closure_spuriousSignal_TH1 = {}
         self.signal = f.Get('%s/signal'%self.channel)
-        self.signal.Rebin(rebin)
+        self.signal = customized_rebin(self.signal, rebin)
 
         f.cd(self.channel)
 
-        self.ttbar_rebin = self.ttbar.Clone()
-        self.ttbar_rebin.SetName('%s_rebin'%self.ttbar.GetName())
-        self.ttbar_rebin.Rebin(rebin)
-        self.data_obs_rebin = self.data_obs.Clone()
-        self.data_obs_rebin.SetName('%s_rebin'%self.data_obs.GetName())
-        self.data_obs_rebin.Rebin(rebin)
+        self.ttbar_rebin = customized_rebin(self.ttbar, rebin)
+        self.data_obs_rebin = customized_rebin(self.data_obs, rebin)
         self.nBins_rebin = self.data_obs_rebin.GetSize()-2
 
         self.bin_width = 1./self.nBins_rebin
@@ -957,7 +973,7 @@ class closure:
         self.basis_element = self.multijet.basis_element
 
         f.cd(self.channel)
-        self.bases = range(self.multijet.basis, maxBasisClosure+1, 2)
+        self.bases = range(self.multijet.basis, maxBasisClosure+1, basisStep)
         self.nBins_closure = self.nBins_rebin + self.bases[-1]+1 # add bins for multijet self-consistency function constraints
         self.multijet_closure = ROOT.TH1F('multijet_closure', '', self.nBins_closure, 0.5, 0.5+self.nBins_closure)
         self.ttbar_closure    = ROOT.TH1F('ttbar_closure',    '', self.nBins_closure, 0.5, 0.5+self.nBins_closure)
@@ -999,7 +1015,7 @@ class closure:
         self.cUp, self.cDown = {}, {}
         self.fProb = {self.multijet.basis: np.nan}
         self.basis = None
-        self.exit_message = ['--- NONE (%s) ---'%self.channel.upper()]
+        self.exit_message = ['--- NONE (%s) ---'%self.channel_label]
         for i, basis in enumerate(self.bases):
             self.makeFitFunction(basis)
             self.fit(basis)
@@ -1012,7 +1028,7 @@ class closure:
                     print(self.fProb)
                     self.basis = self.bases[i-1] # store first basis to satisfy min threshold. Will be used in closure fits
                     self.exit_message.append('-'*50)
-                    self.exit_message.append('%s channel'%self.channel.upper())
+                    self.exit_message.append('%s channel'%self.channel_label)
                     self.exit_message.append('Satisfied goodness of fit and f-test with %d basis elements:'%self.basis)
                     self.exit_message.append('>> p-value, f-test = %2.0f%%, %2.0f%% with %d basis elements (p-value above threshold and f-test prefers this fit previous)'%(100*self.pvalue[self.basis], 100*self.fProb[self.basis], self.basis))
                     self.exit_message.append('>> p-value, f-test = %2.0f%%, %2.0f%% with %d basis elements (f-test does not prefer this over previous fit at greater than 95%%)'%(100*self.pvalue[basis], 100*self.fProb[basis], basis))
@@ -1192,7 +1208,7 @@ class closure:
     def writeClosureResults(self,basis=None):
         if basis is None: basis = self.basis
         nBEs = basis+1
-        closureResults = 'ZZ4b/nTupleAnalysis/combine/closureResults_%s_basis%d.txt'%(self.channel,basis)
+        closureResults = '%s/closureResults_%s_basis%d.txt'%(basePath, self.channel,basis)
         #closureResultsRoot = ROOT.TFile(closureResults.replace('.txt', '.root'), 'RECREATE')
         closureResultsFile = open(closureResults, 'w')
         print('Write Closure Results File: \n>> %s'%(closureResults))
@@ -1255,7 +1271,7 @@ class closure:
 
         fig, (ax) = plt.subplots(nrows=1, figsize=(6,6))
         ax.set_aspect(1)
-        ax.set_title('Closure Fit Parameters (%s)'%self.channel.upper())
+        ax.set_title('Closure Fit Parameters (%s)'%self.channel_label)
         ax.set_xlabel('c$_0$ (\%)')
         ax.set_ylabel('c$_1$ (\%)')
 
@@ -1364,10 +1380,7 @@ class closure:
                             ha=horizontalalignment, va=verticalalignment,
                             bbox=bbox)
 
-        if type(rebin) is list:
-            name = 'closureFits/%s/%s/variable_rebin/%s/%s/stage1_parameters_basis%d_closure.pdf'%(mixName, classifier, region, self.channel, basis)
-        else:
-            name = 'closureFits/%s/%s/rebin%i/%s/%s/stage1_parameters_basis%d_closure.pdf'%(mixName, classifier, rebin, region, self.channel, basis)            
+        name = '%s/%s/stage1_parameters_basis%d_closure.pdf'%(basePath, self.channel, basis)            
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -1382,7 +1395,7 @@ class closure:
         #plt.yscale('log')
 
         y = [self.pvalue[o] for o in x]
-        ax.set_title('Closure Fit (%s)'%self.channel.upper())
+        ax.set_title('Closure Fit (%s)'%self.channel_label)
         ax.plot([self.multijet.basis,self.bases[-1]], [probThreshold,probThreshold], color='r', alpha=0.5, linestyle='--', linewidth=1)
         ax.plot([self.multijet.basis,self.bases[-1]], [0.95,0.95], color='k', alpha=0.5, linestyle='--', linewidth=1)
         ax.plot(x, y, label='p-value', color='r', linewidth=2)
@@ -1399,10 +1412,7 @@ class closure:
         ax.set_ylabel('Fit p-value')
         ax.legend(loc='upper left', fontsize='small')
 
-        if type(rebin) is list:
-            name = 'closureFits/%s/%s/variable_rebin/%s/%s/stage1_pvalues_closure.pdf'%(mixName, classifier, region, self.channel)
-        else:
-            name = 'closureFits/%s/%s/rebin%i/%s/%s/stage1_pvalues_closure.pdf'%(mixName, classifier, rebin, region, self.channel)
+        name = '%s/%s/stage1_pvalues_closure.pdf'%(basePath, self.channel)
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -1459,11 +1469,11 @@ class closure:
             'weight': 100,
             'color' : 'ROOT.kViolet'}
 
-        xTitle = 'SvB P_{Signal} #cbar P_{'+self.channel.upper()+'} is largest'
+        xTitle = 'SvB P_{Signal} #cbar P_{'+self.channel_label+'} is largest'
             
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
                       'titleCenter' : regionName[region],
-                      'titleRight'  : 'Pass #DeltaR(j,j)',
+                      'titleRight'  : eventSelection,
                       'maxDigits'   : 4,
                       'ratioErrors': True,
                       'ratio'     : True,
@@ -1482,10 +1492,7 @@ class closure:
                       'lstLocation' : 'right',
                       'outputName': 'mix_%s'%(str(mix))}
 
-        if type(rebin) is list:
-            parameters['outputDir'] = 'closureFits/%s/%s/variable_rebin/%s/%s/'%(mixName, classifier, region, self.channel)
-        else:
-            parameters['outputDir'] = 'closureFits/%s/%s/rebin%i/%s/%s/'%(mixName, classifier, rebin, region, self.channel)
+        parameters['outputDir'] = '%s/%s/'%(basePath, self.channel)
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         PlotTools.plot(samples, parameters, debug=False)
@@ -1530,13 +1537,13 @@ class closure:
                 'weight': 100,
                 'color' : 'ROOT.kViolet'}
 
-        xTitle = 'SvB P_{Signal} Bin #cbar P_{'+self.channel.upper()+'} is largest'
+        xTitle = 'SvB P_{Signal} Bin #cbar P_{'+self.channel_label+'} is largest'
             
         ymaxScale = 1.7 + max(0, (basis-2)/4.0)
 
         parameters = {'titleLeft'   : '#bf{CMS} Internal',
                       'titleCenter' : regionName[region],
-                      'titleRight'  : 'Pass #DeltaR(j,j)',
+                      'titleRight'  : eventSelection,
                       'maxDigits'   : 4,
                       'drawLines'   : [[self.fit_x_min,        0,self.fit_x_min,      self.ymax[basis]],
                                        [self.nBins_rebin+0.5,  0,self.nBins_rebin+0.5,self.ymax[basis]]],
@@ -1578,10 +1585,7 @@ class closure:
         else:
             parameters['xMax'] = self.nBins_rebin+self.multijet.basis+1.5
 
-        if type(rebin) is list:
-            parameters['outputDir'] = 'closureFits/%s/%s/variable_rebin/%s/%s/'%(mixName, classifier, region, self.channel)
-        else:
-            parameters['outputDir'] = 'closureFits/%s/%s/rebin%i/%s/%s/'%(mixName, classifier, rebin, region, self.channel)
+        parameters['outputDir'] = '%s/%s/'%(basePath, self.channel)
 
         print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
         PlotTools.plot(samples, parameters, debug=False)
@@ -1596,10 +1600,7 @@ class closure:
 # make multijet ensembles and perform self-consistency fits
 multijetEnsembles = {}
 for channel in channels:
-    if type(rebin) is list:
-        mkpath('%s/closureFits/%s/%s/variable_rebin/%s/%s'%(o.basePath, mixName, classifier, region, channel))
-    else:
-        mkpath('%s/closureFits/%s/%s/rebin%i/%s/%s'%(o.basePath, mixName, classifier, rebin, region, channel))
+    mkpath('%s/%s'%(basePath, channel))
     multijetEnsembles[channel] = multijetEnsemble(channel)
 
 # run closure fits using average multijet model and constrained self-consistency function

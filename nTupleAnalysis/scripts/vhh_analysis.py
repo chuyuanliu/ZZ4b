@@ -1,3 +1,4 @@
+from fileinput import filename
 import time
 from copy import copy
 import textwrap
@@ -10,8 +11,6 @@ import optparse
 from threading import Thread
 sys.path.insert(0, 'nTupleAnalysis/python/') #https://github.com/patrickbryant/nTupleAnalysis
 from commandLineHelpers import *
-sys.path.insert(0, 'PlotTools/python/') #https://github.com/patrickbryant/PlotTools 
-from PlotTools import read_parameter_file
 import vhh_fileHelper as fh
 
 class nameTitle:
@@ -40,6 +39,7 @@ parser.add_option('-w',            action="store_true", dest="doWeights",      d
 parser.add_option('--makeJECSyst', action="store_true", dest="makeJECSyst",    default=False, help="Make jet energy correction systematics friend TTrees")
 parser.add_option('--doJECSyst',   action="store_true", dest="doJECSyst",      default=False, help="Run event loop for jet energy correction systematics")
 parser.add_option('-j',            action="store_true", dest="useJetCombinatoricModel",       default=False, help="Use the jet combinatoric model")
+parser.add_option('--JCM',         action="store_true", dest="storeJetCombinatoricModel",       default=False, help="Use the jet combinatoric model")
 parser.add_option('-r',            action="store_true", dest="reweight",       default=False, help="Do reweighting with nJetClassifier TSpline")
 parser.add_option('--bTagSyst',    action="store_true", dest="bTagSyst",       default=False, help="run btagging systematics")
 parser.add_option('--puIdSyst',    action="store_true", dest="puIdSyst",       default=False, help="run PU jet ID systematics")
@@ -51,8 +51,8 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passTTCR.passMV.HHSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
-parser.add_option('-c', '--doCombine',    action="store_true", dest="doCombine",      default=False, help="Make CombineTool input hists")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passMV.HHSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option('-c', '--makeCombineHist',    action="store_true", dest="makeCombineHist",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
 parser.add_option(   '--createHemisphereLibrary',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -72,6 +72,10 @@ parser.add_option(   '--debug', dest = 'debug', action="store_true", default=Fal
 parser.add_option(   '--extraOutput', dest = 'extraOutput', action="store_true", default=False, help = 'make extra root file')
 parser.add_option(   '--histsTag', dest = 'histsTag', default='', help = 'extra tags in hists.root filename')
 parser.add_option(   '--runKlBdt', dest = 'runKlBdt', action="store_true", default=False, help = 'run kl BDT')
+parser.add_option(   '--calcPuIdSF', dest = 'calcPuIdSF', action="store_true", default=False, help = 'calculate PU jet ID SF')
+parser.add_option(   '--applyPuIdSF', dest = 'applyPuIdSF', action="store_true", default=False, help = 'apply PU jet ID SF')
+parser.add_option(   '--nTags', dest = 'nTags', default='_4b', help = 'run on n tag events for ttbar')
+
 o, a = parser.parse_args()
 
 fromNANOAOD = (o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none") 
@@ -225,7 +229,7 @@ def ttbarFiles(year):
         ttYears = [year]
         if year == '2016':
             ttYears = ['2016_preVFP', '2016_postVFP']
-        return ['closureTests/ULTrig/fileLists/' + process + ttYear + tag + '.txt' for process in ttbarProcesses for ttYear in ttYears for tag in ['_4b']]# ['_3b', '_4b']]
+        return ['closureTests/ULTrig/fileLists/' + process + ttYear + tag + '.txt' for process in ttbarProcesses for ttYear in ttYears for tag in o.nTags.split(',')]
     else:
         return ['ZZ4b/fileLists/' + process + year + '.txt' for process in ttbarProcesses]
 
@@ -306,8 +310,6 @@ def doSignal():
                     cmd += " -l "+lumi
                     cmd += " --histDetailLevel "+o.detailLevel
                     cmd += " --histFile "+histFile
-                    cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
-                    cmd += " -r " if o.reweight else ""
                     cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
                     cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
                     #cmd += " -f " if o.fastSkim else ""
@@ -316,7 +318,7 @@ def doSignal():
                     cmd += " --doHigherOrderReweight" if o.higherOrder else ""
                     cmd += " --bTag "+bTagDict[year]
                     cmd += " --bTagSF"
-                    # cmd += " --puIdSF"
+                    cmd += " --puIdSF" if o.applyPuIdSF else ""
                     cmd += " --bTagSyst" if o.bTagSyst else ""
                     cmd += " --puIdSyst" if o.puIdSyst else ""
                     cmd += " --nevents "+o.nevents
@@ -395,7 +397,7 @@ def doDataTT():
 
     # run event loop
     cmds=[]
-    histFile = "hists"+("_j" if o.useJetCombinatoricModel or o.separate3b4b else "")+("_r" if o.reweight else "")+o.histsTag+".root"
+    histFile = "hists"+("_j" if o.useJetCombinatoricModel else "")+("_r" if o.reweight else "")+o.histsTag+".root"
     if o.createPicoAOD == "picoAOD.root": histFile = "histsFromNanoAOD.root"
 
     for year in years:
@@ -417,22 +419,23 @@ def doDataTT():
             cmd += " --era "+era
             cmd += " --histDetailLevel "+o.detailLevel
             cmd += " --histFile "+histFile
-            cmd += " -j "+jetCombinatoricModel(year) if o.useJetCombinatoricModel else ""
+            cmd += " -j "+jetCombinatoricModel(year) if o.storeJetCombinatoricModel else ""
             cmd += " -r " if o.reweight else ""
             cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
             cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
             cmd += " -f " if o.fastSkim else ""
             cmd += " --bTag "+bTagDict[year]
             cmd += " --nevents "+o.nevents
-            cmd += " --jcmNameLoad Nominal"
+            cmd += " --jcmNameLoad Nominal" if o.useJetCombinatoricModel else ""
             cmd += " --FvTName FvT_Nominal"
             cmd += (" --friends " + o.friends) if o.friends else ""
             cmd += " --debug" if o.debug else ""
             cmd += " --extraOutput bosonKinematics" if o.extraOutput else ""
+            cmd += " --calcPuIdSF " if o.calcPuIdSF else ""
             if fileList in ttbarFiles(year):
                 cmd += " -l "+lumi
                 cmd += " --bTagSF"
-                # cmd += " --puIdSF"
+                cmd += " --puIdSF" if o.applyPuIdSF else ""
                 cmd += " --bTagSyst" if o.bTagSyst else ""
                 cmd += " --isMC "
                 cmd += " --doTrigEmulation" if o.trigger else ""
@@ -687,63 +690,49 @@ def doPlots(extraPlotArgs=""):
 ## in my_env with ROOT and Pandas
 # time python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py -i /uscms/home/bryantp/nobackup/ZZ4b/data2018A/picoAOD.h5 -o /uscms/home/bryantp/nobackup/ZZ4b/data2018A/picoAOD.root
 
-def doCombine():
 
-    region="SR"
-    cut = "passMDRs"
+def read_parameter_file(inFileName):
+    inFile = open(inFileName,"r")
+    outputDict = {}
 
-    JECSysts = [""]
-    if o.doJECSyst: 
-        JECSysts += JECSystList
+    for line in inFile:
+        words =  line.split()
+        if len(words) > 2: 
+            words[1]=''.join(words[1:])
+            words = words[:2]
+        outputDict[words[0]] = words[1]
+    return outputDict
 
-    outFile = "ZZ4b/nTupleAnalysis/combine/hists.root"
-    execute("rm "+outFile, o.execute)
-
-    for year in years:
-
-        #for channel in ['zz','zh','zh_0_75','zh_75_150','zh_150_250','zh_250_400','zh_400_inf','zz_0_75','zz_75_150','zz_150_250','zz_250_400','zz_400_inf']:
-        for channel in ['zz','zh']:
-            rebin = '4'
-            if '0_75' in channel or '400_inf' in channel: rebin = '5'
-            var = "SvB_ps_"+channel
-            for signal in [nameTitle('ZZ','ZZ4b'), nameTitle('ZH','bothZH4b')]:
-                for JECSyst in JECSysts:
-                    cmd  = "python ZZ4b/nTupleAnalysis/scripts/makeCombineHists.py -i /uscms/home/"+USER+"/nobackup/ZZ4b/"+signal.title+year+"/hists"+JECSyst+".root"
-                    cmd += " -o "+outFile+" -r "+region+" --var "+var+" --channel "+channel+year+" -n "+signal.name+JECSyst+" --tag four  --cut "+cut+" --rebin "+rebin
+def makeCombineHist():
+    channelName     = {'lbdt': 'kl', 'sbdt': 'kVV'}
+    channelHistName = {'lbdt': 'kl', 'sbdt': 'nkl'}
+    basis = {'lbdt': 2, 'sbdt': 2}
+    histName = 'multijet_background'
+    for channel in channelName.keys():
+        for year in years:
+            closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
+            for systName, variation in closureSysts.iteritems():
+                rootFile = '/uscms/home/'+USER+'/nobackup/VHH/shapefile_VhadHH_'+year+'_'+channelName[channel]+'.root'
+                systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_bbbb_Multijet')
+                if 'basis' in systName:
+                    #Multijet closure systematic templates to data file
+                    cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
+                    cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName
                     execute(cmd, o.execute)
-            cmd  = "python ZZ4b/nTupleAnalysis/scripts/makeCombineHists.py -i /uscms/home/"+USER+"/nobackup/ZZ4b/data"+year+"/hists_j_r.root"
-            cmd += " -o "+outFile+" -r "+region+" --var "+var+" --channel "+channel+year+" -n multijet --tag three --cut "+cut+" --rebin "+rebin
-            execute(cmd, o.execute)
 
-            closureSysts = read_parameter_file("ZZ4b/nTupleAnalysis/combine/closureResults_%s.txt"%channel)
-            for name, variation in closureSysts.iteritems():
-                cmd  = "python ZZ4b/nTupleAnalysis/scripts/makeCombineHists.py -i /uscms/home/"+USER+"/nobackup/ZZ4b/data"+year+"/hists_j_r.root"
-                cmd += " -o "+outFile+" -r "+region+" --var "+var+" --channel "+channel+year+" -f '"+variation+"' -n "+name+" --tag three --cut "+cut+" --rebin "+rebin
-                execute(cmd, o.execute)
+                if 'spurious' in systName:
+                    #Spurious Sigmal template to data file
+                    cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
+                    cmd +=' -n '+histName+' --syst ' + systName
+                    cmd += ' --addHist %s,WHH_CV_1_C2V_1_kl_20_hbbhbb,%s'%(rootFile, variation)
+                    execute(cmd, o.execute)
+                if 'spurious' in systName:
+                    #Spurious Sigmal template to data file
+                    cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
+                    cmd +=' -n '+histName+' --syst ' + systName
+                    cmd += ' --addHist %s,ZHH_CV_1_C2V_1_kl_20_hbbhbb,%s'%(rootFile, variation)
+                    execute(cmd, o.execute)
 
-            cmd  = "python ZZ4b/nTupleAnalysis/scripts/makeCombineHists.py -i /uscms/home/"+USER+"/nobackup/ZZ4b/TT"+year+"/hists_j_r.root"
-            cmd += " -o "+outFile+" -r "+region+" --var "+var+" --channel "+channel+year+" -n ttbar    --tag four  --cut "+cut+" --rebin "+rebin
-            execute(cmd, o.execute)
-            cmd  = "python ZZ4b/nTupleAnalysis/scripts/makeCombineHists.py -i /uscms/home/"+USER+"/nobackup/ZZ4b/data"+year+"/hists_j_r.root"
-            cmd += " -o "+outFile+" -r "+region+" --var "+var+" --channel "+channel+year+" -n data_obs --tag four  --cut "+cut+" --rebin "+rebin
-            execute(cmd, o.execute)
-
-    ### Using https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/
-    ### and https://github.com/cms-analysis/CombineHarvester
-    # text2workspace.py ZZ4b/nTupleAnalysis/combine/combine.txt -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose --PO 'map=.*/ZZ:rZZ[1,0,10]' --PO 'map=.*/ZH:rZH[1,0,10]' -v 2
-    ### Independent fit
-    # combine -M MultiDimFit  ZZ4b/nTupleAnalysis/combine/combine.root  -t -1 --setParameterRanges rZZ=-4,6:rZH=-4,6 --setParameters rZZ=1,rZH=1 --algo=grid --points=2500 -n rZZ_rZH_scan_2d -v 1
-    # python plot_scan_2d.py  
-    ### Assuming SM
-    # combine -M MultiDimFit  ZZ4b/nTupleAnalysis/combine/combine.root  -t -1 --setParameterRanges rZZ=-4,6:rZH=-4,6 --setParameters rZZ=1,rZH=1 --algo singles --cl=0.68 
-    # combine -M Significance ZZ4b/nTupleAnalysis/combine/combine.txt   -t -1 --expectSignal=1
-    # combine -M Significance ZZ4b/nTupleAnalysis/combine/combineZZ.txt -t -1 --expectSignal=1
-    # combine -M Significance ZZ4b/nTupleAnalysis/combine/combineZH.txt -t -1 --expectSignal=1
-    ### Make Pull plot
-    # combineTool.py -M Impacts -d ZZ4b/nTupleAnalysis/combine/combine.root --doInitialFit -t -1 --setParameterRanges rZZ=-4,6:rZH=-4,6 --setParameters rZZ=1,rZH=1 --robustFit 1 -m 125
-    # combineTool.py -M Impacts -d ZZ4b/nTupleAnalysis/combine/combine.root --doFits       -t -1 --setParameterRanges rZZ=-4,6:rZH=-4,6 --setParameters rZZ=1,rZH=1 --robustFit 1 -m 125
-    # combineTool.py -M Impacts -d ZZ4b/nTupleAnalysis/combine/combine.root -o impacts.json -m 125
-    # plotImpacts.py -i impacts.json -o impacts
 
 #
 # Run analysis
@@ -790,6 +779,6 @@ if o.doAccxEff:
 if o.doPlots:
     doPlots("-m")
 
-if o.doCombine:
-    doCombine()
+if o.makeCombineHist:
+    makeCombineHist()
 

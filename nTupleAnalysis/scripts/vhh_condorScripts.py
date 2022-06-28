@@ -33,7 +33,7 @@ parser.add_option('--cp', action="store_true", dest = 'cp', default = False, hel
 parser.add_option('--init', action="store_true", dest = 'init', default = False, help = 'Initialize dirs and files')
 parser.add_option('--coupling', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'Couplings of signals')
 parser.add_option('--classifiers', dest = 'classifiers', default = '', help = 'Classifier outputs')
-parser.add_option('--nTags', dest = 'nTags', default = '_3b,_4b', help = 'nTag events for ttbar')
+parser.add_option('--nTags', dest = 'nTags', default = '_4b', help = 'nTag events for ttbar')
 parser.add_option('--group', dest = 'group', default = '', help = 'Group text files by content')
 
 o, a = parser.parse_args()
@@ -290,8 +290,8 @@ def initialize():
                 for nTag in nTags:
                     lpcmkdir('VHH/'+tt+year+nTag)
                     eosmkdir('VHH/'+tt+year+nTag)
-                    for tag in ['picoAOD'+nTag+'_wJCM', 'FvT_Nominal']:
-                        file = '/'+tag+'.root'
+                    for rootFile in ['picoAOD'+nTag+'_wJCM', 'FvT_Nominal']:
+                        file = '/'+rootFile+'.root'
                         newFile = file
                         if 'picoAOD' in file:
                             newFile = '/picoAOD.root'
@@ -300,18 +300,18 @@ def initialize():
                             filelist.close()
                         xrdcp(full_path('ZH4b/ULTrig/'+tt+year+nTag+'_wTrigW'+file, eos, 'jda102'),full_path('VHH/'+tt+year+nTag+newFile, eos, USER))
         if year not in ['2016_preVFP', '2016_postVFP']:
-            for n_tag in datas:
-                lpcmkdir('VHH/data'+year+n_tag)
-                eosmkdir('VHH/data'+year+n_tag)
-                for tag in ['picoAOD'+n_tag+'_wJCM', 'FvT_Nominal']:
-                    file = '/'+tag+'.root'
+            for nTag in datas:
+                lpcmkdir('VHH/data'+year+nTag)
+                eosmkdir('VHH/data'+year+nTag)
+                for rootFile in ['picoAOD'+nTag+'_wJCM', 'FvT_Nominal']:
+                    file = '/'+rootFile+'.root'
                     newFile = file
                     if 'picoAOD' in file:
                         newFile = '/picoAOD.root'
-                        filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/ULTrig/fileLists/data'+year+n_tag+'.txt', lpc, USER),'w')
-                        filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+n_tag + newFile, eos, USER))
+                        filelist = open(full_path('CMSSW_11_1_0_pre5/src/closureTests/ULTrig/fileLists/data'+year+nTag+'.txt', lpc, USER),'w')
+                        filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+nTag + newFile, eos, USER))
                         filelist.close()
-                    xrdcp(full_path('ZH4b/ULTrig/data'+year+n_tag+file, eos, 'jda102'),full_path('VHH/data'+year+n_tag+newFile, eos, USER))
+                    xrdcp(full_path('ZH4b/ULTrig/data'+year+nTag+file, eos, 'jda102'),full_path('VHH/data'+year+nTag+newFile, eos, USER))
     
 
 def group_files(path):

@@ -59,7 +59,7 @@ namespace nTupleAnalysis {
     lumiHists* lumiCounts    = NULL;
     float  lumiLastWrite    = 0;
 
-    eventHists* allEvents   = NULL;
+    eventHists* allEvents      = NULL;
     tagHists* passPreSel    = NULL;
     tagHists* passDijetMass = NULL;
     tagHists* passLooseMDRs = NULL;
@@ -214,8 +214,8 @@ namespace nTupleAnalysis {
     Float_t   m_h2_match_dist         = 0;
 
 
-    analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year,
-	     std::string histDetailLevel, bool _doReweight, bool _debug, bool _fastSkim = false, bool doTrigEmulation = false, bool _calcTrigWeights = false, bool useMCTurnOns=false, bool useUnitTurnOns=false, bool _isDataMCMix=false, bool usePreCalcBTagSFs=false,
+    analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, std::string histDetailLevel, const std::map<std::string, bool> &options,
+	     bool _doReweight, bool _debug, bool _fastSkim = false, bool doTrigEmulation = false, bool _calcTrigWeights = false, bool useMCTurnOns=false, bool useUnitTurnOns=false, bool _isDataMCMix=false, bool usePreCalcBTagSFs=false,
 	     std::string bjetSF = "", std::string btagVariations = "central",
 	     std::string JECSyst = "", std::string friendFile = "",
 	     bool looseSkim = false, std::string FvTName = "", std::string reweight4bName = "",std::string reweightDvTName = "",

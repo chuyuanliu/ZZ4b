@@ -23,7 +23,7 @@ bool comp_FvT_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventVi
 bool comp_SvB_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->SvB_q_score < second->SvB_q_score); }
 bool comp_dR_close(   std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->close->dR   < second->close->dR  ); }
 
-eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _useUnitTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, bool _runKlBdt, bool _doZHHNNLOScale, std::string era, std::string puIdVariations){
+eventData::eventData(TChain* t, bool mc, std::string y, bool d, const std::map<std::string, bool> &options, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _useUnitTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, bool _runKlBdt, bool _doZHHNNLOScale, std::string era, std::string puIdVariations){
   std::cout << "eventData::eventData()" << std::endl;
   tree  = t;
   isMC  = mc;
@@ -35,6 +35,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
   doTrigEmulation = _doTrigEmulation;
   calcTrigWeights = _calcTrigWeights;
   runKlBdt = _runKlBdt;
+  calcPuIdSF = options.at("calcPuIdSF");
   if(!tree->FindBranch("trigWeight_Data") && doTrigEmulation && !calcTrigWeights){
     cout << "WARNING:: You are trying to use trigger emulation without precomputed weights and without computing weights. Falling back to MC trigger decisions." << endl;
     assert(!tree->FindBranch("trigWeight_Data") && doTrigEmulation && !calcTrigWeights); // for now lets just throw error to prevent this from going unnoticed. Comment this line to fall back to simulated triggers
@@ -405,7 +406,7 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim, 
 
   std::cout << "eventData::eventData() Initialize jets" << std::endl;
   std::string jetDetailLevel = "";
-  if(puIdVariations != "") jetDetailLevel = "GenJet";
+  if(puIdVariations != "" || calcPuIdSF) jetDetailLevel = "GenJet";
   treeJets  = new  jetData(    "Jet", tree, true, isMC, jetDetailLevel, "", bjetSF, btagVariations, JECSyst, "", era, puIdVariations);
   std::cout << "eventData::eventData() Initialize muons" << std::endl;
   treeMuons = new muonData(   "Muon", tree, true, isMC);
@@ -450,6 +451,7 @@ void eventData::resetEvent(){
   truVDijets.clear();
   notTruVDijets.clear();
   canVDijets.clear();
+  canVJets.clear();
   canVTruVDijets.clear();
   allNotCanJets.clear(); nAllNotCanJets = 0;
   topQuarkBJets.clear();
@@ -462,7 +464,6 @@ void eventData::resetEvent(){
   view_dR_min.reset();
   view_max_FvT_q_score.reset();
   view_max_SvB_q_score.reset();
-  canVDijets.clear();
   close.reset();
   other.reset();
   appliedMDRs = false;
@@ -536,6 +537,18 @@ void eventData::resetEvent(){
 
   if(doZHHNNLOScale){
     zhhNNLOSFs["central_NNLO"] = 1; zhhNNLOSFs["up_NNLO"] = 1; zhhNNLOSFs["down_NNLO"] = 1;
+  }
+  if(calcPuIdSF){
+    allPuIdJets.clear();
+    allBJets.clear();
+    allNotBJets.clear();
+    allBJetsPassPuId.clear();
+    allNotBJetsPassPuId.clear();
+
+    allPUBJets.clear();
+    allPUBJetsPassPuId.clear();
+    allPUNotBJets.clear();
+    allPUNotBJetsPassPuId.clear();
   }
 }
 
@@ -613,6 +626,7 @@ void eventData::update(long int e){
   //Objects from ntuple
   if(debug) std::cout << "Get Jets\n";
   //getJets(float ptMin = -1e6, float ptMax = 1e6, float etaMax = 1e6, bool clean = false, float tagMin = -1e6, std::string tagger = "CSVv2", bool antiTag = false, int puIdMin = 0);
+  if(calcPuIdSF) allPuIdJets = treeJets->getJets(20, 1e6, 1e6, false, -1e6, bTagger, false, 0);
   allJets = treeJets->getJets(20, 1e6, 1e6, false, -1e6, bTagger, false, puIdMin);
 
   if(debug) std::cout << "Get Muons\n";
@@ -741,9 +755,9 @@ void eventData::buildEvent(){
       bTagSF = inputBTagSF;
     }else{
       //for(auto &jet: selJets) bTagSF *= treeJets->getSF(jet->eta, jet->pt, jet->deepFlavB, jet->hadronFlavour);
-      treeJets->updateSFs(selJets, debug, puIdMin);
+      treeJets->updateSFs(selJets, debug);
       bTagSF = treeJets->m_btagSFs["central"];
-      if(treeJets->m_puIdVariations.size() > 0) puIdSF = treeJets->m_puIdSFs["nom"];
+      if(treeJets->m_puIdVariations.size() > 0) puIdSF = treeJets->m_puIdSFs["central"];
     }
 
     if(debug) std::cout << "eventData buildEvent bTagSF = " << bTagSF << std::endl;
@@ -899,6 +913,30 @@ void eventData::buildEvent(){
     //cout << " weight now " << weight <<endl;
   }
 
+  if(threeTag && calcPuIdSF){
+    for(auto &jet: allPuIdJets){
+      if(jet->deepFlavB > 0.6){
+        allBJets.push_back(jet);
+        if(jet->puId >= puIdMin) allBJetsPassPuId.push_back(jet);
+      }
+      else{
+        allNotBJets.push_back(jet);
+        if(jet->puId >= puIdMin) allNotBJetsPassPuId.push_back(jet);
+      }
+      if(jet->genJet_p.E() <= 0 && isMC){
+        if(jet->deepFlavB > 0.6){
+          allPUBJets.push_back(jet);
+          if(jet->puId >= puIdMin) allPUBJetsPassPuId.push_back(jet);
+        }
+        else{
+          allPUNotBJets.push_back(jet);
+          if(jet->puId >= puIdMin) allPUNotBJetsPassPuId.push_back(jet);
+        }
+      }
+    }
+  }
+
+  
 
   if(debug) std::cout<<"eventData buildEvent done\n";
   return;
@@ -1066,7 +1104,7 @@ void eventData::chooseCanJets(){
     }
   }
 
-  for(auto& dijet:allDijets){
+  for(auto &dijet:allDijets){
     if(dijet->m >= 65 && dijet->m <= 105){
        passMV = true;
        canVDijets.push_back(dijet);
@@ -1077,12 +1115,12 @@ void eventData::chooseCanJets(){
   std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
   if(truth)
   {
-    for(auto& Vqq:truth->Vqqs){
-      for(auto& jet:canJets){
+    for(auto &Vqq:truth->Vqqs){
+      for(auto &jet:canJets){
         if(matchJet(jet,Vqq->daughters))
           canHTruVJets.push_back(jet);
       }
-      for(auto& jet:othJets){
+      for(auto &jet:othJets){
         if(matchJet(jet,Vqq->daughters))
           truVJets.push_back(jet);
       }
@@ -1139,7 +1177,9 @@ void eventData::chooseCanJets(){
   }
 
   if(canVDijets.size()>0){
-    p6jReco = p4j + canVDijets[0]->p;
+    canVJets.push_back(canVDijets.at(0)->lead);
+    canVJets.push_back(canVDijets.at(0)->subl);
+    p6jReco = p4j + canVDijets.at(0)->p;
     m6j = p6jReco.M();
   }
   if(truth){

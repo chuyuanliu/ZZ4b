@@ -87,6 +87,10 @@ int main(int argc, char * argv[]){
   // NNLO ZHH MC scale
   bool doZHHNNLOScale = parameters.getParameter<bool>("doZHHNNLOScale");
 
+  auto options = std::map<std::string, bool>{
+    {"calcPuIdSF", parameters.getParameter<bool>("calcPuIdSF")}
+  };
+
   //lumiMask
   const edm::ParameterSet& inputs = process.getParameter<edm::ParameterSet>("inputs");   
   std::vector<edm::LuminosityBlockRange> lumiMask;
@@ -209,7 +213,7 @@ int main(int argc, char * argv[]){
   if(useUnitTurnOns)
     std::cout << "\t using Unit Turn-ons. (ie:no trigger applied) " << std::endl;
 
-  analysis a = analysis(events, runs, lumiBlocks, fsh, isMC, blind, year, histDetailLevel, 
+  analysis a = analysis(events, runs, lumiBlocks, fsh, isMC, blind, year, histDetailLevel, options,
 			doReweight, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, usePreCalcBTagSFs, 
 			bjetSF, btagVariations,
 			JECSyst, friendFile,

@@ -12,7 +12,7 @@ using std::cout;  using std::endl;
 
 using namespace nTupleAnalysis;
 
-analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, std::string histDetailLevel, 
+analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, std::string histDetailLevel, const std::map<std::string, bool> &options,
 		   bool _doReweight, bool _debug, bool _fastSkim, bool doTrigEmulation, bool _calcTrigWeights, bool useMCTurnOns, bool useUnitTurnOns, bool _isDataMCMix, bool usePreCalcBTagSFs,
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
@@ -29,6 +29,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   events     = _events;
   looseSkim  = _looseSkim;
   calcTrigWeights = _calcTrigWeights;
+
   events->SetBranchStatus("*", 0);
 
   //keep branches needed for JEC Uncertainties
@@ -85,7 +86,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   bool doWeightStudy = nTupleAnalysis::findSubStr(histDetailLevel,"weightStudy");
 
   lumiBlocks = _lumiBlocks;
-  event      = new eventData(events, isMC, year, debug, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, runKlBdt, doZHHNNLOScale, era, puIdVariations);  
+  event      = new eventData(events, isMC, year, debug, options, fastSkim, doTrigEmulation, calcTrigWeights, useMCTurnOns, useUnitTurnOns, isDataMCMix, doReweight, bjetSF, btagVariations, JECSyst, looseSkim, usePreCalcBTagSFs, FvTName, reweight4bName, reweightDvTName, doWeightStudy, runKlBdt, doZHHNNLOScale, era, puIdVariations);  
   treeEvents = events->GetEntries();
   cutflow    = new tagCutflowHists("cutflow", fs, isMC, debug);
   if(isDataMCMix){
@@ -110,19 +111,19 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   lumiCounts    = new lumiHists("lumiHists", fs, year, false, debug);
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"allEvents"))     allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passPreSel"))    passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passPreSel"))    passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug, event);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passLooseMDRs")) passLooseMDRs = new   tagHists("passLooseMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passLooseNjOth")) passLooseNjOth = new   tagHists("passLooseNjOth",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passLooseMV"))   passLooseMV   = new   tagHists("passLooseMV",    fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug, event);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passNjOth"))     passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMV"))        passMV        = new   tagHists("passMV",    fs, true,  isMC, blind, histDetailLevel, debug, event);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMV"))        passMV        = new   tagHists("passMV",        fs, true,  isMC, blind, histDetailLevel, debug, event);
   //if(nTupleAnalysis::findSubStr(histDetailLevel,"passXWt"))       passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"failrWbW2"))     failrWbW2     = new   tagHists("failrWbW2",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMuon"))      passMuon      = new   tagHists("passMuon",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passDvT05"))     passDvT05     = new   tagHists("passDvT05",     fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCR"))      passTTCR      = new   tagHists("passTTCR",      fs, true,  isMC, blind, histDetailLevel, debug);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCR"))      passTTCR      = new   tagHists("passTTCR",      fs, true,  isMC, blind, histDetailLevel, debug, event);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCRe"))     passTTCRe     = new   tagHists("passTTCRe",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCRem"))    passTTCRem    = new   tagHists("passTTCRem",    fs, true,  isMC, blind, histDetailLevel, debug);
 
@@ -500,7 +501,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("nSelJetsV", &event->nSelJetsV);
 
   //classifier variables
-  picoAODEvents->Branch("BDT_kl", &event->BDT_kl);
+  outputBranch(picoAODEvents, "BDT_kl", event->BDT_kl, "F");
 
   cout << "analysis::addDerivedQuantitiesToPicoAOD() done" << endl;
   return;
@@ -849,7 +850,6 @@ int analysis::processEvent(){
     }    
   }
 
-
   //
   // Preselection
   // 
@@ -1028,7 +1028,7 @@ int analysis::processEvent(){
     }
   }
 
-   
+
   return 0;
 }
 

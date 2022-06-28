@@ -196,6 +196,7 @@ namespace nTupleAnalysis {
     
 
     // VHH
+    std::vector<jetPtr> canVJets; // v candidate jets
     std::vector<jetPtr> canHTruVJets; //truth matched jets from V decay, selected as H candidate
     std::vector<jetPtr> truVJets; //truth matched jets from V decay
     std::vector<jetPtr> lowPtJets; //jets satisfy (jetPtMinV <= pt< jetPtMinH)
@@ -215,6 +216,19 @@ namespace nTupleAnalysis {
     std::vector< std::shared_ptr<eventView> > views_passLooseMDRs;
 
     uint nSelJetsV;
+
+    bool calcPuIdSF;
+    std::vector<jetPtr> allPuIdJets;
+    
+    std::vector<jetPtr> allBJets;
+    std::vector<jetPtr> allNotBJets;
+    std::vector<jetPtr> allBJetsPassPuId;
+    std::vector<jetPtr> allNotBJetsPassPuId;
+
+    std::vector<jetPtr> allPUBJets;
+    std::vector<jetPtr> allPUBJetsPassPuId;
+    std::vector<jetPtr> allPUNotBJets;
+    std::vector<jetPtr> allPUNotBJetsPassPuId;
 
     bool runKlBdt;
     std::unique_ptr<bdtInference> bdtModel;
@@ -322,7 +336,7 @@ namespace nTupleAnalysis {
     nTupleAnalysis::trigData* treeTrig = NULL;
 
     // Constructors and member functions
-    eventData(TChain* t, bool mc, std::string y, bool d, bool _fastSkim = false, bool _doTrigEmulation = false, bool _calcTrigWeights = false, bool _useMCTurnOns = false, bool _useUnitTurnOns = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
+    eventData(TChain* t, bool mc, std::string y, bool d, const std::map<std::string, bool> &options, bool _fastSkim = false, bool _doTrigEmulation = false, bool _calcTrigWeights = false, bool _useMCTurnOns = false, bool _useUnitTurnOns = false, bool _isDataMCMix = false, bool _doReweight = false, std::string bjetSF = "", std::string btagVariations = "central",
 	      std::string JECSyst = "", bool _looseSkim = false, bool usePreCalcBTagSFs = false, std::string FvTName="FvT", std::string reweight4bName="MixedToUnmixed", std::string reweightDvTName="weight_DvT3_3b_pt3", bool doWeightStudy = false,
         bool _runKlBdt = false, bool _doZHHNNLOScale = false, std::string era = "", std::string puIdVariations = "nom"); 
     void setTagger(std::string, float);
