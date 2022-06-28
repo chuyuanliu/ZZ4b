@@ -8,7 +8,7 @@ massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, boo
   blind = _blind;
   debug = _debug;
 
-  inclusive = new viewHists(name+"/inclusive", fs, isMC, debug, event, histDetailLevel);
+  inclusive = new viewHists(name+"/inclusive", fs, isMC, debug, NULL, histDetailLevel);
   notSR     = new viewHists(name+"/notSR", fs, isMC, debug, NULL, histDetailLevel);
   SR        = new viewHists(name+"/SR", fs, isMC, debug, event, histDetailLevel);
   SRNoZZ    = new viewHists(name+"/SRNoZZ", fs, isMC, debug, event, histDetailLevel);
