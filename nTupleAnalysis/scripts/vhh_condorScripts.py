@@ -351,7 +351,7 @@ if o.group:
 # python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --applyPuIdSF -e --friends SvB_MA_VHH$TAG --histsTag $TAG
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --cp --eos --hists --tags _8,_8n,_8nc,_14nc
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --hadd --lpc --hists --tags _8,_8n,_8nc,_14nc
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root"  --base "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/" --updatePostFix _VHH --weightFilePostFix $TAG -u -m "SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset*_epoch20.pkl"
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --updatePostFix _VHH -u -m "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
 
 # $TAG=_8n,_8nc,_14nc
 
@@ -366,9 +366,9 @@ if o.group:
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s --year 2016,2017,2018 --hadd --lpc --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
 
 # http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/dev3cuda/ for onnx
-# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/101cuda/
+# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/100cuda/
 # unset PYTHONPATH
-# source /cvmfs/sft.cern.ch/lcg/views/LCG_101cuda/x86_64-centos7-gcc8-opt/setup.sh 
+# source /cvmfs/sft.cern.ch/lcg/views/LCG_100cuda/x86_64-centos7-gcc8-opt/setup.sh 
 # source /cvmfs/sft.cern.ch/lcg/views/dev3cuda/latest/x86_64-centos7-gcc8-opt/setup.sh 
 
 # training
