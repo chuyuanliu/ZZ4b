@@ -197,37 +197,37 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   // SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
   puIdSF = dir.make<TH1F>("puIdSF",  (name+"/puIdSF;  PU Jet ID SF; Entries").c_str(), 40, 0.8, 1.2);
-  SvB_MA_labelBDT_ps  = dir.make<TH1F>("SvB_MA_labelBDT_ps",  (name+"/SvB_MA_labelBDT_ps;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps_BDT_kVV  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kVV",  (name+"/SvB_MA_labelBDT_ps_BDT_kVV;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps_BDT_kl = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl",  (name+"/SvB_MA_labelBDT_ps_BDT_kl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_VHH_ps  = dir.make<TH1F>("SvB_MA_VHH_ps",  (name+"/SvB_MA_VHH_ps;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_VHH_ps_BDT_kVV  = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kVV",  (name+"/SvB_MA_VHH_ps_BDT_kVV;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_VHH_ps_BDT_kl = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kl",  (name+"/SvB_MA_VHH_ps_BDT_kl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
   
-  SvB_MA_labelBDT_ps_ONNX  = dir.make<TH1F>("SvB_MA_labelBDT_ps_ONNX",  (name+"/SvB_MA_labelBDT_ps_ONNX;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps_BDT_kVV_ONNX  = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kVV_ONNX",  (name+"/SvB_MA_labelBDT_ps_BDT_kVV_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
-  SvB_MA_labelBDT_ps_BDT_kl_ONNX = dir.make<TH1F>("SvB_MA_labelBDT_ps_BDT_kl_ONNX",  (name+"/SvB_MA_labelBDT_ps_BDT_kl_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_VHH_ps_ONNX  = dir.make<TH1F>("SvB_MA_VHH_ps_ONNX",  (name+"/SvB_MA_VHH_ps_ONNX;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
+  SvB_MA_VHH_ps_BDT_kVV_ONNX  = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kVV_ONNX",  (name+"/SvB_MA_VHH_ps_BDT_kVV_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
+  SvB_MA_VHH_ps_BDT_kl_ONNX = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kl_ONNX",  (name+"/SvB_MA_VHH_ps_BDT_kl_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
 
 
   if(event){
-    SvB_MA_labelBDT_ps_bTagSysts = new systHists(SvB_MA_labelBDT_ps, event->treeJets->m_btagVariations);
-    SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV, event->treeJets->m_btagVariations);
-    SvB_MA_labelBDT_ps_BDT_kl_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->treeJets->m_btagVariations);
+    SvB_MA_VHH_ps_bTagSysts = new systHists(SvB_MA_VHH_ps, event->treeJets->m_btagVariations);
+    SvB_MA_VHH_ps_BDT_kVV_bTagSysts = new systHists(SvB_MA_VHH_ps_BDT_kVV, event->treeJets->m_btagVariations);
+    SvB_MA_VHH_ps_BDT_kl_bTagSysts = new systHists(SvB_MA_VHH_ps_BDT_kl, event->treeJets->m_btagVariations);
 
     if(event->treeJets->m_puIdVariations.size() > 0){
-      SvB_MA_labelBDT_ps_puIdSysts = new systHists(SvB_MA_labelBDT_ps, event->treeJets->m_puIdVariations);
-      SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV, event->treeJets->m_puIdVariations);
-      SvB_MA_labelBDT_ps_BDT_kl_puIdSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->treeJets->m_puIdVariations);
+      SvB_MA_VHH_ps_puIdSysts = new systHists(SvB_MA_VHH_ps, event->treeJets->m_puIdVariations, "puId");
+      SvB_MA_VHH_ps_BDT_kVV_puIdSysts = new systHists(SvB_MA_VHH_ps_BDT_kVV, event->treeJets->m_puIdVariations, "puId");
+      SvB_MA_VHH_ps_BDT_kl_puIdSysts = new systHists(SvB_MA_VHH_ps_BDT_kl, event->treeJets->m_puIdVariations, "puId");
     }
 
-    SvB_MA_labelBDT_ps_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps, event->zhhNNLOVariations);
-    SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV, event->zhhNNLOVariations);
-    SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl, event->zhhNNLOVariations);
+    SvB_MA_VHH_ps_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps, event->zhhNNLOVariations);
+    SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps_BDT_kVV, event->zhhNNLOVariations);
+    SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps_BDT_kl, event->zhhNNLOVariations);
 
-    SvB_MA_labelBDT_ps_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_ONNX, event->treeJets->m_btagVariations);
-    SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kVV_ONNX, event->treeJets->m_btagVariations);
-    SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts = new systHists(SvB_MA_labelBDT_ps_BDT_kl_ONNX, event->treeJets->m_btagVariations);
+    SvB_MA_VHH_ps_ONNX_bTagSysts = new systHists(SvB_MA_VHH_ps_ONNX, event->treeJets->m_btagVariations);
+    SvB_MA_VHH_ps_BDT_kVV_ONNX_bTagSysts = new systHists(SvB_MA_VHH_ps_BDT_kVV_ONNX, event->treeJets->m_btagVariations);
+    SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts = new systHists(SvB_MA_VHH_ps_BDT_kl_ONNX, event->treeJets->m_btagVariations);
   }
 
 
-  bdt_vs_labelBDT = dir.make<TH2F>("bdt_vs_labelBDT", (name+"/bdt_vs_labelBDT; BDT output; SvB (BDT label) output; Entries").c_str(), 40,-1,1, 40,0,1);
+  bdt_vs_SvB = dir.make<TH2F>("bdt_vs_SvB", (name+"/bdt_vs_SvB; BDT output; SvB (BDT label) output; Entries").c_str(), 40,-1,1, 40,0,1);
 
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
@@ -542,53 +542,53 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   // FvT_SvB_q_score_max_same->Fill((float)(event->view_max_FvT_q_score==event->view_max_SvB_q_score), event->weight);
 
   puIdSF->Fill(event->puIdSF, event->weight);
-  SvB_MA_labelBDT_ps->Fill(event->SvB_MA_labelBDT_ps, event->weight);
-  SvB_MA_labelBDT_ps_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
-  if(SvB_MA_labelBDT_ps_bTagSysts){
-    SvB_MA_labelBDT_ps_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+  SvB_MA_VHH_ps->Fill(event->SvB_MA_VHH_ps, event->weight);
+  SvB_MA_VHH_ps_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+  if(SvB_MA_VHH_ps_bTagSysts){
+    SvB_MA_VHH_ps_bTagSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
   }
-  if(SvB_MA_labelBDT_ps_puIdSysts){
-    SvB_MA_labelBDT_ps_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
+  if(SvB_MA_VHH_ps_puIdSysts){
+    SvB_MA_VHH_ps_puIdSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
   }
-  if(SvB_MA_labelBDT_ps_zhhNNLOSysts){
-    SvB_MA_labelBDT_ps_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+  if(SvB_MA_VHH_ps_zhhNNLOSysts){
+    SvB_MA_VHH_ps_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
   }
-  if(SvB_MA_labelBDT_ps_ONNX_bTagSysts){
-    SvB_MA_labelBDT_ps_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+  if(SvB_MA_VHH_ps_ONNX_bTagSysts){
+    SvB_MA_VHH_ps_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
   }
   if(event->BDT_kl<0 && event->BDT_kl>=-1){
-    SvB_MA_labelBDT_ps_BDT_kVV->Fill(event->SvB_MA_labelBDT_ps, event->weight);
-    SvB_MA_labelBDT_ps_BDT_kVV_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
-    if(SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts){
-      SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    SvB_MA_VHH_ps_BDT_kVV->Fill(event->SvB_MA_VHH_ps, event->weight);
+    SvB_MA_VHH_ps_BDT_kVV_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+    if(SvB_MA_VHH_ps_BDT_kVV_bTagSysts){
+      SvB_MA_VHH_ps_BDT_kVV_bTagSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
-    if(SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts){
-      SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
+    if(SvB_MA_VHH_ps_BDT_kVV_puIdSysts){
+      SvB_MA_VHH_ps_BDT_kVV_puIdSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
     }
-    if(SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts){
-      SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+    if(SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts){
+      SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
     }
-    if(SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts){
-      SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    if(SvB_MA_VHH_ps_BDT_kVV_ONNX_bTagSysts){
+      SvB_MA_VHH_ps_BDT_kVV_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
   }
   if(event->BDT_kl>=0){
-    SvB_MA_labelBDT_ps_BDT_kl->Fill(event->SvB_MA_labelBDT_ps, event->weight);
-    SvB_MA_labelBDT_ps_BDT_kl_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
-    if(SvB_MA_labelBDT_ps_BDT_kl_bTagSysts){
-      SvB_MA_labelBDT_ps_BDT_kl_bTagSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    SvB_MA_VHH_ps_BDT_kl->Fill(event->SvB_MA_VHH_ps, event->weight);
+    SvB_MA_VHH_ps_BDT_kl_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+    if(SvB_MA_VHH_ps_BDT_kl_bTagSysts){
+      SvB_MA_VHH_ps_BDT_kl_bTagSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
-    if(SvB_MA_labelBDT_ps_BDT_kl_puIdSysts){
-      SvB_MA_labelBDT_ps_BDT_kl_puIdSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
+    if(SvB_MA_VHH_ps_BDT_kl_puIdSysts){
+      SvB_MA_VHH_ps_BDT_kl_puIdSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
     }
-    if(SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts){
-      SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts->Fill(event->SvB_MA_labelBDT_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+    if(SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts){
+      SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
     }
-    if(SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts){
-      SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
+    if(SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts){
+      SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
   }
-  bdt_vs_labelBDT->Fill(event->BDT_kl, event->SvB_MA_labelBDT_ps, event->weight);
+  bdt_vs_SvB->Fill(event->BDT_kl, event->SvB_MA_VHH_ps, event->weight);
 
   if(kl_BDT && event->canVDijets.size() > 0){
     kl_BDT->Fill(event->BDT_kl, event->weight);

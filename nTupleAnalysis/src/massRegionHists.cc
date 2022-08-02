@@ -8,14 +8,16 @@ massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, boo
   blind = _blind;
   debug = _debug;
 
-  inclusive = new viewHists(name+"/inclusive", fs, isMC, debug, NULL, histDetailLevel);
-  notSR     = new viewHists(name+"/notSR", fs, isMC, debug, NULL, histDetailLevel);
-  SR        = new viewHists(name+"/SR", fs, isMC, debug, event, histDetailLevel);
-  SRNoZZ    = new viewHists(name+"/SRNoZZ", fs, isMC, debug, event, histDetailLevel);
-  SRNoHH    = new viewHists(name+"/SRNoHH", fs, isMC, debug, event, histDetailLevel);
-  CR        = new viewHists(name+"/CR", fs, isMC, debug, NULL, histDetailLevel);
-  SB        = new viewHists(name+"/SB", fs, isMC, debug, NULL, histDetailLevel);
-  SCSR      = new viewHists(name+"/SCSR", fs, isMC, debug, NULL, histDetailLevel);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"InclusiveRegions")){
+    inclusive = new viewHists(name+"/inclusive", fs, isMC, debug, NULL, histDetailLevel);
+    notSR     = new viewHists(name+"/notSR", fs, isMC, debug, event, histDetailLevel);
+    // SR        = new viewHists(name+"/SR", fs, isMC, debug, event, histDetailLevel);
+    // SRNoZZ    = new viewHists(name+"/SRNoZZ", fs, isMC, debug, event, histDetailLevel);
+    // SRNoHH    = new viewHists(name+"/SRNoHH", fs, isMC, debug, event, histDetailLevel);
+    CR        = new viewHists(name+"/CR", fs, isMC, debug, event, histDetailLevel);
+    SB        = new viewHists(name+"/SB", fs, isMC, debug, event, histDetailLevel);
+    CRSB      = new viewHists(name+"/CRSB", fs, isMC, debug, event, histDetailLevel);
+  }
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"ZHRegions")){
     ZHSR      = new viewHists(name+"/ZHSR",      fs, isMC, debug, NULL, histDetailLevel );
@@ -33,8 +35,9 @@ massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, boo
     
   if(nTupleAnalysis::findSubStr(histDetailLevel,"HHRegions")){
     HHSR      = new viewHists(name+"/HHSR",      fs, isMC, debug, event, histDetailLevel );
-    HHCR      = new viewHists(name+"/HHCR",      fs, isMC, debug, NULL, histDetailLevel );
-    HHSB      = new viewHists(name+"/HHSB",      fs, isMC, debug, NULL, histDetailLevel );
+    HHnoSR    = new viewHists(name+"/HHnoSR",    fs, isMC, debug, event, histDetailLevel );
+    HHCR      = new viewHists(name+"/HHCR",      fs, isMC, debug, event, histDetailLevel );
+    HHSB      = new viewHists(name+"/HHSB",      fs, isMC, debug, event, histDetailLevel );
     HH        = new viewHists(name+"/HH",        fs, isMC, debug, NULL, histDetailLevel );
   }
 
@@ -63,8 +66,8 @@ massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, boo
 void massRegionHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   if(blind && (view->ZZSR || view->ZHSR || view->HHSR)) return;
 
-  inclusive->Fill(event, view);
-  if(!view->SR) notSR->Fill(event, view);
+  if(inclusive) inclusive->Fill(event, view);
+  if(notSR && !view->SR) notSR->Fill(event, view);
 
   if(ZHSR && view->ZHSR) ZHSR->Fill(event, view);
   if(ZHCR && view->ZHCR) ZHCR->Fill(event, view);
@@ -89,6 +92,9 @@ void massRegionHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   if(HHSR && view->HHSR) HHSR->Fill(event, view);
   if(HHCR && view->HHCR) HHCR->Fill(event, view);
   if(HHSB && view->HHSB) HHSB->Fill(event, view);
+  if(HHnoSR && (view->HHSB || view->HHCR)){
+    HHnoSR->Fill(event, view);
+  }
   if(HH && (view->HHSB || view->HHCR || view->HHSR)){
     HH->Fill(event, view);
   }
@@ -96,11 +102,11 @@ void massRegionHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
 
   if(TTCR && event->passTTCR) TTCR->Fill(event, view);
 
-  if(view->SR) SR->Fill(event, view);
-  if(view->SR && !view->HHSR) SRNoHH->Fill(event, view);
-  if(view->CR) CR->Fill(event, view);
-  if(view->SB) SB->Fill(event, view);
-  if(view->SB || view->CR || view->SR) SCSR->Fill(event, view);
+  if(SR && view->SR) SR->Fill(event, view);
+  if(SRNoHH && view->SR && !view->HHSR) SRNoHH->Fill(event, view);
+  if(CR && view->CR) CR->Fill(event, view);
+  if(SB && view->SB) SB->Fill(event, view);
+  if(CRSB && (view->SB || view->CR)) CRSB->Fill(event, view);
   return;
 }
 

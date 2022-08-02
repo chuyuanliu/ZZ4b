@@ -20,8 +20,8 @@ parser.add_option('--rm', action="store_true", dest = 'remove', default =  False
 parser.add_option('--lpc', action="store_true", dest = 'lpc', default =  False, help = 'Operate on lpc')
 parser.add_option('--eos', action="store_true", dest = 'eos', default =  False, help = 'Operate on eos')
 parser.add_option('--hadd', action="store_true", dest = 'hadd', default =  False, help = 'hadd hists')
-parser.add_option('-y', '--year', dest = 'years', default =  '2017,2018', help = 'Comma separated list of years')
-parser.add_option('--tag', dest = 'tag', default ='', help = 'Set tag of picoAOD and hists')
+parser.add_option('-y', '--year', dest = 'years', default =  '2016,2017,2018', help = 'Comma separated list of years')
+parser.add_option('--tags', dest = 'tags', default ='', help = 'Set tags for picoAOD and hists')
 parser.add_option('--oldTag', dest = 'oldTag', default ='', help = 'Set old tag of picoAOD')
 parser.add_option('--newTag', dest = 'newTag', default ='', help = 'Set new tag of picoAOD')
 parser.add_option('-j', action="store_true", dest = 'jcm', default = False, help = 'Use JCM')
@@ -39,7 +39,7 @@ parser.add_option('--group', dest = 'group', default = '', help = 'Group text fi
 o, a = parser.parse_args()
 classifierFiles = o.classifiers.split(',')
 
-file_tags = o.tag.split(',')
+file_tags = o.tags.split(',')
 
 def classifierFile(isSignal = False):
     if not isSignal:
@@ -125,7 +125,7 @@ def hadd(srcs,dest):
 
 def load_skims():
     oldAOD = picoAOD()
-    newAOD = picoAOD(tag='')
+    newAOD = picoAOD(tags=[''])
     for year in years:
         for cps in signals:
             for boson in cps[0:2]:
@@ -138,8 +138,8 @@ def load_skims():
 def move_eos():
     if o.oldTag == '' and o.newTag == '':
         return
-    oldAOD = picoAOD(tag=o.oldTag)[0]
-    newAOD = picoAOD(tag=o.newTag)[0]
+    oldAOD = picoAOD(tags=[o.oldTag])[0]
+    newAOD = picoAOD(tags=[o.newTag])[0]
     for year in years:
         if year not in ['2016']:
             for cps in signals:
@@ -346,17 +346,36 @@ if o.init:
 if o.group:
     group_files(o.group)
 
+# cmds w/o syst
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e --friends FvT_Nominal,SvB_MA_VHH$TAG --histsTag $TAG
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --applyPuIdSF -e --friends SvB_MA_VHH$TAG --histsTag $TAG
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --cp --eos --hists --tags _8,_8n,_8nc,_14nc
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --hadd --lpc --hists --tags _8,_8n,_8nc,_14nc
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root"  --base "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/" --updatePostFix _VHH --weightFilePostFix $TAG -u -m "SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset*_epoch20.pkl"
+
+# $TAG=_8n,_8nc,_14nc
+
+# cmds
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --bTagSyst --puIdSyst --applyPuIdSF -e --friends SvB_MA_VHH
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --cp --eos --hists 
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --hadd --lpc --hists 
+# for JEC
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --doJECSyst -e --friends SvB_MA_VHH
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s --year 2016,2017,2018 --cp --eos --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s --year 2016,2017,2018 --hadd --lpc --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
+
 # http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/dev3cuda/ for onnx
-# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/100cuda/
+# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/101cuda/
 # unset PYTHONPATH
-# source /cvmfs/sft.cern.ch/lcg/views/LCG_100cuda/x86_64-centos7-gcc8-opt/setup.sh 
+# source /cvmfs/sft.cern.ch/lcg/views/LCG_101cuda/x86_64-centos7-gcc8-opt/setup.sh 
+# source /cvmfs/sft.cern.ch/lcg/views/dev3cuda/latest/x86_64-centos7-gcc8-opt/setup.sh 
 
 # training
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.root" --train
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --train --noXsec --normSignal
 
 # to ONNX
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_1_0_C2V_1_0_C3_20_0_201[7-8]/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201[7-8]_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201[7-8]*/picoAOD.root" --train -e 1
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "" -d "" -t "" -m "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_HCR+attention_8_np1052_lr0.01_epochs1_offset0_epoch01.pkl" --onnx
 
 # save prediction
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_*_201*/picoAOD.h5" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5"  --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ --strategy signalAll,regionC3 -u -m "SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset0_epoch20.pkl"
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root"  --base "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/" --updatePostFix _VHH -u -m "SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset*_epoch20.pkl"

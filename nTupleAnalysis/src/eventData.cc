@@ -107,10 +107,8 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, const std::map<s
   classifierVariables["SvB_MA_q_1423"] = &SvB_MA_q_score[2]; //&SvB_MA_q_1423;
   check_classifierVariables["SvB_MA_event"] = &SvB_MA_event;
 
-  classifierVariables["SvB_MA_signalAll_ps" ] = &SvB_MA_signalAll_ps;
-  classifierVariables["SvB_MA_regionC3_signalAll_ps" ] = &SvB_MA_regionC3_signalAll_ps;
-  classifierVariables["SvB_MA_regionC2V_signalAll_ps" ] = &SvB_MA_regionC2V_signalAll_ps;
-  classifierVariables["SvB_MA_labelBDT_ps" ] = &SvB_MA_labelBDT_ps;
+  classifierVariables["SvB_MA_VHH_ps" ] = &SvB_MA_VHH_ps;
+  check_classifierVariables["SvB_MA_VHH_event"] = &SvB_MA_VHH_event;
 
   classifierVariables[reweight4bName    ] = &reweight4b;
   classifierVariables[reweightDvTName   ] = &DvT;
@@ -156,6 +154,9 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, const std::map<s
       }
       if(variable.first == "SvB_MA_event"){
 	check_SvB_MA_event = true;
+      }
+      if(variable.first == "SvB_MA_VHH_event"){
+        check_SvB_MA_VHH_event = true;
       }
     }else{
       std::cout << "Tree does not have " << variable.first << std::endl;
@@ -584,6 +585,9 @@ void eventData::update(long int e){
   if(check_SvB_MA_event){
     assert( event==ULong64_t(SvB_MA_event) );
   }
+  if(check_SvB_MA_VHH_event){
+    assert( event==ULong64_t(SvB_MA_VHH_event));
+  }
 
   //
   // Reset the derived data
@@ -755,9 +759,9 @@ void eventData::buildEvent(){
       bTagSF = inputBTagSF;
     }else{
       //for(auto &jet: selJets) bTagSF *= treeJets->getSF(jet->eta, jet->pt, jet->deepFlavB, jet->hadronFlavour);
-      treeJets->updateSFs(selJets, debug);
+      treeJets->updateSFs(selJets, debug, puIdMin);
       bTagSF = treeJets->m_btagSFs["central"];
-      if(treeJets->m_puIdVariations.size() > 0) puIdSF = treeJets->m_puIdSFs["central"];
+      if(treeJets->m_puIdVariations.size() > 0) puIdSF = treeJets->m_puIdSFs["nom"];
     }
 
     if(debug) std::cout << "eventData buildEvent bTagSF = " << bTagSF << std::endl;
@@ -1477,8 +1481,6 @@ void eventData::applyMDRs(){
       auto score = bdtModel->getBDTScore(this, view_selected);
       BDT_kl = score["BDT"];
     }
-    if(BDT_kl >= bdtCut) SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC3_signalAll_ps;
-    else SvB_MA_regionBDT_signalAll_ps = SvB_MA_regionC2V_signalAll_ps;
   }
   return;
 }

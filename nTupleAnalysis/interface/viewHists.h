@@ -90,25 +90,25 @@ namespace nTupleAnalysis {
     TH1F* eventBTagSF = NULL;
 
     TH1F* puIdSF;
-    TH1F* SvB_MA_labelBDT_ps;
-    TH1F* SvB_MA_labelBDT_ps_BDT_kVV;
-    TH1F* SvB_MA_labelBDT_ps_BDT_kl;
-    systHists* SvB_MA_labelBDT_ps_bTagSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kVV_bTagSysts = NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kl_bTagSysts = NULL;
-    systHists* SvB_MA_labelBDT_ps_puIdSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kVV_puIdSysts = NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kl_puIdSysts = NULL;
-    systHists* SvB_MA_labelBDT_ps_zhhNNLOSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kVV_zhhNNLOSysts = NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kl_zhhNNLOSysts = NULL;
+    TH1F* SvB_MA_VHH_ps;
+    TH1F* SvB_MA_VHH_ps_BDT_kVV;
+    TH1F* SvB_MA_VHH_ps_BDT_kl;
+    systHists* SvB_MA_VHH_ps_bTagSysts =NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kVV_bTagSysts = NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kl_bTagSysts = NULL;
+    systHists* SvB_MA_VHH_ps_puIdSysts =NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kVV_puIdSysts = NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kl_puIdSysts = NULL;
+    systHists* SvB_MA_VHH_ps_zhhNNLOSysts =NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts = NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts = NULL;
 
-    TH1F* SvB_MA_labelBDT_ps_ONNX;
-    TH1F* SvB_MA_labelBDT_ps_BDT_kVV_ONNX;
-    TH1F* SvB_MA_labelBDT_ps_BDT_kl_ONNX;
-    systHists* SvB_MA_labelBDT_ps_ONNX_bTagSysts =NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kVV_ONNX_bTagSysts = NULL;
-    systHists* SvB_MA_labelBDT_ps_BDT_kl_ONNX_bTagSysts = NULL; 
+    TH1F* SvB_MA_VHH_ps_ONNX;
+    TH1F* SvB_MA_VHH_ps_BDT_kVV_ONNX;
+    TH1F* SvB_MA_VHH_ps_BDT_kl_ONNX;
+    systHists* SvB_MA_VHH_ps_ONNX_bTagSysts =NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kVV_ONNX_bTagSysts = NULL;
+    systHists* SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts = NULL; 
     //
     trigHists*  allTrigJets = NULL;
 
@@ -143,7 +143,7 @@ namespace nTupleAnalysis {
     TH2F* m6j_vs_V_dR_matched;
     TH2F* m6j_vs_V_dR_not_matched;
 
-    TH2F* bdt_vs_labelBDT;
+    TH2F* bdt_vs_SvB;
 
     dijetHists* leadM;
     dijetHists* sublM;

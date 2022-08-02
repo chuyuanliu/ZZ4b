@@ -488,6 +488,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("passHLT", &event->passHLT);
   picoAODEvents->Branch("passDijetMass", &event->passDijetMass);
   picoAODEvents->Branch("passMDRs", &event->passMDRs);
+  picoAODEvents->Branch("passMV", &event->passMV);
   picoAODEvents->Branch("passXWt", &event->passXWt);
   picoAODEvents->Branch("xW", &event->xW);
   picoAODEvents->Branch("xt", &event->xt);
@@ -892,7 +893,7 @@ int analysis::processEvent(){
   if(!event->appliedMDRs) event->applyMDRs();
 
   #if SLC6 == 0
-  if(event->fourTag && event->passMV && event->HHSR){ // for JEC systematic, only run if event pass all selections
+  if(event->fourTag && event->passMV){ // for JEC systematic, only run if event pass all selections
     event->run_SvB_ONNX(); // will only run if a model was initialized
   }
   #endif

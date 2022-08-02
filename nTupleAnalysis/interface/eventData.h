@@ -95,6 +95,8 @@ namespace nTupleAnalysis {
     bool      check_SvB_event = false;
     Long64_t  SvB_MA_event = 0;
     bool      check_SvB_MA_event = false;
+    Long64_t  SvB_MA_VHH_event = 0;
+    bool      check_SvB_MA_VHH_event = false;
     std::vector<Float_t>   otherWeights;
 
     std::map<std::string, float*>           classifierVariables;
@@ -236,11 +238,7 @@ namespace nTupleAnalysis {
     Float_t BDT_kl = -99;
     const float bdtCut = 0.0;
 
-    Float_t SvB_MA_signalAll_ps = -99;
-    Float_t SvB_MA_regionBDT_signalAll_ps = -99;
-    Float_t SvB_MA_regionC3_signalAll_ps = -99;
-    Float_t SvB_MA_regionC2V_signalAll_ps = -99;
-    Float_t SvB_MA_labelBDT_ps = -99;
+    Float_t SvB_MA_VHH_ps = -99;
     Float_t SvB_MA_pskl_ONNX = -99;
     Float_t SvB_MA_plkl_ONNX = -99;
     Float_t SvB_MA_ptt_ONNX  = -99;

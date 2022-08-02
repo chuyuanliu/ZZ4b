@@ -51,7 +51,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMDRs.passMV.HHSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMV.HHRegions.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
 parser.add_option('-c', '--makeCombineHist',    action="store_true", dest="makeCombineHist",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -62,7 +62,7 @@ parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagE
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
 parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
-parser.add_option(   '--friends', dest = 'friends',default='SvB_MA_labelBDT,FvT_Nominal', help = 'friend root files')
+parser.add_option(   '--friends', dest = 'friends',default='FvT_Nominal,SvB_MA_VHH', help = 'friend root files')
 # for VHH study
 parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'set signal coupling')
 parser.add_option(   '--higherOrder',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
@@ -128,19 +128,6 @@ if o.fastSkim and fromNANOAOD:
 # Copy the onnx file to an sl7 CMSSW_11 area
 # Specify the model.onnx above in the python variable SvB_ONNX
 # Run signal samples with --SvB_ONNX --doJECSyst in sl7 and CMSSW_11
-
-### VHH SvB classifier
-# signal  python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2017,2018 -e -p picoAOD_f.root
-# data python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -r -j -y 2017,2018 -e -p picoAOD_f.root
-# python ZZ4b/nTupleAnalysis/scripts/convert_root2h5.py -i "/uscms/home/chuyuanl/nobackup/VHH/*/picoAOD_f.root"
-
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c FvT -d "/uscms/home/chuyuanl/ml/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/ml/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/ml/VHH/*HHTo4B*/picoAOD_f.h5" -m ZZ4b/nTupleAnalysis/pytorchModels/FvT_ResNet+multijetAttention_8_8_8_np1494_lr0.01_epochs20_offset0_epoch20.pkl -u
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -d "/uscms/home/chuyuanl/ml/VHH/data201*/picoAOD_f.h5" -t "/uscms/home/chuyuanl/ml/VHH/TTTo*201*/picoAOD_f.h5" -s "/uscms/home/chuyuanl/ml/VHH/*HHTo4B_CV_1_0_C2V_1_0_C3_1_0_201*/picoAOD_f.h5" --train
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.h5" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD.h5" -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B*201*/picoAOD.h5" --base /uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/ -m SvB_MA_HCR+attention_14_np2714_lr0.01_epochs10_offset0_epoch10.pkl -u --strategy signalSM
-# python ZZ4b/nTupleAnalysis/scripts/convert_h52root.py -i "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD_f.h5 /uscms/home/chuyuanl/nobackup/VHH/TTTo*201*/picoAOD_f.h5 /uscms/home/chuyuanl/nobackup/VHH/*HHTo4B*201*/picoAOD_f.h5"
-# signal python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2017,2018 -e
-# data python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -r -j -y 2017,2018 -e
-
 
 # Condor
 # tar -zcvf CMSSW_11_1_0_pre5.tgz CMSSW_11_1_0_pre5 --exclude="*.pdf" --exclude=".git" --exclude="PlotTools" --exclude="madgraph" --exclude="*.pkl" --exclude="*.root" --exclude="tmp" --exclude="combine" --exclude-vcs --exclude-caches-all; ls -alh
@@ -297,9 +284,9 @@ def doSignal():
                 for fileList in signalFiles(signals[0:2],year):
                     era = year
                     if '2016' in fileList:
-                        if 'preVFP' in fileList:
+                        if '2016_preVFP' in fileList:
                             era = '2016_preVFP'
-                        elif 'postVFP' in fileList: 
+                        elif '2016_postVFP' in fileList: 
                             era = '2016_postVFP'
                     lumi = lumiDict[era]
                     cmd  = "nTupleAnalysis "+script
@@ -407,9 +394,9 @@ def doDataTT():
         for fileList in files:
             era = year
             if '2016' in fileList:
-                if 'preVFP' in fileList:
+                if '2016_preVFP' in fileList:
                     era = '2016_preVFP'
-                elif 'postVFP' in fileList: 
+                elif '2016_postVFP' in fileList: 
                     era = '2016_postVFP'
             lumi = lumiDict[era]
             cmd  = "nTupleAnalysis "+script
@@ -705,33 +692,43 @@ def read_parameter_file(inFileName):
 
 def makeCombineHist():
     channelName     = {'lbdt': 'kl', 'sbdt': 'kVV'}
-    channelHistName = {'lbdt': 'kl', 'sbdt': 'nkl'}
     basis = {'lbdt': 2, 'sbdt': 2}
     histName = 'multijet_background'
     for channel in channelName.keys():
-        for year in years:
-            closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
-            for systName, variation in closureSysts.iteritems():
-                rootFile = '/uscms/home/'+USER+'/nobackup/VHH/shapefile_VhadHH_'+year+'_'+channelName[channel]+'.root'
-                systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_bbbb_Multijet')
-                if 'basis' in systName:
-                    #Multijet closure systematic templates to data file
-                    cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
-                    cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName
-                    execute(cmd, o.execute)
+        for region in ['SR', 'SB']:
+            for year in years:
+                closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
+                for systName, variation in closureSysts.iteritems():
+                    rootFile = '/uscms/home/'+USER+'/nobackup/VHH/shapefile_VhadHH_'+region+'_'+year+'_'+channelName[channel]+'.root'
+                    systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_bbbb_Multijet')
+                    if 'basis' in systName:
+                        #Multijet closure systematic templates to data file
+                        cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
+                        cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName
+                        execute(cmd, o.execute)
 
-                if 'spurious' in systName:
-                    #Spurious Sigmal template to data file
-                    cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
-                    cmd +=' -n '+histName+' --syst ' + systName
-                    cmd += ' --addHist %s,WHH_CV_1_C2V_1_kl_20_hbbhbb,%s'%(rootFile, variation)
-                    execute(cmd, o.execute)
-                if 'spurious' in systName:
-                    #Spurious Sigmal template to data file
-                    cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
-                    cmd +=' -n '+histName+' --syst ' + systName
-                    cmd += ' --addHist %s,ZHH_CV_1_C2V_1_kl_20_hbbhbb,%s'%(rootFile, variation)
-                    execute(cmd, o.execute)
+                    if 'spurious' in systName:
+                        #Spurious Sigmal template to data file
+                        cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
+                        cmd +=' -n '+histName+' --syst ' + systName
+                        cmd += ' --addHist %s,VHH_CV_1_C2V_1_kl_20_hbbhbb,%s'%(rootFile, variation)
+                        execute(cmd, o.execute)
+
+
+# def makeCombineHist():
+#     channelName     = {'lbdt': 'kl', 'sbdt': 'kVV'}
+#     basis = {'lbdt': 2, 'sbdt': 2}
+#     histName = 'multijet_background'
+#     for channel in channelName.keys():
+#         for year in years:
+#             closureSysts = read_parameter_file('closureFits/nominal_legendre_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
+#             for systName, variation in closureSysts.iteritems():
+#                 rootFile = '/uscms/home/'+USER+'/nobackup/VHH/shapefile_VhadHH_'+year+'_'+channelName[channel]+'.root'
+#                 systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_bbbb_Multijet')
+#                 #Multijet closure systematic templates to data file
+#                 cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
+#                 cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName
+#                 execute(cmd, o.execute)
 
 
 #
