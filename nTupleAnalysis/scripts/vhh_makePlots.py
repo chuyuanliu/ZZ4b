@@ -22,17 +22,17 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['RunII', '2016', '2017', '2018']
+# years = ['RunII', '2016', '2017', '2018']
 signals = ['VHH', 'ZHH', 'WHH']
-# years = ['2016', '2017', '2018']
+years = ['2016', '2017', '2018']
 hists_filename = {
-    # 'data'    : ['hists_j_r'],
-    # 'ttbar'   : ['hists_j_r'],
-    # 'signal'  : ['hists', 'hists_jerUp', 'hists_jerDown', 'hists_jesTotalUp', 'hists_jesTotalDown'],
+    'data'    : ['hists_j_r'],
+    'ttbar'   : ['hists_j_r'],
+    'signal'  : ['hists', 'hists_jerUp', 'hists_jerDown', 'hists_jesTotalUp', 'hists_jesTotalDown'],
     # 'signal'  : ['hists'],
-    'data'    : ['hists_j_r', 'hists_j_r_14', 'hists_j_r_14n', 'hists_j_r_14nc', 'hists_j_r_8', 'hists_j_r_8n', 'hists_j_r_8nc'],
-    'ttbar'   : ['hists_j_r', 'hists_j_r_14', 'hists_j_r_14n', 'hists_j_r_14nc', 'hists_j_r_8', 'hists_j_r_8n', 'hists_j_r_8nc'],
-    'signal'  : ['hists', 'hists_14', 'hists_14n', 'hists_14nc', 'hists_8', 'hists_8n', 'hists_8nc'],
+    # 'data'    : ['hists_j_r', 'hists_j_r_14', 'hists_j_r_14n', 'hists_j_r_14nc', 'hists_j_r_8', 'hists_j_r_8n', 'hists_j_r_8nc'],
+    # 'ttbar'   : ['hists_j_r', 'hists_j_r_14', 'hists_j_r_14n', 'hists_j_r_14nc', 'hists_j_r_8', 'hists_j_r_8n', 'hists_j_r_8nc'],
+    # 'signal'  : ['hists', 'hists_14', 'hists_14n', 'hists_14nc', 'hists_8', 'hists_8n', 'hists_8nc'],
 }
 no_background = False
 no_multijet = False
@@ -1173,6 +1173,7 @@ class plots:
                 signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
                 for i,coupling in enumerate(self.couplings.basis):
                     name = signal + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl') + '_hbbhbb'
+                    # name = signal + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl').replace('C2V', 'C2' + signal[0]) + '_hbbhbb'
                     name = name.replace('p0_','_')
                     signal_hist = signal_mc[i]
                     signal_hist.SetNameTitle(name,name+"_"+year)
@@ -1354,8 +1355,8 @@ if __name__ == '__main__':
         # producer.add_couplings(cv=0.5,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=20.0)
 
-        producer.compare_histfile('pass*/fourTag/mainView/HHSR/SvB_MA_VHH_ps[|_BDT_kl|_BDT_kVV]', {'{}':'14, no k-fold', '{}_14':'14, k-fold','{}_14n':'14, k-fold + norm sample','{}_14nc':'14, k-fold + norm coupling', '{}_8':'8, k-fold','{}_8n':'8, k-fold + norm sample','{}_8nc':'8, k-fold + norm coupling'}, rebin = binning, extra_tag='_all', normalize=True)
-        producer.compare_histfile('pass*/fourTag/mainView/HHSR/SvB_MA_VHH_ps[|_BDT_kl|_BDT_kVV]', {'{}_8':'8, k-fold','{}_8n':'8, k-fold + norm sample','{}_8nc':'8, k-fold + norm coupling'}, rebin = binning, extra_tag='_8features', normalize=True)
+        # producer.compare_histfile('pass*/fourTag/mainView/HHSR/SvB_MA_VHH_ps[|_BDT_kl|_BDT_kVV]', {'{}':'14, no k-fold', '{}_14':'14, k-fold','{}_14n':'14, k-fold + norm sample','{}_14nc':'14, k-fold + norm coupling', '{}_8':'8, k-fold','{}_8n':'8, k-fold + norm sample','{}_8nc':'8, k-fold + norm coupling'}, rebin = binning, extra_tag='_all', normalize=True)
+        # producer.compare_histfile('pass*/fourTag/mainView/HHSR/SvB_MA_VHH_ps[|_BDT_kl|_BDT_kVV]', {'{}_8':'8, k-fold','{}_8n':'8, k-fold + norm sample','{}_8nc':'8, k-fold + norm coupling'}, rebin = binning, extra_tag='_8features', normalize=True)
         # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR]/nSel*'])
         # producer.add_dir(['pass*/fourTag/mainview/[HHSR|CR]/SvB_MA_VHH_ps_[down|up|central]*'])
@@ -1439,13 +1440,15 @@ if __name__ == '__main__':
         # {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_down_NNLO')], filename = 'hists'),'up':systematic([(0,3), (4,'+{}_up_NNLO')], filename = 'hists')},'_ZHH_NNLO_reweight', binning)
         
         ## make combine shape
-        # classifier_name = 'SvB_MA_VHH' # SvB_MA_labelBDT
-        # # kVV enhanced region
-        # producer.save_shape('shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning)
-        # producer.save_shape('shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/CRSB/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
-        # # kl  enhanced region
-        # producer.save_shape('shapefile_VhadHH_SR_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning)
-        # producer.save_shape('shapefile_VhadHH_SB_{year}_kl', 'passMV/fourTag/mainView/CRSB/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, unblind = True)
+        classifier_name = 'SvB_MA_VHH' # SvB_MA_labelBDT
+        # kVV enhanced region
+        producer.save_shape('shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning)
+        producer.save_shape('shapefile_VhadHH_CR_{year}_kVV', 'passMV/fourTag/mainView/CR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
+        producer.save_shape('shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
+        # kl  enhanced region
+        producer.save_shape('shapefile_VhadHH_SR_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning)
+        producer.save_shape('shapefile_VhadHH_CR_{year}_kl', 'passMV/fourTag/mainView/CR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, unblind = True)
+        producer.save_shape('shapefile_VhadHH_SB_{year}_kl', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, unblind = True)
 
         ## make signal templates
         # producer.add_dir(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_[kl|kVV]'])

@@ -695,7 +695,7 @@ def makeCombineHist():
     basis = {'lbdt': 2, 'sbdt': 2}
     histName = 'multijet_background'
     for channel in channelName.keys():
-        for region in ['SR', 'SB']:
+        for region in ['SR', 'CR', 'SB']:
             for year in years:
                 closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
                 for systName, variation in closureSysts.iteritems():
