@@ -39,7 +39,7 @@ parser.add_option('--region',    dest="region",     default='HHSR',  help="Regio
 parser.add_option('--classifier',  dest="classifier",     default='SvB_MA',  help="Name of classifier")
 parser.add_option('--doTTAverage', action="store_true", dest="doTTAverage", default=False, help="")
 parser.add_option('--legendre', action="store_true", dest="legendre", default=False, help="use Legendre polynomials are basis instead of Fourier")
-parser.add_option('--loadStage1', dest="loadStage1", default="", help="path of stage1 fit")
+parser.add_option('--skipPlot', dest="skipPlot", default="", help="skip most of plots")
 
 o, a = parser.parse_args()
 
