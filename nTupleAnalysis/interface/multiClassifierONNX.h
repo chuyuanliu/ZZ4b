@@ -5,9 +5,6 @@
 
 #include <iostream>
 #include "PhysicsTools/ONNXRuntime/interface/ONNXRuntime.h"
-//#include "ZZ4b/nTupleAnalysis/interface/eventData.h"
-
-//using namespace cms::Ort;
 
 namespace nTupleAnalysis {
   class eventData;
@@ -17,8 +14,9 @@ namespace nTupleAnalysis {
 
     multiClassifierONNX(std::string modelFile, bool _debug);
     
-    std::unique_ptr<cms::Ort::ONNXRuntime> model;
+    std::vector<std::unique_ptr<cms::Ort::ONNXRuntime>> models;
 
+    int offset = 0;
     std::vector<std::string> input_names;
     std::vector<std::string> output_names;
     cms::Ort::FloatArrays input;

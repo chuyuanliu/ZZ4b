@@ -1,3 +1,4 @@
+from functools import partial
 import os,sys
 import vhh_fileHelper as fh
 from copy import copy
@@ -45,7 +46,7 @@ def classifierFile(isSignal = False):
     if not isSignal:
         return classifierFiles
     else:
-        return filter(lambda x:x!='FvT',classifierFiles)
+        return filter(lambda x:'FvT' not in x,classifierFiles)
 
 def histFile(isSignal = False, tags = file_tags):
   return ['/hists' + ('_j' if not isSignal and o.jcm else '') + ('_r' if not isSignal and o.reweight else '') + tag + '.root' for tag in tags]
@@ -53,8 +54,8 @@ def histFile(isSignal = False, tags = file_tags):
 def picoAOD(isSignal = False, tags = file_tags):
     return ['/picoAOD'+tag+'.root' for tag in tags]
 
-def classifier(isSignal = False):
-    return ['/' + variable + '.root' for variable in classifierFile(isSignal)]
+def classifier(isSignal = False, tags = file_tags):
+    return ['/' + variable + tag + '.root' for variable in classifierFile(isSignal) for tag in tags]
 
 nTags = o.nTags.split(',')
 signals = []
@@ -102,18 +103,22 @@ def eosmv(src, dest):
     run('eos root://cmseos.fnal.gov mv ' + eos(src) + ' ' + eos(dest)) 
 def eoscp(src, dest):
     run('eos cp root://cmseos.fnal.gov/' + eos(src) + ' root://cmseos.fnal.gov/' + eos(dest)) 
-def eosmkdir(dir):
-    run('eos root://cmseos.fnal.gov mkdir ' + eos(dir))
-def eosrm(dir):
-    run('eos root://cmseos.fnal.gov rm -rf ' + eos(dir))
+def eosrm(src):
+    run('eos root://cmseos.fnal.gov rm -rf ' + eos(src))
+def eosmkdir(src):
+    run('eos root://cmseos.fnal.gov mkdir ' + eos(src))
+
+def lpcmv(src, dest):
+    run('mv ' + lpc(src) + ' ' + lpc(dest))
+def lpccp(src, dest):
+    run('cp ' + lpc(src) + ' ' + lpc(dest))
+def lpcrm(src):
+    run('rm -rf ' + lpc(src))
+def lpcmkdir(src):
+    run('mkdir ' + lpc(src))
+
 def xrdcp(src,dest):
     run('xrdcp -f '+('root://cmseos.fnal.gov/' if 'condor' in src else '') + src + ' '+('root://cmseos.fnal.gov/' if 'condor' in dest else '') + dest)    
-
-def lpcmkdir(dir):
-    run('mkdir ' + lpc(dir))
-def lpccp(src, dest):
-    run('cp ' + src + ' ' + dest)
-    
 
 def hadd(srcs,dest):
     if len(srcs) > 0:
@@ -135,25 +140,53 @@ def load_skims():
         # for data in datas:
         #     eoscp('skims/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
 
-def move_eos():
-    if o.oldTag == '' and o.newTag == '':
+def move():
+    mv_years = copy(years)
+    mv_tts   = copy(tts)
+    cps_max  = 2
+    if o.eos: 
+        mv = eosmv
+    elif o.lpc:
+        mv = lpcmv
+        mv_years += ['RunII']
+        mv_tts   += ['TT']
+        cps_max  = 3
+    else:
+        return   
+    if o.oldTag == o.newTag:
         return
-    oldAOD = picoAOD(tags=[o.oldTag])[0]
-    newAOD = picoAOD(tags=[o.newTag])[0]
-    for year in years:
-        if year not in ['2016']:
-            for cps in signals:
-                for boson in cps[0:2]:
-                    eosmv('VHH/'+boson+year+oldAOD,'VHH/'+boson+year+newAOD)
-            for tt in tts:
-                for nTag in nTags:
-                    eosmv('VHH/'+tt+year+nTag+oldAOD,'VHH/'+tt+year+nTag+newAOD)
-        if year not in ['2016_preVFP', '2016_postVFP']:
-            for data in datas:
-                eosmv('VHH/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
+    mv_files = []
+    if o.hists: mv_files += [histFile]
+    if o.picoAOD: mv_files += [picoAOD]
+    if o.classifiers: mv_files += [classifier]
 
-def remove_eos():
-    if not o.eos: 
+    for mv_file in mv_files:
+        oldAOD = partial(mv_file, tags=[o.oldTag])
+        newAOD = partial(mv_file, tags=[o.newTag])
+        for year in mv_years:
+            if year not in ['2016']:
+                for cps in signals:
+                    for boson in cps[0:cps_max]:
+                        mv('VHH/'+boson+year+oldAOD(isSignal = True)[0],'VHH/'+boson+year+newAOD(isSignal = True)[0])
+                for tt in mv_tts:
+                    for nTag in nTags:
+                        mv('VHH/'+tt+year+nTag+oldAOD()[0],'VHH/'+tt+year+nTag+newAOD()[0])
+            if year not in ['2016_preVFP', '2016_postVFP']:
+                for data in datas:
+                    mv('VHH/data'+year+data+oldAOD()[0],'VHH/data'+year+data+newAOD()[0])
+
+def remove():
+    rm_years = copy(years)
+    rm_tts   = copy(tts)
+    cps_max  = 2
+    if o.eos: 
+        rm = eosrm
+    elif o.lpc:
+        rm = lpcrm
+        rm_years += ['RunII']
+        rm_tts   += ['TT']
+        cps_max  = 3
+    else:
         return
 
     rm_files = []
@@ -164,27 +197,27 @@ def remove_eos():
     if not rm_files: return
 
     base = 'VHH/'
-    for year in years:
-        for cp_file in rm_files:
+    for cp_file in rm_files:
+        for year in rm_years:
             if year not in ['2016']:
                 for cps in signals:
-                    for boson in cps[0:2]:
+                    for boson in cps[0:cps_max]:
                         for filename in cp_file(True):
                             file = base + boson + year + filename
                             print(file)
-                            eosrm(file)
-                for tt in tts:
+                            rm(file)
+                for tt in rm_tts:
                     for nTag in nTags:
                         for filename in cp_file():
                             file = base + tt + year + nTag + filename
                             print(file)
-                            eosrm(file)
+                            rm(file)
             if year not in ['2016_preVFP', '2016_postVFP']:
                 for data in datas:
                     for filename in cp_file():
                         file = base + 'data' + year + data + filename
                         print(file)
-                        eosrm(file)
+                        rm(file)
 
 # TODO cp hadded from eos
 # TODO hadd use condor
@@ -332,10 +365,10 @@ def group_files(path):
         print(content[0])
     print('total groups ' + str(groups))
 
-if o.move and o.eos:
-    move_eos()
-if o.remove and o.eos:
-    remove_eos()
+if o.move:
+    move()
+if o.remove:
+    remove()
 if o.hadd and o.lpc:
     hadd_lpc()
 if o.cp:
@@ -346,24 +379,15 @@ if o.init:
 if o.group:
     group_files(o.group)
 
-# cmds w/o syst
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e --friends FvT_Nominal,SvB_MA_VHH$TAG --histsTag $TAG
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --applyPuIdSF -e --friends SvB_MA_VHH$TAG --histsTag $TAG
-# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --cp --eos --hists --tags _8,_8n,_8nc,_14nc
-# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --hadd --lpc --hists --tags _8,_8n,_8nc,_14nc
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --updatePostFix _VHH -u -m "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
-
-# $TAG=_8n,_8nc,_14nc
-
 # cmds
 # python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --bTagSyst --puIdSyst --applyPuIdSF -e --friends SvB_MA_VHH
-# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --cp --eos --hists 
-# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r --year 2016,2017,2018 --hadd --lpc --hists 
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --bTagSyst --puIdSyst --applyPuIdSF -e --friends SvB_MA_VHH_8nc
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --cp --eos --hists 
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --hadd --lpc --hists 
 # for JEC
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --doJECSyst -e --friends SvB_MA_VHH
-# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s --year 2016,2017,2018 --cp --eos --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
-# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s --year 2016,2017,2018 --hadd --lpc --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --doJECSyst -e --friends SvB_MA_VHH_8nc
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -y 2016,2017,2018 --cp --eos --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -y 2016,2017,2018 --hadd --lpc --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
 
 # http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/dev3cuda/ for onnx
 # http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/100cuda/
@@ -372,10 +396,19 @@ if o.group:
 # source /cvmfs/sft.cern.ch/lcg/views/dev3cuda/latest/x86_64-centos7-gcc8-opt/setup.sh 
 
 # training
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --train --noXsec --normSignal
-
-# to ONNX
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "" -d "" -t "" -m "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_HCR+attention_8_np1052_lr0.01_epochs1_offset0_epoch01.pkl" --onnx
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --train --nFeatures 8 --trainOffset 0,1,2 --normCoupling
 
 # save prediction
-# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root"  --base "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/" --updatePostFix _VHH -u -m "SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset*_epoch20.pkl"
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --updatePostFix _VHH --weightFilePostFix _8nc -u -m "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
+
+# to ONNX
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "" -d "" -t "" -m "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl" --onnx
+
+##########experiments##########
+## cmds w/o syst, compare classifier
+# $TAG=_8,_8n,_8nc,_14,_14nc
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --updatePostFix _VHH --weightFilePostFix $TAG -u -m "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e --friends FvT_Nominal,SvB_MA_VHH$TAG --histsTag $TAG
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --higherOrder --trigger --applyPuIdSF --condor -e --friends SvB_MA_VHH$TAG --histsTag $TAG
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --cp --eos --hists --tags $TAG
+# python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --hadd --lpc --hists --tags $TAG

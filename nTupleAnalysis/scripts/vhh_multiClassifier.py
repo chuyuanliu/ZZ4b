@@ -1617,7 +1617,7 @@ class modelParameters:
         O = np.array(O_raw, dtype = np.float32).reshape([1,40])
         A = np.array(A_raw, dtype = np.float32).reshape([1,4])
         # test ONNX output
-        ort_session = ort.InferenceSession(self.modelONNX)
+        ort_session = ort.InferenceSession(self.modelONNX, providers=['CPUExecutionProvider'])
         onnx_out = ort_session.run(None, {'J': J, 'O': O, 'A': A})
         print("ONNX output:", onnx_out)
         # import onnx
@@ -2752,9 +2752,9 @@ if __name__ == '__main__':
         for model in models:
             print()
             model.exportONNX()
-        if len(models) == 3:
-            modelEnsemble = HCREnsemble([model.net for model in models])
-            modelEnsemble.exportONNX(models[0].modelPkl.replace("_offset0","").replace(".pkl",".onnx"))
+        # if len(models) == 3:
+        #     modelEnsemble = HCREnsemble([model.net for model in models])
+        #     modelEnsemble.exportONNX(models[0].modelPkl.replace("_offset0","").replace(".pkl",".onnx"))
  
     if args.storeEventFile:
         print("Store model response in %s"%args.storeEventFile)

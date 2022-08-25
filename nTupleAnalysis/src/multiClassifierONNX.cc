@@ -1,6 +1,7 @@
 #if SLC6 == 0 //Defined in ZZ4b/nTupleAnalysis/BuildFile.xml
 #include "ZZ4b/nTupleAnalysis/interface/multiClassifierONNX.h"
 #include "ZZ4b/nTupleAnalysis/interface/eventData.h"
+#include "ZZ4b/nTupleAnalysis/interface/utils.h"
 
 using namespace nTupleAnalysis;
 
@@ -9,11 +10,19 @@ multiClassifierONNX::multiClassifierONNX(std::string modelFile, bool _debug) {
   Ort::SessionOptions* session_options = new Ort::SessionOptions();
   session_options->SetIntraOpNumThreads(1);
 
-  model = std::make_unique<cms::Ort::ONNXRuntime>(modelFile, session_options);
+  if(modelFile.find("/*offset*/") == std::string::npos){
+    models.push_back(std::move(std::make_unique<cms::Ort::ONNXRuntime>(modelFile, session_options)));
+    std::cout << "loaded model " << modelFile << std::endl;
+    models[0]->getOutputNames();
+  }
+  else{
+    for(int i = 0; i < 3; ++i){
+      auto modelFileName = utils::fillString(modelFile, {{"offset", std::to_string(i)}});
+      models.push_back(std::move(std::make_unique<cms::Ort::ONNXRuntime>(modelFileName, session_options)));
+      std::cout << "loaded model " << modelFileName << std::endl;
+    }
+  }
 
-  model->getOutputNames();
-
-  std::cout << "multiClassifierONNX( "<<modelFile<<" )" << std::endl;
 
   input_names = {"J","O","A"};
   output_names= {"c_logits", "q_logits"};
@@ -71,11 +80,13 @@ void multiClassifierONNX::loadInput(eventData* event){
   input[2][2] = event->xW;
   input[2][3] = event->xbW;
 
+  offset = event->event % models.size();
+
 }
 
 void multiClassifierONNX::run(){
   if(debug) std::cout << "multiClassifierONNX::run()" << std::endl;
-  output = model->run(input_names, input, output_names, 1);
+  output = models[offset]->run(input_names, input, output_names, 1);
   c_score = output[0];
   q_score = output[1];
 }

@@ -51,7 +51,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMV.HHRegions.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMV.InclusiveRegions.HHRegions.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
 parser.add_option('-c', '--makeCombineHist',    action="store_true", dest="makeCombineHist",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -62,7 +62,7 @@ parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagE
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
 parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
-parser.add_option(   '--friends', dest = 'friends',default='FvT_Nominal,SvB_MA_VHH', help = 'friend root files')
+parser.add_option(   '--friends', dest = 'friends',default='FvT_Nominal,SvB_MA_VHH_8nc', help = 'friend root files')
 # for VHH study
 parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'set signal coupling')
 parser.add_option(   '--higherOrder',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
@@ -195,7 +195,7 @@ def jetCombinatoricModel(year):
     return gitRepoBase+"dataRunII/jetCombinatoricModel_"+JCMRegion+"_"+JCMVersion+".txt"
 #reweight = gitRepoBase+"data"+year+"/reweight_"+JCMRegion+"_"+JCMVersion+".root"
 
-SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/labelBDT/SvB_MA_HCR+attention_14_np2714_lr0.01_epochs20_offset0_epoch20.onnx"
+SvB_ONNX = "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset/*offset*/_epoch20.onnx"
 
 def signalFiles(signals, year):
     if year == '2016':
@@ -692,43 +692,21 @@ def read_parameter_file(inFileName):
 
 def makeCombineHist():
     channelName     = {'lbdt': 'kl', 'sbdt': 'kVV'}
-    basis = {'lbdt': 2, 'sbdt': 2}
+    basis = {'lbdt': -1, 'sbdt': -1}
     histName = 'multijet_background'
     for channel in channelName.keys():
-        for region in ['SR', 'CR', 'SB']:
+        # for region in ['SR', 'CR', 'SB']:
+        for mix in range(10):
+            region = 'Mix'+str(mix)
             for year in years:
                 closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
                 for systName, variation in closureSysts.iteritems():
                     rootFile = '/uscms/home/'+USER+'/nobackup/VHH/shapefile_VhadHH_'+region+'_'+year+'_'+channelName[channel]+'.root'
                     systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_bbbb_Multijet')
-                    if 'basis' in systName:
-                        #Multijet closure systematic templates to data file
-                        cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
-                        cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName
-                        execute(cmd, o.execute)
-
-                    if 'spurious' in systName:
-                        #Spurious Sigmal template to data file
-                        cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
-                        cmd +=' -n '+histName+' --syst ' + systName
-                        cmd += ' --addHist %s,VHH_CV_1_C2V_1_kl_20_hbbhbb,%s'%(rootFile, variation)
-                        execute(cmd, o.execute)
-
-
-# def makeCombineHist():
-#     channelName     = {'lbdt': 'kl', 'sbdt': 'kVV'}
-#     basis = {'lbdt': 2, 'sbdt': 2}
-#     histName = 'multijet_background'
-#     for channel in channelName.keys():
-#         for year in years:
-#             closureSysts = read_parameter_file('closureFits/nominal_legendre_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
-#             for systName, variation in closureSysts.iteritems():
-#                 rootFile = '/uscms/home/'+USER+'/nobackup/VHH/shapefile_VhadHH_'+year+'_'+channelName[channel]+'.root'
-#                 systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_bbbb_Multijet')
-#                 #Multijet closure systematic templates to data file
-#                 cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
-#                 cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName
-#                 execute(cmd, o.execute)
+                    #Multijet closure systematic templates to data file
+                    cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
+                    cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName
+                    execute(cmd, o.execute)
 
 
 #
