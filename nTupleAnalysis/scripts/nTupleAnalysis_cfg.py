@@ -44,6 +44,7 @@ parser.add_option('-f', '--fastSkim',             dest="fastSkim",      action="
 parser.add_option(      '--looseSkim',            dest="looseSkim",     action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option(      '--doTrigEmulation',                            action="store_true", default=False, help="Emulate the trigger using weights stored in the picoAODs")
 parser.add_option(      '--calcTrigWeights',                            action="store_true", default=False, help="Calculate and store trigger weights in the picoAODs")
+parser.add_option(      '--passZeroTrigWeight',                         action="store_true", default=False, help="passHLT and passL1 are true even if trigWeight is zero")
 parser.add_option(      '--useMCTurnOns',                               action="store_true", default=False, help="Calculate and store trigger weights in the picoAODs")
 parser.add_option(      '--useUnitTurnOns',                               action="store_true", default=False, help="Calculate and store trigger weights in the picoAODs")
 parser.add_option('-n', '--nevents',              dest="nevents",       default="-1", help="Number of events to process. Default -1 for no limit.")
@@ -67,6 +68,8 @@ parser.add_option(   '--usePreCalcBTagSFs',    default=False, action="store_true
 parser.add_option(   '--skip3b',       default=False, action="store_true",help="Skip all 3b Events")
 parser.add_option(   '--skip4b',       default=False, action="store_true",help="Skip all 4b Events")
 parser.add_option(   '--emulate4bFrom3b',    default=False, action="store_true",help="Processing combined Data/MC file for signal injection study")
+parser.add_option(   '--emulate4bFromMixed',    default=False, action="store_true",help="")
+parser.add_option(   '--emulationSF',    default=1.0, help="")
 parser.add_option(   '--emulationOffset',    default="0", help="Emulation offset")
 parser.add_option(      '--histFile',             dest="histFile",      default="hists.root", help="name of ouptut histogram file")
 parser.add_option('-r', '--doReweight',           dest="doReweight",    action="store_true", default=False, help="boolean  to toggle using FvT reweight")
@@ -115,7 +118,7 @@ if o.puIdSyst:
 #
 # Basic Configuration
 #
-outputBase = o.outputBase + ("/" if o.outputBase[-1] != "/" else "") # make sure it ends with a slash
+outputBase = o.outputBase + ('/' if o.outputBase[-1] != '/' else '') # make sure it ends with a slash
 isData     = not o.isMC
 blind      = True and isData and not o.isDataMCMix and not o.unBlind
 #https://cms-service-dqmdc.web.cern.ch/CAF/certification/
@@ -198,7 +201,7 @@ if o.isMC:
 
 fileNames = []
 inputList=False
-if ".txt" in o.input:
+if '.txt' in o.input:
     inputList = True
     for line in open(o.input, 'r').readlines():
         line = line.replace('\n','').strip()
@@ -211,7 +214,7 @@ else:
 
 weightFileNames = []
 if o.inputWeightFiles:
-    if ".txt" in o.inputWeightFiles:
+    if '.txt' in o.inputWeightFiles:
         for line in open(o.inputWeightFiles, 'r').readlines():
             line = line.replace('\n','').strip()
             if line    == '' : continue
@@ -224,7 +227,7 @@ if o.inputWeightFiles:
 
 weightFileNames4b = []
 if o.inputWeightFiles4b:
-    if ".txt" in o.inputWeightFiles4b:
+    if '.txt' in o.inputWeightFiles4b:
         for line in open(o.inputWeightFiles4b, 'r').readlines():
             line = line.replace('\n','').strip()
             if line    == '' : continue
@@ -237,7 +240,7 @@ if o.inputWeightFiles4b:
 
 weightFileNamesDvT = []
 if o.inputWeightFilesDvT:
-    if ".txt" in o.inputWeightFilesDvT:
+    if '.txt' in o.inputWeightFilesDvT:
         for line in open(o.inputWeightFilesDvT, 'r').readlines():
             line = line.replace('\n','').strip()
             if line    == '' : continue
@@ -250,27 +253,27 @@ if o.inputWeightFilesDvT:
 
 fourbkfactor = 1.0
 # for name in fileNames:
-#     if "TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8" in name: 
+#     if 'TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8' in name: 
 #         #fourbkfactor = 5.5/3.6 # from https://cds.cern.ch/record/2687373/files/TOP-18-011-paper-v15.pdf
 #         fourbkfactor = 4.7/4.1 # 2.9/2.4 dilepton channel, 4.7/4.1 lepton+jets channel https://cds.cern.ch/record/2684606/files/TOP-18-002-paper-v19.pdf 
-#         print "Four b-jet k-Factor: TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8",fourbkfactor
-#     if "TTTo" in name and "powheg-pythia8" in name:
+#         print 'Four b-jet k-Factor: TTJets_TuneCP5_13TeV-amcatnloFXFX-pythia8',fourbkfactor
+#     if 'TTTo' in name and 'powheg-pythia8' in name:
 #         #fourbkfactor = 5.5/3.5 # from https://cds.cern.ch/record/2687373/files/TOP-18-011-paper-v15.pdf
 #         fourbkfactor = 4.7/3.9 # 2.9/2.3 dilepton channel, 4.7/3.9 lepton+jets channel https://cds.cern.ch/record/2684606/files/TOP-18-002-paper-v19.pdf
-#         print "Four b-jet k-Factor: TTTo*powheg-pythia8",fourbkfactor
+#         print 'Four b-jet k-Factor: TTTo*powheg-pythia8',fourbkfactor
 
 
-useOtherPicoAOD = True if "picoAOD" in o.input else False
+useOtherPicoAOD = True if 'picoAOD' in o.input else False
 
 pathOut = outputBase
-if "root://cmsxrootd-site.fnal.gov//store/" in pathOut: 
-    pathOut = pathOut + fileNames[0].replace("root://cmsxrootd-site.fnal.gov//store/", "") #make it a local path
+if 'root://cmsxrootd-site.fnal.gov//store/' in pathOut: 
+    pathOut = pathOut + fileNames[0].replace('root://cmsxrootd-site.fnal.gov//store/', '') #make it a local path
 if useOtherPicoAOD:
     pathOut = o.input
-pathOut = '/'.join(pathOut.split("/")[:-1])+"/" #remove <fileName>.root
+pathOut = '/'.join(pathOut.split('/')[:-1])+'/' #remove <fileName>.root
     
 if inputList: #use simplified directory structure based on grouping of filelists
-    sampleDirectory = o.input.split("/")[-1].replace(".txt","/")
+    sampleDirectory = o.input.split('/')[-1].replace('.txt','/')
     pathOut = outputBase+sampleDirectory
 
 mkpath(pathOut)
@@ -281,7 +284,7 @@ histOut = pathOut+o.histFile
 #
 # Automatic picoAOD logic
 #
-defaultPicoAOD = "picoAOD.root"
+defaultPicoAOD = 'picoAOD.root'
 
 #check if the defaultPicoAOD already exists, if it doesn't we probably want to make one.
 defaultPicoAODExists = exists(pathOut + defaultPicoAOD)
@@ -290,25 +293,25 @@ defaultPicoAODExists = exists(pathOut + defaultPicoAOD)
 createDefaultPicoAOD = o.createPicoAOD == defaultPicoAOD
 
 # Use the default picoAOD if it exists and we aren't explicitly being asked to make it or use a different picoAOD
-useDefaultPicoAOD = defaultPicoAODExists and not createDefaultPicoAOD and not useOtherPicoAOD and xstr(o.createPicoAOD).lower() != "none"
+useDefaultPicoAOD = defaultPicoAODExists and not createDefaultPicoAOD and not useOtherPicoAOD and xstr(o.createPicoAOD).lower() != 'none'
 if useDefaultPicoAOD: fileNames = [pathOut+defaultPicoAOD]
 
 # construct the picoAOD file path
-picoAOD = pathOut+(o.createPicoAOD if o.createPicoAOD else "picoAOD.root")
+picoAOD = pathOut+(o.createPicoAOD if o.createPicoAOD else 'picoAOD.root')
 
 # create this picoAOD if the user specified one or if the default picoAOD.root does not exist and not explicitly overriding the auto-create
-create = bool(o.createPicoAOD or not defaultPicoAODExists) and xstr(o.createPicoAOD).lower() != "none"
+create = bool(o.createPicoAOD or not defaultPicoAODExists) and xstr(o.createPicoAOD).lower() != 'none'
 
 # make sure the input and output files are not the same
-print("create picoAOD:",create,picoAOD)
+print('create picoAOD:',create,picoAOD)
 if fileNames[0] == picoAOD and create:
-    print "ERROR: Trying to overwrite input picoAOD:",picoAOD
+    print 'ERROR: Trying to overwrite input picoAOD:',picoAOD
     sys.exit()
 
 
 friendFiles = []
 if o.friends:
-    if ".txt" in o.friends:
+    if '.txt' in o.friends:
         for line in open(o.friends, 'r').readlines():
             line = line.replace('\n','').strip()
             if line    == '' : continue
@@ -329,16 +332,16 @@ if o.friends:
 jcmFileList = []
 jcmNameList = []
 if o.jcmFileList: 
-    jcmFileList = o.jcmFileList.split(",")
-    jcmNameList = o.jcmNameList.split(",")
+    jcmFileList = o.jcmFileList.split(',')
+    jcmNameList = o.jcmNameList.split(',')
 
     if not len(jcmFileList) == len(jcmNameList):
-        print "\n\n"
-        print "ERROR: --jcmFileList and --jcmNameList must be of same size. You gave "
-        print "o.jcmFileList  len=",len(jcmFileList),jcmFileList
-        print "o.jcmNameList  len=",len(jcmNameList),jcmNameList
-        print "...Aborting"
-        print "\n\n"
+        print '\n\n'
+        print 'ERROR: --jcmFileList and --jcmNameList must be of same size. You gave '
+        print 'o.jcmFileList  len=',len(jcmFileList),jcmFileList
+        print 'o.jcmNameList  len=',len(jcmNameList),jcmNameList
+        print '...Aborting'
+        print '\n\n'
         import sys
         sys.exit(-1)
 
@@ -348,7 +351,7 @@ if o.jcmFileList:
 #
 otherWeights = []
 if o.otherWeights:
-    otherWeights = o.otherWeights.split(",")
+    otherWeights = o.otherWeights.split(',')
 
 
 #
@@ -383,18 +386,18 @@ inputHFiles_3Tag = []
 inputHFiles_4Tag = []
 if o.loadHemisphereLibrary:
 
-    fileList_3Tag = os.popen("ls "+o.inputHLib3Tag).readlines()
+    fileList_3Tag = os.popen('ls '+o.inputHLib3Tag).readlines()
     for i in fileList_3Tag:
         inputHFiles_3Tag.append(i.rstrip())
 
 
-    fileList_4Tag = os.popen("ls "+o.inputHLib4Tag).readlines()
+    fileList_4Tag = os.popen('ls '+o.inputHLib4Tag).readlines()
     for i in fileList_4Tag:
         inputHFiles_4Tag.append(i.rstrip())
 
 
 # Setup hemisphere Mixing files
-hSphereLib = pathOut+"hemiSphereLib"
+hSphereLib = pathOut+'hemiSphereLib'
 process.hSphereLib = cms.PSet(
     fileName = cms.string(hSphereLib),
     create   = cms.bool(o.createHemisphereLibrary),
@@ -423,6 +426,7 @@ process.nTupleAnalysis = cms.PSet(
     era     = cms.string(o.era if o.isMC else ""),
     doTrigEmulation = cms.bool(o.doTrigEmulation),
     calcTrigWeights = cms.bool(o.calcTrigWeights),
+    passZeroTrigWeight = cms.bool(o.passZeroTrigWeight),
     useMCTurnOns    = cms.bool(o.useMCTurnOns),
     useUnitTurnOns    = cms.bool(o.useUnitTurnOns),
     lumi    = cms.double(o.lumi),
@@ -435,7 +439,7 @@ process.nTupleAnalysis = cms.PSet(
     btagVariations = cms.string(btagVariations),
     puIdVariations = cms.string(puIdVariations),
     JECSyst = cms.string(o.JECSyst),
-    friendFile = cms.string(fileNames[0].replace(".root","_Friend.root")),
+    friendFile = cms.string(fileNames[0].replace('.root','_Friend.root')),
     lumiData= cms.string(lumiData[year]),
     histDetailLevel = cms.string(o.histDetailLevel),
     jetCombinatoricModel = cms.string(o.jetCombinatoricModel),
@@ -450,6 +454,8 @@ process.nTupleAnalysis = cms.PSet(
     skip3b         = cms.bool(o.skip3b),
     usePreCalcBTagSFs      = cms.bool(o.usePreCalcBTagSFs),
     emulate4bFrom3b    = cms.bool(o.emulate4bFrom3b),
+    emulate4bFromMixed    = cms.bool(o.emulate4bFromMixed),
+    emulationSF    = cms.double(float(o.emulationSF)),
     emulationOffset    = cms.int32(int(o.emulationOffset)),
     looseSkim = cms.bool(o.looseSkim),
     writeOutEventNumbers  = cms.bool(o.writeOutEventNumbers),
@@ -472,4 +478,4 @@ process.nTupleAnalysis = cms.PSet(
     calcPuIdSF = cms.bool(o.calcPuIdSF)
     )
 
-print("nTupleAnalysis_cfg.py done")
+print('nTupleAnalysis_cfg.py done')

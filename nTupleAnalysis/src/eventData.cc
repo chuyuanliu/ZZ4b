@@ -462,6 +462,13 @@ void eventData::resetEvent(){
   views_passMDRs.clear();
   views_passLooseMDRs.clear();
   view_selected.reset();
+  nViews_eq = 0;
+  nViews_00 = 0;
+  nViews_01 = 0;
+  nViews_02 = 0;
+  nViews_10 = 0;
+  nViews_11 = 0;
+  nViews_12 = 0;
   view_dR_min.reset();
   view_max_FvT_q_score.reset();
   view_max_SvB_q_score.reset();
@@ -686,8 +693,8 @@ void eventData::update(long int e){
 
     weight *= trigWeight;
 
-    passL1  = trigWeight>0;
-    passHLT = trigWeight>0;
+    passL1  = trigWeight>0 || passZeroTrigWeight;
+    passHLT = trigWeight>0 || passZeroTrigWeight;
 
   }else{
     for(auto &trigger: HLT_triggers){
@@ -1194,10 +1201,10 @@ void eventData::chooseCanJets(){
     }
   }
   m4j = p4j.M();
-  m123 = (canJets[1]->p + canJets[2]->p + canJets[3]->p).M();
-  m023 = (canJets[0]->p + canJets[2]->p + canJets[3]->p).M();
-  m013 = (canJets[0]->p + canJets[1]->p + canJets[3]->p).M();
-  m012 = (canJets[0]->p + canJets[1]->p + canJets[2]->p).M();
+  // m123 = (canJets[1]->p + canJets[2]->p + canJets[3]->p).M();
+  // m023 = (canJets[0]->p + canJets[2]->p + canJets[3]->p).M();
+  // m013 = (canJets[0]->p + canJets[1]->p + canJets[3]->p).M();
+  // m012 = (canJets[0]->p + canJets[1]->p + canJets[2]->p).M();
   s4j = canJets[0]->pt + canJets[1]->pt + canJets[2]->pt + canJets[3]->pt;
 
   //flat nTuple variables for neural network inputs
@@ -1432,22 +1439,35 @@ void eventData::buildViews(){
     // if(view->passSublStMDR){ view->random +=  1; } // add one again so that views passing MDRs are given preference. 
     truthMatch = truthMatch || view->truthMatch; // check if there is a view which was truth matched to two massive boson decays
   }
-  // std::sort(views.begin(), views.end(), sortRandom); // put in random order for random view selection  
-  // //for(auto &view: views){ views_passMDRs.push_back(view); }
 
-  // view_selected = views[0];
-  // HHSR = view_selected->HHSR;
-  // ZHSR = view_selected->ZHSR;
-  // ZZSR = view_selected->ZZSR;
-  // SB = view_selected->SB; 
-  // SR = view_selected->SR;
-  // leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
-  // selectedViewTruthMatch = view_selected->truthMatch;
-  // if(runKlBdt && canVDijets.size() > 0){
-  //   auto score = bdtModel->getBDTScore(this, view_selected);
-  //   BDT_kl = score["BDT"];
-  // }
-   std::sort(views.begin(), views.end(), sortDBB);
+  std::sort(views.begin(), views.end(), sortRandom); // put in random order for random view selection  
+  //for(auto &view: views){ views_passMDRs.push_back(view); }
+
+  view_selected = views[0];
+  int selected_random = (int)view_selected->random;//event->views.size();
+  for(auto &view: views){ 
+    int this_random = (int)view->random;
+    if(this_random == selected_random) nViews_eq += 1;
+    if(this_random ==  0) nViews_00 += 1;
+    if(this_random ==  1) nViews_01 += 1;
+    if(this_random ==  2) nViews_02 += 1;
+    if(this_random == 10) nViews_10 += 1;
+    if(this_random == 11) nViews_11 += 1;
+    if(this_random == 12) nViews_12 += 1;
+  }
+
+  HHSR = view_selected->HHSR;
+  ZHSR = view_selected->ZHSR;
+  ZZSR = view_selected->ZZSR;
+  SB = view_selected->SB; 
+  SR = view_selected->SR;
+  leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
+  selectedViewTruthMatch = view_selected->truthMatch;
+  if(runKlBdt && passMV && bdtModel){
+    auto score = bdtModel->getBDTScore(this, view_selected);
+    BDT_kl = score["BDT"];
+  }
+
   return;
 }
 
@@ -1477,10 +1497,6 @@ void eventData::applyMDRs(){
   //   leadStM = 0;  sublStM = 0;
   //   //passDEtaBB = false;
   //   selectedViewTruthMatch = false;
-    if(runKlBdt && passMV && bdtModel){
-      auto score = bdtModel->getBDTScore(this, view_selected);
-      BDT_kl = score["BDT"];
-    }
   }
   return;
 }
@@ -1620,14 +1636,14 @@ float eventData::GetTrigEmulationWeight(TriggerEmulator::TrigEmulatorTool* tEmul
 
 
 
-bool eventData::pass4bEmulation(unsigned int offset, bool passAll)
+bool eventData::pass4bEmulation(unsigned int offset, bool passAll, unsigned int seedOffset)
 {
   if(debug) cout << "bool eventData::pass4bEmulation("<<offset<<","<< passAll << ")" << endl;
   if(passAll)
     return true;
   
 
-  random->SetSeed(7*event+13);
+  random->SetSeed(7*event+13+seedOffset);
   float randNum = random->Uniform(0,1);
 
   //cout << "pseudoTagWeight " << pseudoTagWeight << " vs weight " << weight << " bTag SF x pseudoTagWeight " << bTagSF * pseudoTagWeight << endl;
@@ -1650,6 +1666,7 @@ bool eventData::pass4bEmulation(unsigned int offset, bool passAll)
     cout << "                                             = " << (randNum > lowerLimit && randNum < upperLimit) << endl;
   }
 
+  //Calc pass fraction
   if(randNum > lowerLimit && randNum < upperLimit){
     return true;
   }

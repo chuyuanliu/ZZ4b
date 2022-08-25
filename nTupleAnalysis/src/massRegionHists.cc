@@ -4,6 +4,7 @@
 using namespace nTupleAnalysis;
 
 massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, bool isMC, bool _blind, std::string histDetailLevel, bool _debug, eventData* event) {
+  if(_debug) std::cout << "massRegionHists::massRegionHists(std::string name, fwlite::TFileService& fs, bool isMC, bool _blind, std::string histDetailLevel, bool _debug, eventData* event)" << std::endl;
   dir = fs.mkdir(name);
   blind = _blind;
   debug = _debug;

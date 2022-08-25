@@ -42,6 +42,7 @@ namespace nTupleAnalysis {
     bool debug;
     bool useMCTurnOns = false;
     bool useUnitTurnOns = false;
+    bool passZeroTrigWeight = false;
     bool printCurrentFile = true;
     bool fastSkim = false;
     bool looseSkim = false;
@@ -270,7 +271,7 @@ namespace nTupleAnalysis {
     float st;
     TLorentzVector p4j;//combined 4-vector of the candidate jet system
     float m4j;
-    float m123; float m013; float m023; float m012;
+    // float m123; float m013; float m023; float m012;
     float s4j;
     float canJet0_btag; float canJet1_btag; float canJet2_btag; float canJet3_btag;//order by decreasing btag score
     float canJet0_pt ; float canJet1_pt ; float canJet2_pt ; float canJet3_pt ;
@@ -308,7 +309,15 @@ namespace nTupleAnalysis {
     std::shared_ptr<nTupleAnalysis::dijet> close;
     std::shared_ptr<nTupleAnalysis::dijet> other;
     std::vector< std::shared_ptr<eventView> > views;
-    std::vector< std::shared_ptr<eventView> > views_passMDRs;
+    int nViews_eq;
+    int nViews_00;
+    int nViews_01;
+    int nViews_02;
+    int nViews_10;
+    int nViews_11;
+    int nViews_12;
+    // std::vector< std::shared_ptr<eventView> > views_passMDRs;
+
     std::shared_ptr<eventView> view_selected;
     std::shared_ptr<eventView> view_dR_min;
     std::shared_ptr<eventView> view_max_FvT_q_score;
@@ -350,7 +359,7 @@ namespace nTupleAnalysis {
     //
     //  For signal Injection studies
     // 
-    bool pass4bEmulation(unsigned int offset, bool passAll = false);
+    bool pass4bEmulation(unsigned int offset, bool passAll = false, unsigned int seedOffset=0);
     void setPSJetsAsTagJets();
     void setLooseAndPSJetsAsTagJets(bool debug = false);
     bool passPSDataFilter(bool invertW = false);

@@ -1053,7 +1053,6 @@ class closure:
             self.makeFitFunction(basis)
             self.fit(basis)
             self.fitSpuriousSignal(basis)
-            self.writeClosureResults(basis)
             self.plotFitResults(basis)
             max_basis = max(basis, self.multijet.basis)
             for j in range(1,max_basis):
@@ -1085,6 +1084,7 @@ class closure:
         if self.basis is None:
             self.basis = self.bases[-1]
 
+        self.writeClosureResults(basis)
 
     def makeFitFunction(self, basis):
 

@@ -4,6 +4,7 @@
 using namespace nTupleAnalysis;
 
 viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool _debug, eventData* event, std::string histDetailLevel) {
+  if(_debug) std::cout << "viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool _debug, eventData* event, std::string histDetailLevel)" << std::endl;
   dir = fs.mkdir(name);
   debug = _debug;
 
@@ -140,10 +141,10 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   v4j = new fourVectorHists(name+"/v4j", fs, "4j");
   s4j = dir.make<TH1F>("s4j", (name+"/s4j; Scalar sum of boson candidate jet p_{T}'s [GeV]; Entries").c_str(), 90, 100, 1000);
   r4j = dir.make<TH1F>("r4j", (name+"/r4j; Quadjet system p_{T} / s_{T}; Entries").c_str(), 50, 0, 1);
-  m123 = dir.make<TH1F>("m123", (name+"/m123; m_{1,2,3}; Entries").c_str(), 100, 0, 1000);
-  m023 = dir.make<TH1F>("m023", (name+"/m023; m_{0,2,3}; Entries").c_str(), 100, 0, 1000);
-  m013 = dir.make<TH1F>("m013", (name+"/m013; m_{0,1,3}; Entries").c_str(), 100, 0, 1000);
-  m012 = dir.make<TH1F>("m012", (name+"/m012; m_{0,1,2}; Entries").c_str(), 100, 0, 1000);
+  // m123 = dir.make<TH1F>("m123", (name+"/m123; m_{1,2,3}; Entries").c_str(), 100, 0, 1000);
+  // m023 = dir.make<TH1F>("m023", (name+"/m023; m_{0,2,3}; Entries").c_str(), 100, 0, 1000);
+  // m013 = dir.make<TH1F>("m013", (name+"/m013; m_{0,1,3}; Entries").c_str(), 100, 0, 1000);
+  // m012 = dir.make<TH1F>("m012", (name+"/m012; m_{0,1,2}; Entries").c_str(), 100, 0, 1000);
   dBB = dir.make<TH1F>("dBB", (name+"/dBB; D_{BB}; Entries").c_str(), 40, 0, 200);
   dEtaBB = dir.make<TH1F>("dEtaBB", (name+"/dEtaBB; #Delta#eta_{BB}; Entries").c_str(), 100, -5, 5);
   dRBB = dir.make<TH1F>("dRBB", (name+"/dRBB; #Delta#R_{BB}; Entries").c_str(), 50, 0, 5);
@@ -261,7 +262,13 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   L1hT30 = dir.make<TH1F>("L1hT30", (name+"/L1hT30; hT [GeV] (L1 jet Pt > 30 GeV); Entries").c_str(),  100,0,1000);
   HLThT   = dir.make<TH1F>("HLThT", (name+"/HLThT; hT [GeV]; Entries").c_str(),  100,0,1000);
   HLThT30 = dir.make<TH1F>("HLThT30", (name+"/HLThT30; hT [GeV] (HLT jet Pt > 30 GeV); Entries").c_str(),  100,0,1000);
-  m4j_vs_nViews = dir.make<TH2F>("m4j_vs_nViews", (name+"/m4j_vs_nViews; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 3,0.5,3.5);
+  m4j_vs_nViews_eq = dir.make<TH2F>("m4j_vs_nViews_eq", (name+"/m4j_vs_nViews_eq; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
+  m4j_vs_nViews_00 = dir.make<TH2F>("m4j_vs_nViews_00", (name+"/m4j_vs_nViews_00; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
+  m4j_vs_nViews_01 = dir.make<TH2F>("m4j_vs_nViews_01", (name+"/m4j_vs_nViews_01; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
+  m4j_vs_nViews_02 = dir.make<TH2F>("m4j_vs_nViews_02", (name+"/m4j_vs_nViews_02; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
+  m4j_vs_nViews_10 = dir.make<TH2F>("m4j_vs_nViews_10", (name+"/m4j_vs_nViews_10; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
+  m4j_vs_nViews_11 = dir.make<TH2F>("m4j_vs_nViews_11", (name+"/m4j_vs_nViews_11; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
+  m4j_vs_nViews_12 = dir.make<TH2F>("m4j_vs_nViews_12", (name+"/m4j_vs_nViews_12; m_{4j} [GeV]; Number of Event Views; Entries").c_str(), 40,100,1100, 4,-0.5,3.5);
 
   if(isMC){
     Double_t bins_m4b[] = {100, 112, 126, 142, 160, 181, 205, 232, 263, 299, 340, 388, 443, 507, 582, 669, 770, 888, 1027, 1190, 1381, 1607, 2000};
@@ -296,7 +303,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   
 } 
 
-void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
+void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int nViews, int nViews_10, int nViews_11, int nViews_12){
   //
   // Object Level
   //
@@ -446,10 +453,10 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
   v4j->Fill(view->p, event->weight);
   s4j->Fill(event->s4j, event->weight);
   r4j->Fill(view->pt/event->s4j, event->weight);
-  m123->Fill(event->m123, event->weight);
-  m023->Fill(event->m023, event->weight);
-  m013->Fill(event->m013, event->weight);
-  m012->Fill(event->m012, event->weight);
+  // m123->Fill(event->m123, event->weight);
+  // m023->Fill(event->m023, event->weight);
+  // m013->Fill(event->m013, event->weight);
+  // m012->Fill(event->m012, event->weight);
   dBB->Fill(view->dBB, event->weight);
   dEtaBB->Fill(view->dEtaBB, event->weight);
   dRBB->Fill(view->dRBB, event->weight);
@@ -594,7 +601,17 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){
     kl_BDT->Fill(event->BDT_kl, event->weight);
   }
 
-  m4j_vs_nViews->Fill(view->m4j, event->views_passMDRs.size(), event->weight);
+
+  m4j_vs_nViews_eq->Fill(view->m4j, event->nViews_eq, event->weight);
+  if(view->passDijetMass){
+    if      (view->passLeadStMDR && view->passSublStMDR){ m4j_vs_nViews_12->Fill(view->m4j, event->nViews_12, event->weight); 
+    }else if(view->passLeadStMDR || view->passSublStMDR){ m4j_vs_nViews_11->Fill(view->m4j, event->nViews_11, event->weight); 
+    }else                                               { m4j_vs_nViews_10->Fill(view->m4j, event->nViews_10, event->weight); }
+  }else{
+    if      (view->passLeadStMDR && view->passSublStMDR){ m4j_vs_nViews_02->Fill(view->m4j, event->nViews_02, event->weight); 
+    }else if(view->passLeadStMDR || view->passSublStMDR){ m4j_vs_nViews_01->Fill(view->m4j, event->nViews_01, event->weight); 
+    }else                                               { m4j_vs_nViews_00->Fill(view->m4j, event->nViews_00, event->weight); }
+  }
 
   if(event->truth != NULL){
     truthM4b       ->Fill(event->truth->m4b,            event->weight);
