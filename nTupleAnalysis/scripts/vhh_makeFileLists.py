@@ -11,12 +11,8 @@ nanoAODs = {
 outputPath = '/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/fileLists/'
 
 years = ['2016_preVFP', '2016_postVFP', '2017', '2018']
-# couplings = fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0')
-couplings = fh.getCouplingList('C3:20_0')
+couplings = fh.getCouplingList(',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0')
 maxVer = 10
-
-# years = ['2018']
-# couplings = fh.getCouplingList('C3:20_0')
 
 for year in years:
     for processes in couplings:

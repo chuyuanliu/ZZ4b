@@ -52,15 +52,15 @@ void multiClassifierONNX::loadInput(eventData* event){
   // canJets
   for(uint i = 0; i < 4; i++){
     input[0][   i] = event->canJets[i]->pt;
-    input[0][4+i] = event->canJets[i]->eta;
-    input[0][8+i] = event->canJets[i]->phi;
+    input[0][ 4+i] = event->canJets[i]->eta;
+    input[0] [8+i] = event->canJets[i]->phi;
     input[0][12+i] = event->canJets[i]->m;
   };
 
   // othJets
   for(uint i = 0; i < event->nAllNotCanJets && i < 8; i++){
     input[1][   i] = event->allNotCanJets[i]->pt;
-    input[1][8+i]  = event->allNotCanJets[i]->eta;
+    input[1][ 8+i] = event->allNotCanJets[i]->eta;
     input[1][16+i] = event->allNotCanJets[i]->phi;
     input[1][24+i] = event->allNotCanJets[i]->m;
     bool isSelJet = (event->allNotCanJets[i]->pt>40) & (fabs(event->allNotCanJets[i]->eta)<2.4);
@@ -68,7 +68,7 @@ void multiClassifierONNX::loadInput(eventData* event){
   };
   for(uint i =  event->nAllNotCanJets; i < 8; i++){
     input[1][   i] = -1;
-    input[1][8+i]  = -1;
+    input[1][ 8+i] = -1;
     input[1][16+i] = -1;
     input[1][24+i] = -1;
     input[1][32+i] = -1; 

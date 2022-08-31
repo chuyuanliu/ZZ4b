@@ -22,20 +22,19 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
-years = ['RunII', '2016', '2017', '2018']
+# years = ['RunII', '2016', '2017', '2018']
 # signals = ['VHH', 'ZHH', 'WHH']
-# years = ['2016', '2017', '2018']
-# signals = ['ZHH', 'WHH']
+years = ['2016', '2017', '2018']
+signals = ['ZHH', 'WHH']
 # years = ['RunII']
-signals = ['VHH']
+# signals = ['VHH']
 hists_filename = {
     'data'    : ['hists_j_r'],
     'ttbar'   : ['hists_j_r'],
     'signal'  : ['hists', 'hists_jerUp', 'hists_jerDown', 'hists_jesTotalUp', 'hists_jesTotalDown'],
-    # 'signal'  : ['hists'],
-    # 'data'    : ['hists_j_r', 'hists_j_r_14', 'hists_j_r_14n', 'hists_j_r_14nc', 'hists_j_r_8', 'hists_j_r_8n', 'hists_j_r_8nc'],
-    # 'ttbar'   : ['hists_j_r', 'hists_j_r_14', 'hists_j_r_14n', 'hists_j_r_14nc', 'hists_j_r_8', 'hists_j_r_8n', 'hists_j_r_8nc'],
-    # 'signal'  : ['hists', 'hists_14', 'hists_14n', 'hists_14nc', 'hists_8', 'hists_8n', 'hists_8nc'],
+    # 'data'    : ['hists_j_r', 'hists_j_r_noMDR', 'hists_j_r_noMDR_v2'],
+    # 'ttbar'   : ['hists_j_r', 'hists_j_r_noMDR', 'hists_j_r_noMDR_v2'],
+    # 'signal'  : ['hists', 'hists_noMDR', 'hists_noMDR_v2'],
 }
 no_background = False
 no_multijet = False
@@ -1141,14 +1140,39 @@ class plots:
                         ploter.add_hist(SF_num, sf_category[i] + '_' + sf_category[j])
                         ploter.plot('TEXT COLZ')
     
-    def save(self, path):
-        save_path = path_extensions(self.output + path, clean = True, debug = self.debug, cmd_length = self.cmd_length)
-        
+    def save(self, path = 'shapes'):
+        save_path = path_extensions(self.input + path, clean = True, debug = self.debug, cmd_length = self.cmd_length)
+        for year in self.years:
+            if not no_signal:
+                for signal in self.signals:
+                    signal_files = {}
+                    for coupling in (self.couplings.basis if mc_signals else self.plot_couplings):
+                        if self.debug: print('Create'.ljust(self.cmd_length) + filename) 
+                        filename = '{path}{signal}{coupling}{year}.root'.format(path = save_path, signal = signal, coupling = self.couplings.get_filename(**coupling), year = year)
+                        signal_files[self.couplings.get_caption(**coupling)] = ROOT.TFile(filename, 'RECREATE')
+                    for hist in self.plot_hists:
+                        if self.debug: print('Save'.ljust(self.cmd_length) + hist) 
+                        signal_mc = self.load_signal_mc_hists(year, signal, hist)
+                        if mc_signals: 
+                            for i,coupling in enumerate(self.couplings.basis):
+                                #TODO
+                                ploter.add_hist(signal_mc[i], self.couplings.get_caption(**coupling), signal_scale)
+                        else:
+                            for coupling in self.plot_couplings:
+                                weights = self.couplings.generate_weight(**coupling)
+                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), signal_scale)
+            if not no_background and not mc_only:
+                ploter.add_hist(self.load_data_hists(year, hist), 'Data ' + self.lumi[year] + ' ' + year)
+                if not no_multijet:
+                    ploter.add_hist(self.load_multijet_hists(year, hist), 'Multijet Model')
+            if not no_background:
+                ploter.add_hist(self.load_ttbar_mc_hists(year, hist), 't#bar{t}')
 
 
     def save_shape(self, filename, hist, MC_systs = [], rebin = 1, unblind = False, mix_as_obs = ''):
         for year in self.years:
             format_args = {'year': year}
+            if self.debug: print('Datacard'.ljust(self.cmd_length) + filename.format(**format_args)) 
             output_file = ROOT.TFile(self.input + filename.format(**format_args) + '.root','recreate')                
             output_file.cd()
             multijet = self.load_multijet_hists(year, hist, rebin)
@@ -1363,8 +1387,7 @@ if __name__ == '__main__':
         # producer.add_couplings(cv=0.5,c2v=1.0, c3=1.0)
         # producer.add_couplings(cv=1.0,c2v=1.0, c3=20.0)
 
-        # producer.compare_histfile('pass*/fourTag/mainView/HHSR/SvB_MA_VHH_ps[_BDT_kl|_BDT_kVV]', {'{}':'14, no k-fold', '{}_14':'14, k-fold','{}_14n':'14, k-fold + norm sample','{}_14nc':'14, k-fold + norm coupling', '{}_8':'8, k-fold','{}_8n':'8, k-fold + norm sample','{}_8nc':'8, k-fold + norm coupling'}, rebin = binning, extra_tag='_all', normalize=True)
-        # producer.compare_histfile('pass*/fourTag/mainView/HHSR/SvB_MA_VHH_ps[|_BDT_kl|_BDT_kVV]', {'{}_8':'8, k-fold','{}_8n':'8, k-fold + norm sample','{}_8nc':'8, k-fold + norm coupling'}, rebin = binning, extra_tag='_8features', normalize=True)
+        # producer.compare_histfile('pass*/fourTag/mainView/HHSR/SvB_MA_VHH_ps[_BDT_kl|_BDT_kVV]', {'{}':'cut on MDR', '{}_noMDR':'no MDR', '{}_noMDR_v2':'no MDR v2'}, rebin = binning, extra_tag='_all', normalize=True)
         # producer.add_dir(['pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/n*','pass*/fourTag/mainview/[notSR|HHSR|CR|SB]/[can*|*dijet*]/[m*|pt*|*dr*]'])
         # producer.add_dir(['pass*/fourTag/mainview/CR/nSel*'])
         # producer.add_dir(['pass*/fourTag/mainview/CR/[can*|*dijet*|v4j]/[eta|phi|dR|m*|pt*]'])
@@ -1375,7 +1398,6 @@ if __name__ == '__main__':
         # producer.add_dir(['pass*/threeTag/mainView/TTCR/nSel*'])
         # producer.add_dir(['passMV/fourTag/mainView/HHSR/kl_BDT'], normalize = True)
         producer.add_plot_rule(plot_rule([(0,'passMV')],["self.set_topright('Pass m_{V_{jj}}')"]))
-        producer.add_plot_rule(plot_rule([(0,'passMDRs')],["self.set_topright('Pass #Delta R(j,j)')"]))
         producer.add_plot_rule(plot_rule([(3,'HHSR')],["self.set_topmid('HH Signal Region')"]))
         producer.add_plot_rule(plot_rule([(3,'SR')],["self.set_topmid('Inclusive Signal Region')"]))
         producer.add_plot_rule(plot_rule([(3,'CR')],["self.set_topmid('Control Region')"]))
@@ -1388,8 +1410,7 @@ if __name__ == '__main__':
         # producer.optimize('passNjOth/fourTag/mainView/HHSR/canJet3BTag')
         # producer.optimize('passMV/fourTag/mainView/HHSR/canJet3BTag')
 
-        # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('MDRs','#Delta R_{jj}'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
-        # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('LooseMDRs','Loose #Delta R_{jj}'), ('LooseMV','Loose m_{V}'),('LooseMV_HHmSR','modified SR'),('LooseMV_HHmSR_HLT','HLT')]
+        # cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('NjOth','N_{j}#geq 6'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
         # producer.AccxEff(cuts)
 
 
@@ -1454,17 +1475,15 @@ if __name__ == '__main__':
         
         # # kVV enhanced region
         producer.save_shape('shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning)
-        # producer.save_shape('shapefile_VhadHH_CR_{year}_kVV', 'passMV/fourTag/mainView/CR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
         producer.save_shape('shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
         # # kl  enhanced region
         producer.save_shape('shapefile_VhadHH_SR_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning)
-        # producer.save_shape('shapefile_VhadHH_CR_{year}_kl', 'passMV/fourTag/mainView/CR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, unblind = True)
         producer.save_shape('shapefile_VhadHH_SB_{year}_kl', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, unblind = True)
 
-        # for i in range(10):
-        #     mix_n = str(i)
-        #     producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_nf8_HH.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
-        #     producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_nf8_HH.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
+        for i in range(10):
+            mix_n = str(i)
+            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_nf8_HH.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
+            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_nf8_HH.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
 
         ## make signal templates
         # producer.add_dir(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_[kl|kVV]'])

@@ -13,8 +13,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   //
   nAllJets = dir.make<TH1F>("nAllJets", (name+"/nAllJets; Number of Jets (pt>20); Entries").c_str(),  16,-0.5,15.5);
   nAllNotCanJets = dir.make<TH1F>("nAllNotCanJets", (name+"/nAllNotCanJets; Number of Jets excluding boson candidate jets (pt>20); Entries").c_str(),  16,-0.5,15.5);
-  nSelJetsV = dir.make<TH1F>("nSelJetsV", (name+"/nSelJetsV; Number of Selected Jets for Vector Boson; Entries").c_str(),  16,-0.5,15.5);
-  nSelJets = dir.make<TH1F>("nSelJets", (name+"/nSelJets; Number of Selected Jets for Higgs Boson; Entries").c_str(),  16,-0.5,15.5);
+  nSelJets = dir.make<TH1F>("nSelJets", (name+"/nSelJets; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
   nSelJets_noBTagSF = dir.make<TH1F>("nSelJets_noBTagSF", (name+"/nSelJets_noBTagSF; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
   nSelJets_lowSt = dir.make<TH1F>("nSelJets_lowSt", (name+"/nSelJets_lowSt; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
   nSelJets_midSt = dir.make<TH1F>("nSelJets_midSt", (name+"/nSelJets_midSt; Number of Selected Jets; Entries").c_str(),  16,-0.5,15.5);
@@ -33,8 +32,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   nCanJets = dir.make<TH1F>("nCanJets", (name+"/nCanJets; Number of Boson Candidate Jets; Entries").c_str(),  16,-0.5,15.5);
   //allJets = new jetHists(name+"/allJets", fs, "All Jets");
   allNotCanJets = new jetHists(name+"/allNotCanJets", fs, "All Jets Excluding Boson Candidate Jets");
-  selJetsV = new jetHists(name+"/selJetsV", fs, "Selected Jets for Vector Boson", "", debug);
-  selJets = new jetHists(name+"/selJets", fs, "Selected Jets for Higgs Boson", "", debug);
+  selJets = new jetHists(name+"/selJets", fs, "Selected Jets", "", debug);
   tagJets = new jetHists(name+"/tagJets", fs, "Tagged Jets");
   canJets = new jetHists(name+"/canJets", fs, "Higgs Boson Candidate Jets");
   canJet0 = new jetHists(name+"/canJet0", fs, "Higgs Boson Candidate Jet_{0}");
@@ -45,24 +43,12 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   //VHH
   nTruVJets = dir.make<TH1F>("nTruVJets", (name+"/nTruVJets; Number of Truth Matched Vector Boson Jets in Other Jets; Entries").c_str(), 16,-0.5,15.5);
   truVJets = new jetHists(name+"/truVJets", fs, "Truth Matched Vector Boson Jets in Other Jets");
-  // truVJet0 = new jetHists(name+"/truVJet0", fs, "Truth Matched Vector Boson Jet_{0} in Other Jets");
-  // truVJet1 = new jetHists(name+"/truVJet1", fs, "Truth Matched Vector Boson Jet_{1} in Other Jets");
-  // lowPtJets = new jetHists(name+"/lowPtJets", fs, "Jets 20 GeV #leq p_{T}<40 GeV");
   nCanHTruVJets = dir.make<TH1F>("nCanHTruVJets", (name+"/nCanHTruVJets; Number of Truth Matched Vector Boson Jets in Higgs Candidate Jets; Entries").c_str(), 16,-0.5,15.5);
-  // canHTruVJets = new jetHists(name+"/canHTruVJets", fs, "Truth Matched Vector Boson Jets in Higgs Candidate Jets");
-  nSelTruVJets =dir.make<TH1F>("nSelTruVJets", (name+"/nSelTruVJets; Number of Truth Matched Vector Boson Jets in Selected Jets; Entries").c_str(), 16,-0.5,15.5);
-  allDijets   = new dijetHists(name+"/allDijets",   fs,    "All Dijets formed by Other Jets");
-  // truVDijets   = new dijetHists(name+"/truVDijets",   fs,    "Truth Matched Vector Boson Dijets");
-  // notTruVDijets   = new dijetHists(name+"/notTruVDijets",   fs,    "Not Truth Matched Vector Boson Dijets");
-  nAllDijets =dir.make<TH1F>("nAllDijets", (name+"/nAllDijets; Number of All Dijets formed by Other Jets; Entries").c_str(), 16,-0.5,15.5);
-  nTruVDijets =dir.make<TH1F>("nTruVDijets", (name+"/nTruVDijets; Number of Truth Matched Vector Boson Dijets; Entries").c_str(), 16,-0.5,15.5);
   nCanVDijets =dir.make<TH1F>("nCanVDijets", (name+"/nCanVDijets; Number of Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
-  nCanVTruVDijets =dir.make<TH1F>("nCanVTruVDijets", (name+"/nCanVTruVDijets; Number of Truth Matched Vector Boson Candidate Dijets; Entries").c_str(), 16,-0.5,15.5);
   canVJets = new jetHists(name+"/canVJets", fs, "Vector Boson Candidate Jets");
   canVJet0 = new jetHists(name+"/canVJet0", fs, "Vector Boson Candidate Jet_{0}");
   canVJet1 = new jetHists(name+"/canVJet1", fs, "Vector Boson Candidate Jet_{1}"); 
   canVDijets   = new dijetHists(name+"/canVDijets",   fs,    "Vector Boson Candidate Dijets");
-  canVTruVDijets   = new dijetHists(name+"/canVTruVDijets",   fs,    "Truth Matched Vector Boson Candidate Dijets");
   //
   aveAbsEta = dir.make<TH1F>("aveAbsEta", (name+"/aveAbsEta; <|#eta|>; Entries").c_str(), 25, 0 , 2.5);
   aveAbsEtaOth = dir.make<TH1F>("aveAbsEtaOth", (name+"/aveAbsEtaOth; Other Jets <|#eta|>; Entries").c_str(), 27, -0.2, 2.5);
@@ -96,11 +82,6 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   m4j_vs_leadSt_dR = dir.make<TH2F>("m4j_vs_leadSt_dR", (name+"/m4j_vs_leadSt_dR; m_{4j} [GeV]; S_{T} leading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
   m4j_vs_sublSt_dR = dir.make<TH2F>("m4j_vs_sublSt_dR", (name+"/m4j_vs_sublSt_dR; m_{4j} [GeV]; S_{T} subleading Higgs candidate #DeltaR(j,j); Entries").c_str(), 40,100,1200, 25,0,5);
 
-  // m6j_vs_V_dR = dir.make<TH2F>("m6j_vs_V_dR", (name+"/m6j_vs_V_dR; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
-  // m6j_vs_V_dR_matched = dir.make<TH2F>("m6j_vs_V_dR_matched", (name+"/m6j_vs_V_dR_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
-  // m6j_vs_V_dR_not_matched = dir.make<TH2F>("m6j_vs_V_dR_not_matched", (name+"/m6j_vs_V_dR_not_matched; m_{6j} [GeV]; Vector boson candidate #DeltaR(j,j) Not Truth Matched; Entries").c_str(), 40,100,1400, 25,0,5);
-  // m6j_vs_V_dR_Loose = dir.make<TH2F>("m6j_vs_V_dR_Loose", (name+"/m6j_vs_V_dR_Loose; m_{6j} [GeV]; Vector boson candidate (Loose) #DeltaR(j,j); Entries").c_str(), 40,100,1400, 25,0,5);
-
   leadM  = new dijetHists(name+"/leadM",  fs,    "Leading mass boson candidate");
   sublM  = new dijetHists(name+"/sublM",  fs, "Subleading mass boson candidate");
   leadM_m_vs_sublM_m = dir.make<TH2F>("leadM_m_vs_sublM_m", (name+"/leadM_m_vs_sublM_m; mass leading boson candidate Mass [GeV]; mass subleading boson candidate Mass [GeV]; Entries").c_str(), 50,0,250, 50,0,250);
@@ -122,13 +103,6 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
       allPUNotBJets = dir.make<TH2F>("allPUNotBJets", (name+"/allPUNotBJets; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
       allPUNotBJetsPassPuId = dir.make<TH2F>("allPUNotBJetsPassPuId", (name+"/allPUNotBJetsPassPuId; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
     }
-  }
-
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"bTagSFStudy")){
-    bJetBTagSF = dir.make<TH1F>("bJetBTagSF", (name+"/bJetBTagSF; b-tagging SF for b jets; Entries").c_str(), 50, -0.5, 0.5);
-    cJetBTagSF = dir.make<TH1F>("cJetBTagSF", (name+"/cJetBTagSF; b-tagging SF for c jets; Entries").c_str(), 50, -0.5, 0.5);
-    udsgJetBTagSF = dir.make<TH1F>("udsgJetBTagSF", (name+"/udsgJetBTagSF; b-tagging SF for udsg jets; Entries").c_str(), 50, -0.5, 0.5);
-    eventBTagSF = dir.make<TH1F>("eventBTagSF", (name+"/eventBTagSF; b-tagging SF for event; Entries").c_str(), 50, -0.5, 0.5);
   }
   
   //
@@ -197,7 +171,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   // SvB_MA_ps_zhh = dir.make<TH1F>("SvB_MA_ps_zhh",  (name+"/SvB_MA_ps_zhh;  SvB_MA Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH); Entries").c_str(), 100, 0, 1);
   // SvB_MA_ps_whh = dir.make<TH1F>("SvB_MA_ps_whh",  (name+"/SvB_MA_ps_whh;  SvB_MA Regressed P(WHH)+P(ZHH), P(WHH) > P(ZHH); Entries").c_str(), 100, 0, 1);
 
-  puIdSF = dir.make<TH1F>("puIdSF",  (name+"/puIdSF;  PU Jet ID SF; Entries").c_str(), 40, 0.8, 1.2);
+  puIdSF = dir.make<TH1F>("puIdSF",  (name+"/puIdSF;  PU Jet ID SF; Entries").c_str(), 60, 0.7, 1.3);
   SvB_MA_VHH_ps  = dir.make<TH1F>("SvB_MA_VHH_ps",  (name+"/SvB_MA_VHH_ps;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_VHH_ps_BDT_kVV  = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kVV",  (name+"/SvB_MA_VHH_ps_BDT_kVV;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
   SvB_MA_VHH_ps_BDT_kl = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kl",  (name+"/SvB_MA_VHH_ps_BDT_kl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
@@ -227,29 +201,12 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
     SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts = new systHists(SvB_MA_VHH_ps_BDT_kl_ONNX, event->treeJets->m_btagVariations);
   }
 
-
-  bdt_vs_SvB = dir.make<TH2F>("bdt_vs_SvB", (name+"/bdt_vs_SvB; BDT output; SvB (BDT label) output; Entries").c_str(), 40,-1,1, 40,0,1);
-
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
   // FvT_q_score_SvB_q_score_max = dir.make<TH1F>("FvT_q_score_SvB_q_score_max", (name+"/FvT_q_score; FvT q_score (max SvB q_score pairing); Entries").c_str(), 100, 0, 1);
   // SvB_q_score = dir.make<TH1F>("SvB_q_score", (name+"/SvB_q_score; SvB q_score; Entries").c_str(), 100, 0, 1);
   // SvB_q_score_FvT_q_score_max = dir.make<TH1F>("SvB_q_score_FvT_q_score_max", (name+"/SvB_q_score; SvB q_score (max FvT q_score pairing); Entries").c_str(), 100, 0, 1);
   // SvB_MA_q_score = dir.make<TH1F>("SvB_MA_q_score", (name+"/SvB_MA_q_score; SvB_MA q_score; Entries").c_str(), 100, 0, 1);
-
-  // FvT_SvB_q_score_max_same = dir.make<TH1F>("FvT_SvB_q_score_max_same", (name+"/FvT_SvB_q_score_max_same; FvT max q_score pairing == SvB max q_score pairing").c_str(), 2, -0.5, 1.5);
-  // //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-  // SvB_ps_zhh_0_75 = dir.make<TH1F>("SvB_ps_zhh_0_75",  (name+"/SvB_ps_zhh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_zhh_75_150 = dir.make<TH1F>("SvB_ps_zhh_75_150",  (name+"/SvB_ps_zhh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_zhh_150_250 = dir.make<TH1F>("SvB_ps_zhh_150_250",  (name+"/SvB_ps_zhh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_zhh_250_400 = dir.make<TH1F>("SvB_ps_zhh_250_400",  (name+"/SvB_ps_zhh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_zhh_400_inf = dir.make<TH1F>("SvB_ps_zhh_400_inf",  (name+"/SvB_ps_zhh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(ZHH)$ #geq P(WHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
-
-  // SvB_ps_whh_0_75 = dir.make<TH1F>("SvB_ps_whh_0_75",  (name+"/SvB_ps_whh_0_75;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 0<p_{T,Z}<75; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_whh_75_150 = dir.make<TH1F>("SvB_ps_whh_75_150",  (name+"/SvB_ps_whh_75_150;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 75<p_{T,Z}<150; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_whh_150_250 = dir.make<TH1F>("SvB_ps_whh_150_250",  (name+"/SvB_ps_whh_150_250;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 150<p_{T,Z}<250; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_whh_250_400 = dir.make<TH1F>("SvB_ps_whh_250_400",  (name+"/SvB_ps_whh_250_400;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 250<p_{T,Z}<400; Entries").c_str(), 100, 0, 1);
-  // SvB_ps_whh_400_inf = dir.make<TH1F>("SvB_ps_whh_400_inf",  (name+"/SvB_ps_whh_400_inf;  SvB Regressed P(WHH)+P(ZHH), P(WHH)$ > P(ZHH), 400<p_{T,Z}<inf; Entries").c_str(), 100, 0, 1);
 
   xHH = dir.make<TH1F>("xHH", (name+"/xHH; X_{HH}; Entries").c_str(), 100, 0, 10);  
   Double_t bins_mHH[] = {100, 216, 237, 260, 286, 314, 345, 379, 416, 457, 502, 552, 607, 667, 733, 806, 886, 974, 1071, 1178, 1295, 1500};
@@ -285,18 +242,6 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
     //weightStudy_v0v1 = new weightStudyHists(name+"/FvTStudy_v0v1", fs, debug);
   }
 
-  canJet0BTag = dir.make<TH1F>("canJet0BTag", (name+"/canJet0BTag; b-tagging score; Entries").c_str(),  100,0,1);
-  canJet1BTag = dir.make<TH1F>("canJet1BTag", (name+"/canJet1BTag; b-tagging score; Entries").c_str(),  100,0,1);
-  canJet2BTag = dir.make<TH1F>("canJet2BTag", (name+"/canJet2BTag; b-tagging score; Entries").c_str(),  100,0,1);
-  canJet3BTag = dir.make<TH1F>("canJet3BTag", (name+"/canJet3BTag; b-tagging score; Entries").c_str(),  100,0,1);
-  canJet23BTag = dir.make<TH2F>("canJet23BTag", (name+"/canJet23BTag; b-tagging score of canJet2; b-tagging score of canJet3; Entries").c_str(), 100,0,1, 100,0,1);
-  DvT_pt   = dir.make<TH1F>("DvT_pt",   (name+"/DvT_pt; TTbar Prob; Entries").c_str(),   100, -0.1, 2);
-  DvT_pt_l = dir.make<TH1F>("DvT_pt_l", (name+"/DvT_pt_l; TTbar Prob; Entries").c_str(), 100, -0.1, 10);
-  DvT_pm   = dir.make<TH1F>("DvT_pm",   (name+"/DvT_pm; Multijet Prob; Entries").c_str(),   100, -2, 2);
-  DvT_pm_l = dir.make<TH1F>("DvT_pm_l", (name+"/DvT_pm_l; Multijet Prob; Entries").c_str(), 100, -10, 10);
-  DvT_raw = dir.make<TH1F>("DvT_raw", (name+"/DvT_raw; TTbar Prob raw; Entries").c_str(), 100, -0.1, 2);
-
-
   if(nTupleAnalysis::findSubStr(histDetailLevel,"bdtStudy")){
     kl_BDT = dir.make<TH1F>("kl_BDT", (name+"/kl_BDT; #kappa_{#lambda} BDT Output; Entries").c_str(), 32, -1 , 1); 
   }
@@ -311,7 +256,6 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   nAllNotCanJets->Fill(event->nAllNotCanJets, event->weight);
   st->Fill(event->st, event->weight);
   stNotCan->Fill(event->stNotCan, event->weight);
-  nSelJetsV->Fill(event->nSelJetsV, event->weight);
   nSelJets->Fill(event->nSelJets, event->weight);
   nSelJets_noBTagSF->Fill(event->nSelJets, event->weight/event->bTagSF);
   if     (event->s4j < 320) nSelJets_lowSt ->Fill(event->nSelJets, event->weight);
@@ -337,7 +281,6 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   hT30->Fill(event->ht30, event->weight);
 
   if(debug) std::cout << "viewHists::Fill seljets " << std::endl;
-  for(auto &jet: event->selJetsV) selJetsV->Fill(jet, event->weight);
   for(auto &jet: event->selJets) selJets->Fill(jet, event->weight);
   if(debug) std::cout << "viewHists::Fill tagjets " << std::endl;
   for(auto &jet: event->tagJets) tagJets->Fill(jet, event->weight);
@@ -356,23 +299,9 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
 
   nTruVJets->Fill(event->truVJets.size(), event->weight);
   for(auto &jet: event->truVJets) truVJets->Fill(jet, event->weight);
-  // if(event->truVJets.size()>1){
-  //   truVJet0->Fill(event->truVJets[0], event->weight);
-  //   truVJet1->Fill(event->truVJets[1], event->weight);
-  // }
-  // for(auto &jet: event->lowPtJets) lowPtJets->Fill(jet, event->weight);
   nCanHTruVJets->Fill(event->canHTruVJets.size(), event->weight);
-  // for(auto &jet: event->canHTruVJets) canHTruVJets->Fill(jet, event->weight);
-  nSelTruVJets->Fill(event->truVJets.size()+event->canHTruVJets.size(), event->weight);
-  for(auto &dijet: event->allDijets) allDijets->Fill(dijet, event->weight);
-  // for(auto &dijet: event->truVDijets) truVDijets->Fill(dijet, event->weight);
-  // for(auto &dijet: event->notTruVDijets) notTruVDijets->Fill(dijet, event->weight);
   for(auto &dijet: event->canVDijets) canVDijets->Fill(dijet, event->weight);
-  for(auto &dijet: event->canVTruVDijets) canVTruVDijets->Fill(dijet, event->weight);
-  nAllDijets->Fill(event->allDijets.size(), event->weight);
-  nTruVDijets->Fill(event->truVDijets.size(), event->weight);
   nCanVDijets->Fill(event->canVDijets.size(), event->weight);
-  nCanVTruVDijets->Fill(event->canVTruVDijets.size(), event->weight);
 
   aveAbsEta->Fill(event->aveAbsEta, event->weight);
   aveAbsEtaOth->Fill(event->aveAbsEtaOth, event->weight);
@@ -413,18 +342,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   leadSt_m_vs_sublSt_m->Fill(view->leadSt->m, view->sublSt->m, event->weight);
   m4j_vs_leadSt_dR->Fill(view->m4j, view->leadSt->dR, event->weight);
   m4j_vs_sublSt_dR->Fill(view->m4j, view->sublSt->dR, event->weight);
-  
-  // if(event->canVDijets.size()>0){
-  //   m6j_vs_V_dR->Fill(event->m6j, event->canVDijets[0]->dR, event->weight);
-  // }
-  
-  // if(event->p6jGen.Pt()>0){
-  //   for(auto &dijet: event->truVDijets) m6j_vs_V_dR_matched->Fill(event->m6jGen, dijet->dR, event->weight);
-  //   for(auto &dijet: event->notTruVDijets) m6j_vs_V_dR_not_matched->Fill(event->m6jGen, dijet->dR, event->weight);
-  // }
-  // if(event->passLooseMV){
-  //   m6j_vs_V_dR_Loose->Fill(event->m6jLoose, event->pVLoose_dR, event->weight);
-  // }
+
   leadM ->Fill(view->leadM,  event->weight);
   sublM ->Fill(view->sublM,  event->weight);
   leadM_m_vs_sublM_m->Fill(view->leadM->m, view->sublM->m, event->weight);
@@ -494,35 +412,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   // SvB_pwhh->Fill(event->SvB_pwhh, event->weight);
   // SvB_pzhh->Fill(event->SvB_pzhh, event->weight);
   // SvB_ptt->Fill(event->SvB_ptt, event->weight);
-  // if(event->SvB_pwhh<event->SvB_pzhh){
-  //   SvB_ps_zhh->Fill(event->SvB_ps, event->weight);
-  //   //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-  //   if      (view->sublM->pt< 75){
-  //     SvB_ps_zhh_0_75   ->Fill(event->SvB_ps, event->weight);
-  //   }else if(view->sublM->pt<150){
-  //     SvB_ps_zhh_75_150 ->Fill(event->SvB_ps, event->weight);
-  //   }else if(view->sublM->pt<250){
-  //     SvB_ps_zhh_150_250->Fill(event->SvB_ps, event->weight);
-  //   }else if(view->sublM->pt<400){
-  //     SvB_ps_zhh_250_400->Fill(event->SvB_ps, event->weight);
-  //   }else{
-  //     SvB_ps_zhh_400_inf->Fill(event->SvB_ps, event->weight);
-  //   }
-  // }else{
-  //   SvB_ps_whh->Fill(event->SvB_ps, event->weight);
-  //   //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-  //   if      (view->sublM->pt< 75){
-  //     SvB_ps_whh_0_75   ->Fill(event->SvB_ps, event->weight);
-  //   }else if(view->sublM->pt<150){
-  //     SvB_ps_whh_75_150 ->Fill(event->SvB_ps, event->weight);
-  //   }else if(view->sublM->pt<250){
-  //     SvB_ps_whh_150_250->Fill(event->SvB_ps, event->weight);
-  //   }else if(view->sublM->pt<400){
-  //     SvB_ps_whh_250_400->Fill(event->SvB_ps, event->weight);
-  //   }else{
-  //     SvB_ps_whh_400_inf->Fill(event->SvB_ps, event->weight);
-  //   }
-  // }
+
 
   // SvB_MA_ps ->Fill(event->SvB_MA_ps , event->weight);
   // if(SvB_MA_ps_bTagSysts){
@@ -595,7 +485,6 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
       SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
   }
-  bdt_vs_SvB->Fill(event->BDT_kl, event->SvB_MA_VHH_ps, event->weight);
 
   if(kl_BDT && event->canVDijets.size() > 0){
     kl_BDT->Fill(event->BDT_kl, event->weight);
@@ -623,12 +512,6 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   if(weightStudy_v0v9)  weightStudy_v0v9 ->Fill(event, view);
   if(weightStudy_os012) weightStudy_os012->Fill(event, view);
   if(weightStudy_e20)   weightStudy_e20  ->Fill(event, view);
-
-  canJet0BTag->Fill(event->canJet0_btag, event->weight);
-  canJet1BTag->Fill(event->canJet1_btag, event->weight);
-  canJet2BTag->Fill(event->canJet2_btag, event->weight);
-  canJet3BTag->Fill(event->canJet3_btag, event->weight);
-  canJet23BTag->Fill(event->canJet2_btag,event->canJet3_btag, event->weight);
 
   if(debug) std::cout << "viewHists::Fill done " << std::endl;
   return;

@@ -61,20 +61,16 @@ namespace nTupleAnalysis {
     bool blind = true;
     bool calcTrigWeights = false;
 
-
     int treeEvents;
     eventData* event;
     tagCutflowHists* cutflow;
     lumiHists* lumiCounts    = NULL;
     float  lumiLastWrite    = 0;
 
-    eventHists* allEvents      = NULL;
+    eventHists* allEvents   = NULL;
     tagHists* passPreSel    = NULL;
-    tagHists* passDijetMass = NULL;
-    tagHists* passLooseMDRs = NULL;
-    tagHists* passLooseNjOth= NULL;
-    tagHists* passLooseMV   = NULL;
-    tagHists* passMDRs      = NULL;
+    //tagHists* passDijetMass = NULL;
+    // tagHists* passMDRs      = NULL;
     tagHists* passNjOth     = NULL;
     tagHists* passMV        = NULL;
     tagHists* passXWt       = NULL;

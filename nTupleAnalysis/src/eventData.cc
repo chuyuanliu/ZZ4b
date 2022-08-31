@@ -442,25 +442,18 @@ void eventData::resetEvent(){
     selJetsLoosePt.clear();
     tagJetsLoosePt.clear();
   }
-  selJetsV.clear();
   canJets.clear();
   canHTruVJets.clear();
   truVJets.clear();
   othJets.clear();
-  lowPtJets.clear();
   allDijets.clear();
-  truVDijets.clear();
-  notTruVDijets.clear();
-  canVDijets.clear();
   canVJets.clear();
-  canVTruVDijets.clear();
   allNotCanJets.clear(); nAllNotCanJets = 0;
   topQuarkBJets.clear();
   topQuarkWJets.clear();
   dijets .clear();
   views  .clear();
-  views_passMDRs.clear();
-  views_passLooseMDRs.clear();
+  // views_passMDRs.clear();
   view_selected.reset();
   nViews_eq = 0;
   nViews_00 = 0;
@@ -472,20 +465,20 @@ void eventData::resetEvent(){
   view_dR_min.reset();
   view_max_FvT_q_score.reset();
   view_max_SvB_q_score.reset();
+  canVDijets.clear();
   close.reset();
   other.reset();
   appliedMDRs = false;
   m4j = -99;
-  m6j = -99;
-  m6jGen = -99;
-  m6jLoose = -99;
-  pVLoose_dR = -99;
-  passLooseMDRs = false;
-  passLooseMV = false;
-  ZZSB = false; ZZCR = false; ZZSR = false;
-  ZHSB = false; ZHCR = false; ZHSR = false;
-  HHSB = false; HHCR = false; HHSR = false;  HHmSR = false;
-  SB = false; CR = false; SR = false;
+  // ZZSB = false; ZZCR = false; 
+  // ZHSB = false; ZHCR = false; 
+  // HHSB = false; HHCR = false; 
+  ZZSR = false;
+  ZHSR = false;
+  HHSR = false;
+  SB = false; 
+  // CR = false; 
+  SR = false;
   leadStM = -99; sublStM = -99;
   passDijetMass = false;
   d01TruthMatch = 0;
@@ -496,16 +489,13 @@ void eventData::resetEvent(){
   d12TruthMatch = 0;
   truthMatch = false;
   selectedViewTruthMatch = false;
-  passMDRs = false;
+  // passMDRs = false;
   passXWt = false;
   passMV = false;
   passL1  = false;
   passHLT = false;
   //passDEtaBB = false;
-  p4j.SetPtEtaPhiM(0,0,0,0);
-  p6jGen.SetPtEtaPhiM(0,0,0,0);
-  p6jReco.SetPtEtaPhiM(0,0,0,0);
-  pVGen_dR = -99;
+  p4j    .SetPtEtaPhiM(0,0,0,0);
   canJet1_pt = -99;
   canJet3_pt = -99;
   aveAbsEta = -99; aveAbsEtaOth = -0.1; stNotCan = 0;
@@ -746,19 +736,19 @@ void eventData::buildEvent(){
   // Select Jets
   //
   if(looseSkim){
-    selJetsLoosePt = treeJets->getJets(       allJets, jetPtMinV-5, 1e6, jetEtaMax, doJetCleaning);
-    tagJetsLoosePt = treeJets->getJets(selJetsLoosePt, jetPtMinV-5, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
-  } 
-  selJetsV      = treeJets->getJets(     allJets,  jetPtMinV, 1e6, jetEtaMax, doJetCleaning);
-  selJets       = treeJets->getJets(     selJetsV, jetPtMinH, 1e6, jetEtaMax, doJetCleaning);
-  looseTagJets  = treeJets->getJets(    selJets, jetPtMinH, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger);
-  tagJets       = treeJets->getJets(looseTagJets, jetPtMinH, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
-  antiTag       = treeJets->getJets(    selJets, jetPtMinH, 1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger, true); //boolean specifies antiTag=true, inverts tagging criteria
-  nSelJetsV     =     selJetsV.size();
-  nSelJets      =      selJets.size();
-  nLooseTagJets = looseTagJets.size();
-  nTagJets      =      tagJets.size();
-  nAntiTag      =      antiTag.size();
+    selJetsLoosePt = treeJets->getJets(       allJets, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning);
+    tagJetsLoosePt = treeJets->getJets(selJetsLoosePt, jetPtMin-5, 1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
+    selJets        = treeJets->getJets(selJetsLoosePt, jetPtMin,   1e6, jetEtaMax, doJetCleaning);
+  }else{
+    selJets        = treeJets->getJets(       allJets, jetPtMin,   1e6, jetEtaMax, doJetCleaning);
+  }
+  looseTagJets   = treeJets->getJets(       selJets, jetPtMin,   1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger);
+  tagJets        = treeJets->getJets(  looseTagJets, jetPtMin,   1e6, jetEtaMax, doJetCleaning, bTag,   bTagger);
+  antiTag        = treeJets->getJets(       selJets, jetPtMin,   1e6, jetEtaMax, doJetCleaning, bTag/2, bTagger, true); //boolean specifies antiTag=true, inverts tagging criteria
+  nSelJets       =      selJets.size();
+  nLooseTagJets  = looseTagJets.size();
+  nTagJets       =      tagJets.size();
+  nAntiTag       =      antiTag.size();
 
   //btag SF
   if(isMC){
@@ -1078,40 +1068,18 @@ void eventData::chooseCanJets(){
   //else        preCanJets = &selJets;
 
   // order by decreasing btag score
-  std::sort(selJetsV.begin(), selJetsV.end(), sortTag);
-  // take the four jets with highest btag score
-  for(uint i = 0; i < nSelJetsV; ++i){
-    auto & jet = selJetsV.at(i);
-    if(canJets.size() < 4 && jet->pt >= jetPtMinH)
-      canJets.push_back(jet);
-    else
-      othJets.push_back(jet);
-    if(jet->pt < jetPtMinH)
-      lowPtJets.push_back(jet);
-  }
-  for(uint i = 0; i < 3;        ++i) topQuarkBJets.push_back(selJetsV.at(i));
-  for(uint i = 2; i < nSelJetsV; ++i) topQuarkWJets.push_back(selJetsV.at(i));
+  std::sort(selJets.begin(), selJets.end(), sortTag);
+  // take the four jets with highest btag score    
+  for(uint i = 0; i < 4;        ++i) canJets.push_back(selJets.at(i));
+  for(uint i = 4; i < nSelJets; ++i) othJets.push_back(selJets.at(i));
+  for(uint i = 0; i < 3;        ++i) topQuarkBJets.push_back(selJets.at(i));
+  for(uint i = 2; i < nSelJets; ++i) topQuarkWJets.push_back(selJets.at(i));
   nOthJets = othJets.size();
-
-  auto getbTag = +[](const jetPtr& jet){return jet->deepB;}; 
-  if(bTagger == "CSVv2")
-    getbTag = +[](const jetPtr& jet){return jet->CSVv2;};
-  else if(bTagger == "deepFlavB" || bTagger == "deepjet")
-    getbTag = +[](const jetPtr& jet){return jet->deepFlavB;};
-  canJet0_btag = getbTag(canJets[0]); canJet1_btag = getbTag(canJets[1]); canJet2_btag = getbTag(canJets[2]); canJet3_btag = getbTag(canJets[3]);
 
   for(uint i = 0; i < nOthJets; ++i){
     for(uint j = i+1; j < nOthJets; ++j){
       auto othDijet = std::make_shared<dijet>(othJets.at(i), othJets.at(j));
       allDijets.push_back(othDijet);
-      if(truth)
-      {
-        if(matchDijet(othDijet, truth))
-          truVDijets.push_back(othDijet);
-        else
-          notTruVDijets.push_back(othDijet);
-      }
-
     }
   }
 
@@ -1119,8 +1087,6 @@ void eventData::chooseCanJets(){
     if(dijet->m >= 65 && dijet->m <= 105){
        passMV = true;
        canVDijets.push_back(dijet);
-       if(dijet->truthMatch!=NULL)
-        canVTruVDijets.push_back(dijet);
     }
   }
   std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
@@ -1174,31 +1140,9 @@ void eventData::chooseCanJets(){
   std::sort(othJets.begin(), othJets.end(), sortPt); // order by decreasing pt
   p4j = canJets[0]->p + canJets[1]->p + canJets[2]->p + canJets[3]->p;
 
-  for(auto& dijet:allDijets){
-    if(dijet->m >= 50 && dijet->m <= 120){
-       auto p6jReco_temp = p4j + dijet->p;
-       auto m6j_temp = p6jReco_temp.M();
-       if(dijet->dR < std::max(650.0/m6j_temp + 0.3, 1.3)){
-          passLooseMV = true;
-          m6jLoose = m6j_temp;
-          pVLoose_dR = dijet->dR;
-          break;
-       }
-    }
-  }
-
   if(canVDijets.size()>0){
     canVJets.push_back(canVDijets.at(0)->lead);
     canVJets.push_back(canVDijets.at(0)->subl);
-    p6jReco = p4j + canVDijets.at(0)->p;
-    m6j = p6jReco.M();
-  }
-  if(truth){
-    if(truth->Hbbs.size()>=2 && truth->Vqqs.size()>=1){
-      p6jGen = truth->Hbbs[0]->p + truth->Hbbs[1]->p + truth->Vqqs[0]->p;
-      m6jGen = p6jGen.M();
-      pVGen_dR  = truth->Vqqs[0]->daughters.at(0)->p.DeltaR(truth->Vqqs[0]->daughters.at(1)->p);
-    }
   }
   m4j = p4j.M();
   // m123 = (canJets[1]->p + canJets[2]->p + canJets[3]->p).M();
@@ -1214,6 +1158,7 @@ void eventData::chooseCanJets(){
   canJet0_phi = canJets[0]->phi; canJet1_phi = canJets[1]->phi; canJet2_phi = canJets[2]->phi; canJet3_phi = canJets[3]->phi;
   canJet0_m   = canJets[0]->m  ; canJet1_m   = canJets[1]->m  ; canJet2_m   = canJets[2]->m  ; canJet3_m   = canJets[3]->m  ;
   //canJet0_e   = canJets[0]->e  ; canJet1_e   = canJets[1]->e  ; canJet2_e   = canJets[2]->e  ; canJet3_e   = canJets[3]->e  ;
+
   return;
 }
 
@@ -1412,10 +1357,6 @@ void eventData::buildViews(){
   views.push_back(std::make_shared<eventView>(eventView(dijets[0], dijets[1], FvT_q_score[0], SvB_q_score[0], SvB_MA_q_score[0])));
   views.push_back(std::make_shared<eventView>(eventView(dijets[2], dijets[3], FvT_q_score[1], SvB_q_score[1], SvB_MA_q_score[1])));
   views.push_back(std::make_shared<eventView>(eventView(dijets[4], dijets[5], FvT_q_score[2], SvB_q_score[2], SvB_MA_q_score[2])));
-  for(auto &view: views){
-    views_passMDRs.push_back(view);
-    views_passLooseMDRs.push_back(view);
-  }
 
   dR0123 = views[0]->dRBB;
   dR0213 = views[1]->dRBB;
@@ -1430,16 +1371,14 @@ void eventData::buildViews(){
   dRjjClose = close->dR;
   dRjjOther = other->dR;
 
-  // random->SetSeed(11*event+5);
+  random->SetSeed(11*event+5);
   for(auto &view: views){
-    passDijetMass = passDijetMass || (view->leadM->m<250); // want at least one view with both dijet masses under 250 for FvT training
-    // view->random = random->Uniform(0.1,0.9); // random float for random sorting
-    // if(view->passDijetMass){ view->random += 10; passDijetMass = true; } // add ten so that views passing dijet mass cut are at top of list after random sort
-    // if(view->passLeadStMDR){ view->random +=  1; } // add one
-    // if(view->passSublStMDR){ view->random +=  1; } // add one again so that views passing MDRs are given preference. 
+    view->random = random->Uniform(0.1,0.9); // random float for random sorting
+    if(view->passDijetMass){ view->random += 10; passDijetMass = true; } // add ten so that views passing dijet mass cut are at top of list after random sort
+    if(view->passLeadStMDR){ view->random +=  1; } // add one
+    if(view->passSublStMDR){ view->random +=  1; } // add one again so that views passing MDRs are given preference. 
     truthMatch = truthMatch || view->truthMatch; // check if there is a view which was truth matched to two massive boson decays
   }
-
   std::sort(views.begin(), views.end(), sortRandom); // put in random order for random view selection  
   //for(auto &view: views){ views_passMDRs.push_back(view); }
 
@@ -1472,34 +1411,27 @@ void eventData::buildViews(){
 }
 
 
-bool failMDRs(std::shared_ptr<eventView> &view){ return !view->passMDRs; }
+// bool failSBSR(std::shared_ptr<eventView> &view){ return !view->passDijetMass; }
+// bool failMDRs(std::shared_ptr<eventView> &view){ return !view->passMDRs; }
 
-void eventData::applyMDRs(){
-  appliedMDRs = true;
-  views_passMDRs.erase(std::remove_if(views_passMDRs.begin(), views_passMDRs.end(), failMDRs), views_passMDRs.end());
-  views_passLooseMDRs.erase(std::remove_if(views_passLooseMDRs.begin(), views_passLooseMDRs.end(), [](auto view){return !view->passLooseMDRs;}), views_passLooseMDRs.end());
-  passMDRs = views_passMDRs.size() > 0;
-  passLooseMDRs = views_passLooseMDRs.size() > 0;
+// void eventData::applyMDRs(){
+//   appliedMDRs = true;
+//   views_passMDRs.erase(std::remove_if(views_passMDRs.begin(), views_passMDRs.end(), failSBSR), views_passMDRs.end()); // only consider views within SB outer boundary
+//   views_passMDRs.erase(std::remove_if(views_passMDRs.begin(), views_passMDRs.end(), failMDRs), views_passMDRs.end());
+//   passMDRs = views_passMDRs.size() > 0;
 
-  if(passMDRs){
-    view_selected = views_passMDRs[0];
-    HHSB = view_selected->HHSB; HHCR = view_selected->HHCR; HHSR = view_selected->HHSR; HHmSR = view_selected->HHmSR;
-    ZHSB = view_selected->ZHSB; ZHCR = view_selected->ZHCR; ZHSR = view_selected->ZHSR;
-    ZZSB = view_selected->ZZSB; ZZCR = view_selected->ZZCR; ZZSR = view_selected->ZZSR;
-    SB = view_selected->SB; CR = view_selected->CR; SR = view_selected->SR;
-    leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
-    //passDEtaBB = view_selected->passDEtaBB;
-    selectedViewTruthMatch = view_selected->truthMatch;
-  // }else{
-  //   ZHSB = false; ZHCR = false; ZHSR=false;
-  //   ZZSB = false; ZZCR = false; ZZSR=false;
-  //   SB   = false;   CR = false;   SR=false;
-  //   leadStM = 0;  sublStM = 0;
-  //   //passDEtaBB = false;
-  //   selectedViewTruthMatch = false;
-  }
-  return;
-}
+//   if(passMDRs){
+//     view_selected = views_passMDRs[0];
+//     HHSR = view_selected->HHSR;
+//     ZHSR = view_selected->ZHSR;
+//     ZZSR = view_selected->ZZSR;
+//     SB = view_selected->SB; 
+//     SR = view_selected->SR;
+//     leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
+//     selectedViewTruthMatch = view_selected->truthMatch;
+//   }
+//   return;
+// }
 
 void eventData::buildTops(){
   //All quadjet events will have well defined xWt0, a top candidate where all three jets are allowed to be candidate jets.
@@ -1576,7 +1508,7 @@ void eventData::buildTops(){
   //     }
   //   }
   // }  
-  if(debug) cout << "eventData::buildTops()" << endl;
+
   return;
 }
 

@@ -97,23 +97,23 @@ parser.add_option(      '--calcPuIdSF',    action="store_true", default=False, h
 o, a = parser.parse_args()
 
 
-bjetSF = "deepJet"
+bjetSF = 'deepJet'
 year = o.year.replace('_preVFP','').replace('_postVFP','')
 
 if o.fastSkim or not o.isMC or not o.bTagSF:
-    bjetSF = ""
-btagVariations = "central"
-if o.JECSyst == "_jesTotalUp":
-    btagVariations = "central up_jes"
-elif o.JECSyst == "_jesTotalDown":
-    btagVariations = "central down_jes"
+    bjetSF = ''
+btagVariations = 'central'
+if o.JECSyst == '_jesTotalUp':
+    btagVariations = 'central up_jes'
+elif o.JECSyst == '_jesTotalDown':
+    btagVariations = 'central down_jes'
 if o.bTagSyst:
-    btagVariations = "central down_jes up_jes down_lf up_lf down_hf up_hf down_hfstats2 up_hfstats2 down_lfstats2 up_lfstats2 down_hfstats1 up_hfstats1 down_lfstats1 up_lfstats1 up_cferr1 down_cferr1 up_cferr2 down_cferr2"
-puIdVariations = ""
+    btagVariations = 'central down_jes up_jes down_lf up_lf down_hf up_hf down_hfstats2 up_hfstats2 down_lfstats2 up_lfstats2 down_hfstats1 up_hfstats1 down_lfstats1 up_lfstats1 up_cferr1 down_cferr1 up_cferr2 down_cferr2'
+puIdVariations = ''
 if o.puIdSF:
-    puIdVariations = "nom"
+    puIdVariations = 'nom'
 if o.puIdSyst:
-    puIdVariations = "nom up down"
+    puIdVariations = 'nom up down'
 
 #
 # Basic Configuration

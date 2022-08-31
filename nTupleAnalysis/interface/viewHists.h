@@ -30,7 +30,6 @@ namespace nTupleAnalysis {
     TH1F*     nAllJets;
     TH1F*     nAllNotCanJets;
     TH1F*     st;
-    TH1F*     nSelJetsV;
     TH1F*     nSelJets;
     TH1F*     nSelJets_noBTagSF;
     TH1F*     nSelJets_lowSt;
@@ -49,7 +48,6 @@ namespace nTupleAnalysis {
     TH1F*     nPSTJetsUnweighted;
     TH1F*     nCanJets;
     //jetHists*  allJets;
-    jetHists*  selJetsV;
     jetHists*  selJets;
     jetHists*  tagJets;
     jetHists*  canJets;
@@ -65,29 +63,13 @@ namespace nTupleAnalysis {
     //VHH
     TH1F* nTruVJets;
     jetHists* truVJets;
-    jetHists* truVJet0;
-    jetHists* truVJet1;
-    jetHists* lowPtJets;
     jetHists* canVJets;
     jetHists* canVJet0;
     jetHists* canVJet1;
     TH1F* nCanHTruVJets;
-    jetHists* canHTruVJets;
-    TH1F* nSelTruVJets;
-    dijetHists* allDijets;
-    dijetHists* truVDijets;
-    dijetHists* notTruVDijets;
-    TH1F* nAllDijets;
-    TH1F* nTruVDijets;
     TH1F* nCanVDijets;
-    TH1F* nCanVTruVDijets;
     dijetHists* canVDijets;
-    dijetHists* canVTruVDijets;
     TH1F* kl_BDT;
-    TH1F* bJetBTagSF = NULL;
-    TH1F* cJetBTagSF = NULL;
-    TH1F* udsgJetBTagSF = NULL;
-    TH1F* eventBTagSF = NULL;
 
     TH1F* puIdSF;
     TH1F* SvB_MA_VHH_ps;
@@ -137,13 +119,6 @@ namespace nTupleAnalysis {
 
     TH2F* m4j_vs_leadSt_dR;
     TH2F* m4j_vs_sublSt_dR;
-
-    TH2F* m6j_vs_V_dR;
-    TH2F* m6j_vs_V_dR_Loose;
-    TH2F* m6j_vs_V_dR_matched;
-    TH2F* m6j_vs_V_dR_not_matched;
-
-    TH2F* bdt_vs_SvB;
 
     dijetHists* leadM;
     dijetHists* sublM;
@@ -228,17 +203,6 @@ namespace nTupleAnalysis {
     systHists* SvB_MA_ps_bTagSysts = NULL;
 
     //Simplified template cross section binning https://cds.cern.ch/record/2669925/files/1906.02754.pdf
-    TH1F* SvB_ps_zhh_0_75;
-    TH1F* SvB_ps_zhh_75_150;
-    TH1F* SvB_ps_zhh_150_250;
-    TH1F* SvB_ps_zhh_250_400;
-    TH1F* SvB_ps_zhh_400_inf;
-
-    TH1F* SvB_ps_whh_0_75;
-    TH1F* SvB_ps_whh_75_150;
-    TH1F* SvB_ps_whh_150_250;
-    TH1F* SvB_ps_whh_250_400;
-    TH1F* SvB_ps_whh_400_inf;
 
     TH1F* FvT_q_score;
     TH1F* FvT_q_score_dR_min;
@@ -265,20 +229,6 @@ namespace nTupleAnalysis {
     weightStudyHists* weightStudy_v0v9  = NULL;
     weightStudyHists* weightStudy_os012 = NULL;
     weightStudyHists* weightStudy_e20   = NULL;
-
-    TH1F* DvT_pt = NULL;
-    TH1F* DvT_pt_l = NULL;
-
-    TH1F* DvT_pm = NULL;
-    TH1F* DvT_pm_l = NULL;
-
-    TH1F* DvT_raw = NULL;
-
-    TH1F* canJet0BTag;
-    TH1F* canJet1BTag;
-    TH1F* canJet2BTag;
-    TH1F* canJet3BTag;
-    TH2F* canJet23BTag;
 
     viewHists(std::string, fwlite::TFileService&, bool isMC = false, bool _debug = false, eventData* event = NULL, std::string histDetailLevel="");
     void Fill(eventData*, std::shared_ptr<eventView>&);//, int nViews=-1, int nViews_10=-1, int nViews_11=-1, int nViews_12=-1);

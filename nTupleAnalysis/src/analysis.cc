@@ -100,10 +100,7 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   cutflow->AddCut("jetMultiplicity");
   cutflow->AddCut("bTags");
   cutflow->AddCut("DijetMass");
-  cutflow->AddCut("LooseMDRs");
-  cutflow->AddCut("LooseNjOth");
-  cutflow->AddCut("LooseMV");
-  cutflow->AddCut("MDRs");
+  // cutflow->AddCut("MDRs");
   cutflow->AddCut("NjOth");
   cutflow->AddCut("MV");
 
@@ -111,32 +108,24 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   lumiCounts    = new lumiHists("lumiHists", fs, year, false, debug);
 
   if(nTupleAnalysis::findSubStr(histDetailLevel,"allEvents"))     allEvents     = new eventHists("allEvents",     fs, false, isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passPreSel"))    passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug, event);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passLooseMDRs")) passLooseMDRs = new   tagHists("passLooseMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passLooseNjOth")) passLooseNjOth = new   tagHists("passLooseNjOth",      fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passLooseMV"))   passLooseMV   = new   tagHists("passLooseMV",    fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug, event);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passPreSel"))    passPreSel    = new   tagHists("passPreSel",    fs, true,  isMC, blind, histDetailLevel, debug);
+  //if(nTupleAnalysis::findSubStr(histDetailLevel,"passDijetMass")) passDijetMass = new   tagHists("passDijetMass", fs, true,  isMC, blind, histDetailLevel, debug);
+  // if(nTupleAnalysis::findSubStr(histDetailLevel,"passMDRs"))      passMDRs      = new   tagHists("passMDRs",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passNjOth"))     passNjOth     = new   tagHists("passNjOth",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMV"))        passMV        = new   tagHists("passMV",        fs, true,  isMC, blind, histDetailLevel, debug, event);
-  //if(nTupleAnalysis::findSubStr(histDetailLevel,"passXWt"))       passXWt       = new   tagHists("passXWt",       fs, true,  isMC, blind, histDetailLevel, debug, event);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"failrWbW2"))     failrWbW2     = new   tagHists("failrWbW2",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passMuon"))      passMuon      = new   tagHists("passMuon",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passDvT05"))     passDvT05     = new   tagHists("passDvT05",     fs, true,  isMC, blind, histDetailLevel, debug);
-  if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCR"))      passTTCR      = new   tagHists("passTTCR",      fs, true,  isMC, blind, histDetailLevel, debug, event);
+  if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCR"))      passTTCR      = new   tagHists("passTTCR",      fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCRe"))     passTTCRe     = new   tagHists("passTTCRe",     fs, true,  isMC, blind, histDetailLevel, debug);
   if(nTupleAnalysis::findSubStr(histDetailLevel,"passTTCRem"))    passTTCRem    = new   tagHists("passTTCRem",    fs, true,  isMC, blind, histDetailLevel, debug);
 
-  if(!allEvents)     std::cout << "Turning off allEvents Hists" << std::endl; 
-  if(!passPreSel)    std::cout << "Turning off passPreSel Hists" << std::endl; 
-  if(!passDijetMass) std::cout << "Turning off passDijetMass Hists" << std::endl; 
-  if(!passLooseMDRs) std::cout << "Turning off passLooseMDRs Hists" << std::endl; 
-  if(!passLooseNjOth) std::cout << "Turning off passLooseNjOth Hists" << std::endl; 
-  if(!passLooseMV)   std::cout << "Turning off passLooseMV Hists" << std::endl; 
-  if(!passMDRs)      std::cout << "Turning off passMDRs Hists" << std::endl; 
-  if(!passNjOth)     std::cout << "Turning off passNjOth Hists" << std::endl; 
-  if(!passMV)    std::cout << "Turning off passMV Hists" << std::endl; 
-  //if(!passXWt)       std::cout << "Turning off passXWt Hists" << std::endl; 
+  if(allEvents)     std::cout << "Turning on allEvents Hists" << std::endl; 
+  if(passPreSel)    std::cout << "Turning on passPreSel Hists" << std::endl; 
+  //if(passDijetMass) std::cout << "Turning on passDijetMass Hists" << std::endl; 
+  // if(passMDRs)      std::cout << "Turning on passMDRs Hists" << std::endl; 
+  if(passNjOth)     std::cout << "Turning on passNjOth Hists" << std::endl; 
+  if(passMV)        std::cout << "Turning on passMV Hists" << std::endl; 
   if(failrWbW2)     std::cout << "Turning on failrWbW2 Hists" << std::endl; 
   if(passMuon)      std::cout << "Turning on passMuon Hists" << std::endl; 
   if(passDvT05)     std::cout << "Turning on passDvT05 Hists" << std::endl; 
@@ -477,10 +466,15 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("notCanJet_eta", event->notCanJet_eta, "notCanJet_eta[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_phi", event->notCanJet_phi, "notCanJet_phi[nAllNotCanJets]/F");
   picoAODEvents->Branch("notCanJet_m",   event->notCanJet_m,   "notCanJet_m[nAllNotCanJets]/F");
-  picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); picoAODEvents->Branch("HHSR", &event->HHSR);
-  picoAODEvents->Branch("ZHSB", &event->ZHSB); picoAODEvents->Branch("ZHCR", &event->ZHCR); picoAODEvents->Branch("ZHSR", &event->ZHSR);
-  picoAODEvents->Branch("ZZSB", &event->ZZSB); picoAODEvents->Branch("ZZCR", &event->ZZCR); picoAODEvents->Branch("ZZSR", &event->ZZSR);
-  picoAODEvents->Branch("SB", &event->SB); picoAODEvents->Branch("CR", &event->CR); picoAODEvents->Branch("SR", &event->SR);
+  // picoAODEvents->Branch("HHSB", &event->HHSB); picoAODEvents->Branch("HHCR", &event->HHCR); 
+  // picoAODEvents->Branch("ZHSB", &event->ZHSB); picoAODEvents->Branch("ZHCR", &event->ZHCR); 
+  // picoAODEvents->Branch("ZZSB", &event->ZZSB); picoAODEvents->Branch("ZZCR", &event->ZZCR); 
+  picoAODEvents->Branch("HHSR", &event->HHSR);
+  picoAODEvents->Branch("ZHSR", &event->ZHSR);
+  picoAODEvents->Branch("ZZSR", &event->ZZSR);
+  picoAODEvents->Branch("SB", &event->SB);
+  // picoAODEvents->Branch("CR", &event->CR); 
+  picoAODEvents->Branch("SR", &event->SR);
   picoAODEvents->Branch("leadStM", &event->leadStM); picoAODEvents->Branch("sublStM", &event->sublStM);
   picoAODEvents->Branch("st", &event->st);
   picoAODEvents->Branch("stNotCan", &event->stNotCan);
@@ -489,7 +483,7 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("nPSTJets", &event->nPSTJets);
   picoAODEvents->Branch("passHLT", &event->passHLT);
   picoAODEvents->Branch("passDijetMass", &event->passDijetMass);
-  picoAODEvents->Branch("passMDRs", &event->passMDRs);
+  // picoAODEvents->Branch("passMDRs", &event->passMDRs);
   picoAODEvents->Branch("passMV", &event->passMV);
   picoAODEvents->Branch("passXWt", &event->passXWt);
   picoAODEvents->Branch("xW", &event->xW);
@@ -500,8 +494,6 @@ void analysis::addDerivedQuantitiesToPicoAOD(){
   picoAODEvents->Branch("nIsoMuons", &event->nIsoMuons);
   picoAODEvents->Branch("nOthJets", &event->nOthJets);
   picoAODEvents->Branch("ttbarWeight", &event->ttbarWeight);
-  //VHH
-  picoAODEvents->Branch("nSelJetsV", &event->nSelJetsV);
 
   //classifier variables
   outputBranch(picoAODEvents, "BDT_kl", event->BDT_kl, "F");
@@ -577,7 +569,7 @@ int analysis::eventLoop(int maxEvents, long int firstEvent){
     alreadyFilled = false;
     //m4jPrevious = event->m4j;
 
-    event->update(e);
+    event->update(e);    
 
 
     if(( event->mixedEventIsData & !mixedEventWasData) ||
@@ -821,6 +813,9 @@ int analysis::processEvent(){
       event->mcPseudoTagWeightMap[jcmName] *= event->reweight4b;
     }
 
+
+
+
   }
 
   if(debug) cout << "cutflow->Fill(event, all, true)" << endl;
@@ -889,6 +884,7 @@ int analysis::processEvent(){
     }
   }
 
+
   //
   // Preselection
   // 
@@ -910,25 +906,24 @@ int analysis::processEvent(){
 
   // Fill picoAOD
   if(writePicoAOD){
-    event->applyMDRs();
     picoAODFillEvents();
   }
 
 
-  // // Dijet mass preselection. 
-  // if(!event->passDijetMass){
-  //   if(debug) cout << "Fail dijet mass cut" << endl;
-  //   return 0;
-  // }
-  // cutflow->Fill(event, "DijetMass");
+  // Dijet mass preselection. 
+  if(!event->passDijetMass){
+    if(debug) cout << "Fail dijet mass cut" << endl;
+    return 0;
+  }
+  cutflow->Fill(event, "DijetMass");
 
   // if(passDijetMass != NULL && event->passHLT) passDijetMass->Fill(event, event->views);
 
   
-  //
-  // Event View Requirements: Mass Dependent Requirements (MDRs) on event views
-  //
-  if(!event->appliedMDRs) event->applyMDRs();
+  // //
+  // // Event View Requirements: Mass Dependent Requirements (MDRs) on event views
+  // //
+  // if(!event->appliedMDRs) event->applyMDRs();
 
   #if SLC6 == 0
   if(event->fourTag && event->passMV){ // for JEC systematic, only run if event pass all selections
@@ -936,30 +931,17 @@ int analysis::processEvent(){
   }
   #endif
 
-  // Fill picoAOD
-  if(writePicoAOD){//for regular picoAODs, keep them small by filling after dijetMass cut
-    picoAODFillEvents();
-    if(fastSkim) return 0;
-  }
+  // // Fill picoAOD
+  // if(writePicoAOD){
+  //   picoAODFillEvents();
+  //   if(fastSkim) return 0;
+  // }
 
-  if(event->passLooseMDRs){
-    cutflow->Fill(event, "LooseMDRs");
-    if(passLooseMDRs != NULL && event->passHLT){
-      passLooseMDRs->Fill(event, event->views_passLooseMDRs);
-    }
-    if(event->passLooseMV){
-      cutflow->Fill(event, "LooseMV");
-      if(passLooseMV != NULL && event->passHLT){
-        passLooseMV->Fill(event, event->views_passLooseMDRs);
-      }
-    }
-  }
-
-  if(!event->passMDRs){
-    if(debug) cout << "Fail MDRs" << endl;
-    return 0;
-  }
-  cutflow->Fill(event, "MDRs");
+  // if(!event->passMDRs){
+  //   if(debug) cout << "Fail MDRs" << endl;
+  //   return 0;
+  // }
+  // cutflow->Fill(event, "MDRs");
 
   //
   //  Do Trigger Study
@@ -968,43 +950,37 @@ int analysis::processEvent(){
     trigStudy->Fill(event);
 
 
-  if(passMDRs != NULL && event->passHLT){
-    passMDRs->Fill(event, event->views_passMDRs);
+  // if(passMDRs != NULL && event->passHLT){
+  //   passMDRs->Fill(event, event->views_passMDRs);
 
-    lumiCounts->FillMDRs(event);
-  }
+  //   lumiCounts->FillMDRs(event);
+  // }
 
   if(passTTCR != NULL && event->passTTCR && event->passHLT){
-    passTTCR->Fill(event, event->views_passMDRs);
+    passTTCR->Fill(event, event->views);
   }
 
   if(passTTCRe != NULL && event->passTTCRe && event->passHLT){
-    passTTCRe->Fill(event, event->views_passMDRs);
+    passTTCRe->Fill(event, event->views);
   }
 
   if(passTTCRem != NULL && event->passTTCRem && event->passHLT){
-    passTTCRem->Fill(event, event->views_passMDRs);
+    passTTCRem->Fill(event, event->views);
   }
 
 
   //
   //  For VHH Study
   //
-  if(event->nSelJetsV >=5){
-    cutflow->Fill(event, "LooseNjOth");
-    if(passLooseNjOth!=NULL && event->passHLT){
-      passLooseNjOth->Fill(event, event->views_passMDRs);
-    }
-  }
 
   // Require at least 6 jets
-  if(event->nSelJetsV < 6){
-    if(debug) cout << "Fail Njet" << endl;
+  if(event->nSelJets < 6){
+    if(debug) cout << "Fail NjOth" << endl;
     return 0;
   }
   cutflow->Fill(event,"NjOth");
   if (passNjOth!=NULL && event->passHLT){
-    passNjOth->Fill(event, event->views_passMDRs);
+    passNjOth->Fill(event, event->views);
   }
 
     // Vector boson candidate dijet mass cut
@@ -1014,60 +990,29 @@ int analysis::processEvent(){
   }
   cutflow->Fill(event,"MV");
   if (passMV!=NULL && event->passHLT){
-    passMV->Fill(event, event->views_passMDRs);
+    passMV->Fill(event, event->views);
   }
-
-  if(extraRoot->rootFile && event->passHLT && event->HHSR && ((isMC && event->fourTag)||(!isMC && event->threeTag)))
-  {
-    extraRoot->fill("weight", event->weight);
-    auto V_p = event->canVDijets[0]->p;
-    auto view = event->view_selected;
-    auto H1_p = view->lead->p;
-    auto H2_p = view->subl->p;
-    auto HH_p = H1_p + H2_p;
-    extraRoot->fill("VpT", V_p.Pt());
-    extraRoot->fill("H1m", H1_p.M());
-    extraRoot->fill("H1E", H1_p.E());
-    extraRoot->fill("H1pT", H1_p.Pt());
-    extraRoot->fill("H1eta", H1_p.Eta());
-    extraRoot->fill("H2m", H2_p.M());
-    extraRoot->fill("H2E", H2_p.E());
-    extraRoot->fill("H2pT", H2_p.Pt());
-    extraRoot->fill("H2eta", H2_p.Eta());
-    extraRoot->fill("HHm", HH_p.M());
-    extraRoot->fill("HHE", HH_p.E());
-    extraRoot->fill("HHpT", HH_p.Pt());
-    extraRoot->fill("HHeta", HH_p.Eta());
-    extraRoot->fill("HHdeta", std::abs(H1_p.Eta() - H2_p.Eta()));
-    extraRoot->fill("HHdphi", std::abs(H1_p.DeltaPhi(H2_p)));
-    extraRoot->fill("HHdR", H1_p.DeltaR(H2_p));
-    extraRoot->fill("H2H1rpT", H2_p.Pt()/H1_p.Pt());
-    extraRoot->fill("VH1phi", std::abs(V_p.DeltaPhi(H1_p)));
-    extraRoot->fill("VH2phi", std::abs(V_p.DeltaPhi(H2_p)));
-    extraRoot->fill();
-  }
-
 
   //
   // ttbar CRs
   //
   if(failrWbW2 != NULL && event->passHLT){
     if(event->t->rWbW < 2){
-      failrWbW2->Fill(event, event->views_passMDRs);
+      failrWbW2->Fill(event, event->views);
     }
   }
 
   if(passMuon != NULL && event->passHLT && event->muons_isoMed25.size()>0){
-    passMuon->Fill(event, event->views_passMDRs);
+    passMuon->Fill(event, event->views);
   }
 
   if(passDvT05 != NULL && event->passHLT){
     if(event->DvT < 0){
-      passDvT05->Fill(event, event->views_passMDRs);
+      passDvT05->Fill(event, event->views);
     }
   }
 
-
+   
   return 0;
 }
 

@@ -172,8 +172,7 @@ namespace nTupleAnalysis {
     bool L1_HTT360er = false;
     bool L1_ETT2000 = false;
 
-    const float jetPtMinV = 40;
-    const float jetPtMinH = 40;
+    const float jetPtMin = 40;
     const float jetEtaMax= 2.4;
     const int puIdMin = 0b110;//7=tight, 6=medium, 4=loose working point
     const bool doJetCleaning=false;
@@ -182,8 +181,7 @@ namespace nTupleAnalysis {
     std::vector<jetPtr> allJets;//all jets in nTuple
     std::vector<jetPtr> selJetsLoosePt;//jets passing loose pt/eta requirements
     std::vector<jetPtr> tagJetsLoosePt;//tagged jets passing loose pt/eta requirements
-    std::vector<jetPtr> selJetsV;//jets passing V boson jet pt/eta requirements
-    std::vector<jetPtr> selJets;//jets passing H boson jet pt/eta requirements
+    std::vector<jetPtr> selJets;//jets passing pt/eta requirements
     std::vector<jetPtr> looseTagJets;//jets passing pt/eta and loose bTagging requirements
     std::vector<jetPtr> tagJets;//jets passing pt/eta and bTagging requirements
     std::vector<jetPtr> antiTag;//jets passing pt/eta and failing bTagging requirements
@@ -195,30 +193,18 @@ namespace nTupleAnalysis {
     std::vector<trigPtr> selTrigJets;//sel jets in nTuple
     float ht, ht30,  ht30_noMuon, L1ht, L1ht30, HLTht, HLTht30, HLTht30Calo, HLTht30CaloAll, HLTht30Calo2p6;
     std::vector<jetPtr> allNotCanJets;//other jets pt>20
-    
-    
-
+ 
     // VHH
     std::vector<jetPtr> canVJets; // v candidate jets
     std::vector<jetPtr> canHTruVJets; //truth matched jets from V decay, selected as H candidate
     std::vector<jetPtr> truVJets; //truth matched jets from V decay
-    std::vector<jetPtr> lowPtJets; //jets satisfy (jetPtMinV <= pt< jetPtMinH)
     std::vector<dijetPtr> allDijets; // all dijets formed by othJets
-    std::vector<dijetPtr> truVDijets; // truth matched dijets from V decay
-    std::vector<dijetPtr> notTruVDijets; // not truth matched dijets from V decay
     std::vector<dijetPtr> canVDijets; // v candidate dijet
-    std::vector<dijetPtr> canVTruVDijets; // truth matched v candidate dijet
 
     template<class T1, class T2> bool matchJet(const T1& jet, const std::vector<T2>& jets);
     bool matchDijet(const dijetPtr& dijet, const truthData* truth);
 
     bool passMV;
-    bool passLooseMDRs;
-    bool passLooseMV;
-    bool HHmSR;
-    std::vector< std::shared_ptr<eventView> > views_passLooseMDRs;
-
-    uint nSelJetsV;
 
     bool calcPuIdSF;
     std::vector<jetPtr> allPuIdJets;
@@ -245,14 +231,6 @@ namespace nTupleAnalysis {
     Float_t SvB_MA_ptt_ONNX  = -99;
     Float_t SvB_MA_ps_ONNX  = -99;
 
-    TLorentzVector p6jGen;
-    TLorentzVector p6jReco;
-    float m6j;
-    float m6jGen;
-    float m6jLoose;
-    float pVLoose_dR;
-    float pVGen_dR;
-
     bool doZHHNNLOScale = false;
     std::vector<std::string> zhhNNLOVariations{"central_NNLO", "up_NNLO", "down_NNLO"};
     std::map<std::string, float> zhhNNLOSFs{{"central_NNLO", 1}, {"up_NNLO", 1}, {"down_NNLO", 1}};
@@ -273,7 +251,6 @@ namespace nTupleAnalysis {
     float m4j;
     // float m123; float m013; float m023; float m012;
     float s4j;
-    float canJet0_btag; float canJet1_btag; float canJet2_btag; float canJet3_btag;//order by decreasing btag score
     float canJet0_pt ; float canJet1_pt ; float canJet2_pt ; float canJet3_pt ;
     float canJet0_eta; float canJet1_eta; float canJet2_eta; float canJet3_eta;
     float canJet0_phi; float canJet1_phi; float canJet2_phi; float canJet3_phi;
@@ -316,15 +293,13 @@ namespace nTupleAnalysis {
     int nViews_10;
     int nViews_11;
     int nViews_12;
-    // std::vector< std::shared_ptr<eventView> > views_passMDRs;
-
     std::shared_ptr<eventView> view_selected;
     std::shared_ptr<eventView> view_dR_min;
     std::shared_ptr<eventView> view_max_FvT_q_score;
     std::shared_ptr<eventView> view_max_SvB_q_score;
 
     bool passDijetMass;
-    bool passMDRs;
+    // bool passMDRs;
     bool passXWt;
     bool passTTCR = false;
     bool passTTCRe = false;

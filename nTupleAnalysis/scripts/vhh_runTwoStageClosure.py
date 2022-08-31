@@ -27,7 +27,7 @@ COLORS=['xkcd:purple', 'xkcd:green', 'xkcd:blue', 'xkcd:teal', 'xkcd:orange', 'x
 
 parser = optparse.OptionParser()
 parser.add_option('-s', '--signalPaths', dest = 'signalPaths', default = '/uscms/home/%s/nobackup/VHH/signals/VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_RunII.root'%(USER), help = 'Path for signal templates used in spurious signal fit')
-parser.add_option('--hist', dest = 'hist', default = '{region}/{classifier}_VHH_ps_BDT_{channel}', help = 'Name of histogram in signal template')
+parser.add_option('--hist', dest = 'hist', default = 'passMV/fourTag/mainView/{region}/{classifier}_VHH_ps_BDT_{channel}', help = 'Name of histogram in signal template')
 parser.add_option('--years', dest = 'years', default = '2016,2017,2018', help = 'Comma separated list of years')
 parser.add_option('--channels', dest = 'channels', default = 'VHH_ps_sbdt,VHH_ps_lbdt', help = 'Comma separated list of channels')
 parser.add_option('--rebin', dest = 'rebin', default = '0.0,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,0.95,1.0', help = 'ngroup or bin edges')

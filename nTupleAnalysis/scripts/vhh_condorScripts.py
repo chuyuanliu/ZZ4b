@@ -38,7 +38,7 @@ parser.add_option('--nTags', dest = 'nTags', default = '_4b', help = 'nTag event
 parser.add_option('--group', dest = 'group', default = '', help = 'Group text files by content')
 
 o, a = parser.parse_args()
-classifierFiles = o.classifiers.split(',')
+classifierFiles = list(filter(lambda x: x != '', o.classifiers.split(',')))
 
 file_tags = o.tags.split(',')
 
@@ -312,7 +312,8 @@ def initialize():
                 for process in signal[0:2]:
                     lpcmkdir('VHH/'+process+year)
                     eosmkdir('VHH/'+process+year)
-                    xrdcp(full_path('ZH4b/ULTrig/'+process+year+'/picoAOD_wTrigWeights.root', eos, 'jda102'),full_path('VHH/'+process+year+'/picoAOD.root', eos, USER))
+                    if o.picoAOD:
+                        xrdcp(full_path('ZH4b/ULTrig/'+process+year+'/picoAOD_wTrigWeights.root', eos, 'jda102'),full_path('VHH/'+process+year+'/picoAOD.root', eos, USER))
                 lpcmkdir('VHH/'+signal[2]+year)
                 eosmkdir('VHH/'+signal[2]+year) 
             if o.ttbar:
@@ -323,7 +324,7 @@ def initialize():
                 for nTag in nTags:
                     lpcmkdir('VHH/'+tt+year+nTag)
                     eosmkdir('VHH/'+tt+year+nTag)
-                    for rootFile in ['picoAOD'+nTag+'_wJCM', 'FvT_Nominal']:
+                    for rootFile in [] + (['picoAOD'+nTag+'_wJCM'] if o.picoAOD else []) + (classifierFiles):
                         file = '/'+rootFile+'.root'
                         newFile = file
                         if 'picoAOD' in file:
@@ -336,7 +337,7 @@ def initialize():
             for nTag in datas:
                 lpcmkdir('VHH/data'+year+nTag)
                 eosmkdir('VHH/data'+year+nTag)
-                for rootFile in ['picoAOD'+nTag+'_wJCM', 'FvT_Nominal']:
+                for rootFile in [] + (['picoAOD'+nTag+'_wJCM'] if o.picoAOD else []) + (classifierFiles):
                     file = '/'+rootFile+'.root'
                     newFile = file
                     if 'picoAOD' in file:
@@ -380,12 +381,12 @@ if o.group:
     group_files(o.group)
 
 # cmds
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --bTagSyst --puIdSyst --applyPuIdSF -e --friends SvB_MA_VHH_8nc
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e --runKlBdt
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --bTagSyst --puIdSyst --applyPuIdSF -e --friends SvB_MA_VHH_8nc --runKlBdt
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --cp --eos --hists 
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --hadd --lpc --hists 
 # for JEC
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --doJECSyst -e --friends SvB_MA_VHH_8nc
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --doJECSyst -e --friends SvB_MA_VHH_8nc --runKlBdt
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -y 2016,2017,2018 --cp --eos --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -y 2016,2017,2018 --hadd --lpc --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
 

@@ -103,7 +103,7 @@ def getFrame(fileName, classifier='', PS=None, selection='', weight='weight', Fv
     if '.h5' in fileName: # if h5, just grab pandas dataframe directly
         data = pd.read_hdf(fileName, key='df')
     if '.root' in fileName: # if root, use uproot to read the branches we want
-        branches = ['fourTag','passMDRs','passHLT','HHSB','HHCR','HHSR', weight,'mcPseudoTagWeight','canJet*','notCanJet*','nSelJets','xW','xbW','event'] + ([BDT_NAME] if BDT_NAME else [])
+        branches = ['fourTag','passMV','passHLT','HHSR', weight,'mcPseudoTagWeight','canJet*','notCanJet*','nSelJets','xW','xbW','event'] + ([BDT_NAME] if BDT_NAME else [])
         tree = uproot3.open(fileName)['Events']
         if bytes(FvT,'utf-8') in tree.keys(): 
             branches.append(FvT)
@@ -496,7 +496,7 @@ if classifier in ['SvB', 'SvB_MA']:
         for d4b in args.data4b.split(","):
             dataFiles += glob(args.data4b)    
 
-        selection = '(df.HHSB|df.HHCR|df.HHSR) & ~df.fourTag & df.%s & (df.nSelJets>=6) & df.passMDRs & (df.%s>=-1)'%(trigger, BDT_NAME)
+        selection = '(df.HHSR) & ~df.fourTag & df.%s & (df.nSelJets>=6) & df.passMV & (df.%s>=-1)'%(trigger, BDT_NAME)
         frames = getFramesSeparateLargeH5(sorted(dataFiles), classifier=classifier, selection=selection, FvT=FvTForSvBTrainingName, seed=seed)
         dfDB = pd.concat(frames, sort=False)
         log.print("Setting dfDB weight: %s to: %s * %s"%(weight,weightName,FvTForSvBTrainingName)) 
@@ -524,7 +524,7 @@ if classifier in ['SvB', 'SvB_MA']:
         if args.ttbar4b:
             ttbarFiles += glob(args.ttbar4b)    
 
-        selection = '(df.HHSB|df.HHCR|df.HHSR) & df.fourTag & df.%s & (df.trigWeight_Data!=0) & (df.nSelJets>=6) & df.passMDRs & (df.%s>=-1)'%(trigger, BDT_NAME)
+        selection = '(df.HHSR) & df.fourTag & df.%s & (df.trigWeight_Data!=0) & (df.nSelJets>=6) & df.passMV & (df.%s>=-1)'%(trigger, BDT_NAME)
         frames = getFramesSeparateLargeH5(sorted(ttbarFiles), classifier=classifier, selection=selection, seed=seed)
         dfT = pd.concat(frames, sort=False)
         dfT['skl'] = False
@@ -1462,9 +1462,7 @@ class modelParameters:
         else:#assume all zero. y_true not needed for updating classifier output values in .h5 files for example.
             y=torch.LongTensor( np.zeros(df.shape[0], dtype=np.uint8).reshape(-1) )
 
-        R  = torch.LongTensor( 1*np.array(df['HHSB'], dtype=np.uint8).reshape(-1) )
-        R += torch.LongTensor( 2*np.array(df['HHCR'], dtype=np.uint8).reshape(-1) )
-        R += torch.LongTensor( 3*np.array(df['HHSR'], dtype=np.uint8).reshape(-1) )
+        R = torch.LongTensor( np.array(df['HHSR'], dtype=np.uint8).reshape(-1) )
 
         w=torch.FloatTensor( np.float32(df[weight]).reshape(-1) )
 
@@ -2034,7 +2032,7 @@ class modelParameters:
         self.modelPkl = OUTPUT_PATH + '/%s_epoch%02d.pkl'%(self.name, self.epoch)
         if not baseName: baseName = self.modelPkl.replace('.pkl', '')
         if classifier in ['SvB','SvB_MA']:
-            plotROC(self.training.roc1,    self.validation.roc1,    plotName=baseName+suffix+'_ROC_hhsb.pdf')
+            plotROC(self.training.roc1,    self.validation.roc1,    plotName=baseName+suffix+'_ROC_hhsr.pdf')
             plotROC(self.training.roc2,    self.validation.roc2,    plotName=baseName+suffix+'_ROC_skl_lkl.pdf')
             plotROC(self.training.roc_skl,  self.validation.roc_skl,  plotName=baseName+suffix+'_ROC_skl.pdf')
             plotROC(self.training.roc_lkl,  self.validation.roc_lkl,  plotName=baseName+suffix+'_ROC_lkl.pdf')

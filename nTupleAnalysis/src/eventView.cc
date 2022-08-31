@@ -59,32 +59,31 @@ eventView::eventView(std::shared_ptr<dijet> &dijet1, std::shared_ptr<dijet> &dij
   xZZ = getXZZ(leadSt->m, sublSt->m); //0 for perfect consistency with ZZ->4b
   xZH = getXZH(leadSt->m, sublSt->m); //0 for perfect consistency with ZH->4b
   xHH = getXHH(leadSt->m, sublSt->m); //0 for perfect consistency with HH->4b
-  r2HHm = getR2HHm(leadSt->m, sublSt->m);
-
   ZZSR = (xZZ < xMaxZZSR);
   ZHSR = (xZH < xMaxZHSR);
   HHSR = (xHH < xMaxHHSR);
   SR = ZZSR || ZHSR || HHSR;
-  HHmSR = (r2HHm < r2MaxHHmSR);
 
-  //Control Regions
-  rZZCR = sqrt( pow(leadSt->m - leadZ *sZZCR, 2) + pow(sublSt->m - sublZ *sZZCR, 2) );
-  rZHCR = sqrt( pow(leadSt->m - leadZH*sZHCR, 2) + pow(sublSt->m - sublZH*sZHCR, 2) );
-  rHHCR = sqrt( pow(leadSt->m - leadH *sHHCR, 2) + pow(sublSt->m - sublH *sHHCR, 2) );
-  // in outer radius but not in any SR
-  ZZCR = (rZZCR < rMaxZZCR) && !ZZSR && !ZHSR && !HHSR;
-  ZHCR = (rZHCR < rMaxZHCR) && !ZHSR && !ZZSR && !HHSR;
-  HHCR = (rHHCR < rMaxHHCR) && !HHSR && !ZZSR && !ZHSR;
-  CR = (ZZCR || ZHCR || HHCR) && !SR;
+  // //Control Regions
+  // rZZCR = sqrt( pow(leadSt->m - leadZ *sZZCR, 2) + pow(sublSt->m - sublZ *sZZCR, 2) );
+  // rZHCR = sqrt( pow(leadSt->m - leadZH*sZHCR, 2) + pow(sublSt->m - sublZH*sZHCR, 2) );
+  // rHHCR = sqrt( pow(leadSt->m - leadH *sHHCR, 2) + pow(sublSt->m - sublH *sHHCR, 2) );
+  // // in outer radius but not in any SR
+  // ZZCR = (rZZCR < rMaxZZCR) && !ZZSR && !ZHSR && !HHSR;
+  // ZHCR = (rZHCR < rMaxZHCR) && !ZHSR && !ZZSR && !HHSR;
+  // HHCR = (rHHCR < rMaxHHCR) && !HHSR && !ZZSR && !ZHSR;
+  // CR = (ZZCR || ZHCR || HHCR) && !SR;
 
-  //Sidebands
-  rZZSB = sqrt( pow(leadSt->m - leadZ *sZZSB, 2) + pow(sublSt->m - sublZ *sZZSB, 2) );
-  rZHSB = sqrt( pow(leadSt->m - leadZH*sZHSB, 2) + pow(sublSt->m - sublZH*sZHSB, 2) );
-  rHHSB = sqrt( pow(leadSt->m - leadH *sHHSB, 2) + pow(sublSt->m - sublH *sHHSB, 2) );
-  ZZSB = (rZZSB < rMaxZZSB) && !ZZSR && !ZZCR && !ZHSR && !HHSR;
-  ZHSB = (rZHSB < rMaxZHSB) && !ZHSR && !ZHCR && !ZZSR && !HHSR;
-  HHSB = (rHHSB < rMaxHHSB) && !HHSR && !HHCR && !ZZSR && !ZHSR;
-  SB = (ZZSB || ZHSB || HHSB || CR) && !SR;// && !CR && !SR;
+  // //Sidebands
+  // rZZSB = sqrt( pow(leadSt->m - leadZ *sZZSB, 2) + pow(sublSt->m - sublZ *sZZSB, 2) );
+  // rZHSB = sqrt( pow(leadSt->m - leadZH*sZHSB, 2) + pow(sublSt->m - sublZH*sZHSB, 2) );
+  // rHHSB = sqrt( pow(leadSt->m - leadH *sHHSB, 2) + pow(sublSt->m - sublH *sHHSB, 2) );
+  // ZZSB = (rZZSB < rMaxZZSB) && !ZZSR && !ZZCR && !ZHSR && !HHSR;
+  // ZHSB = (rZHSB < rMaxZHSB) && !ZHSR && !ZHCR && !ZZSR && !HHSR;
+  // HHSB = (rHHSB < rMaxHHSB) && !HHSR && !HHCR && !ZZSR && !ZHSR;
+  // SB = (ZZSB || ZHSB || HHSB || CR) && !SR;// && !CR && !SR;
+  passDijetMass = (leadSt->m>52) && (leadSt->m<180) && (sublSt->m>50) && (sublSt->m<173);
+  SB = (!SR) && passDijetMass;
 
   dBB = getDBB(leadSt->m, sublSt->m); //Distance from being equal mass boson candidates
 
@@ -93,9 +92,6 @@ eventView::eventView(std::shared_ptr<dijet> &dijet1, std::shared_ptr<dijet> &dij
   //passLeadStMDR = (m4j < 1250) ? (360/m4j - 0.5 < leadSt->dR) && (leadSt->dR < 653/m4j + 0.977) : (leadSt->dR < 1.5);
   //passSublStMDR = (m4j < 1250) ? (235/m4j       < sublSt->dR) && (sublSt->dR < 875/m4j + 0.800) : (sublSt->dR < 1.5);
   passMDRs = passLeadStMDR && passSublStMDR;
-
-  passLeadStLooseMDR = (250/m4j - 0.5 < leadSt->dR) && (leadSt->dR < std::max(840/m4j - 0.1, 1.5));
-  passLooseMDRs = passLeadStLooseMDR && passSublStMDR;
 
   //passLeadMDC = lead->pt > m4j*0.51 - 103;
   //passSublMDC = subl->pt > m4j*0.33 -  73;

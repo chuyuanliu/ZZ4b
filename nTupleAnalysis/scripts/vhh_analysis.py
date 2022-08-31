@@ -51,7 +51,7 @@ parser.add_option(      '--h52root',                    dest="h52root",        d
 parser.add_option('-f', '--fastSkim',                   dest="fastSkim",       action="store_true", default=False, help="Do fast picoAOD skim")
 parser.add_option(      '--looseSkim',                  dest="looseSkim",      action="store_true", default=False, help="Relax preselection to make picoAODs for JEC Uncertainties which can vary jet pt by a few percent.")
 parser.add_option('-n', '--nevents',                    dest="nevents",        default="-1", help="Number of events to process. Default -1 for no limit.")
-parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMV.InclusiveRegions.HHRegions.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
+parser.add_option(      '--detailLevel',                dest="detailLevel",  default="allEvents.passMV.SB.HHSR.fourTag.threeTag.bdtStudy", help="Histogramming detail level. ")
 parser.add_option('-c', '--makeCombineHist',    action="store_true", dest="makeCombineHist",      default=False, help="Make CombineTool input hists")
 parser.add_option(   '--loadHemisphereLibrary',    action="store_true", default=False, help="load Hemisphere library")
 parser.add_option(   '--noDiJetMassCutInPicoAOD',    action="store_true", default=False, help="create Output Hemisphere library")
@@ -695,9 +695,7 @@ def makeCombineHist():
     basis = {'lbdt': -1, 'sbdt': -1}
     histName = 'multijet_background'
     for channel in channelName.keys():
-        # for region in ['SR', 'CR', 'SB']:
-        for mix in range(10):
-            region = 'Mix'+str(mix)
+        for region in ['SR', 'CR', 'SB'] + ['Mix'+str(mix) for mix in range(10)]:
             for year in years:
                 closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
                 for systName, variation in closureSysts.iteritems():
