@@ -25,9 +25,8 @@ out_path = in_path + 'plots/'
 # years = ['RunII', '2016', '2017', '2018']
 # signals = ['VHH', 'ZHH', 'WHH']
 years = ['2016', '2017', '2018']
-signals = ['ZHH', 'WHH']
+signals = ['ZHH', 'WHH', 'VHH']
 # years = ['RunII']
-# signals = ['VHH']
 hists_filename = {
     'data'    : ['hists_j_r'],
     'ttbar'   : ['hists_j_r'],
@@ -974,6 +973,11 @@ class plots:
                         ploter.add_hist(multijet[file], histFiles_bkg[file])
                     ploter.plot()
 
+    def compare_standalone(self, hists, rebin = 1, normalize = False, output = ''):
+        rootFiles = []
+        for tag in hists:
+            pass
+        
     def plot_syst(self, pattern, systs, tag = '', rebin = 1):
         hists = []
         def add_syst_hist(path, norm):
@@ -1204,8 +1208,7 @@ class plots:
                         signal_systs[syst.get_name()] = self.load_signal_mc_hists(year, signal, self.join_hist_path(syst_hist), rebin, filename = syst_hist_file)
                 signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
                 for i,coupling in enumerate(self.couplings.basis):
-                    name = signal + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl') + '_hbbhbb'
-                    # name = signal + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl').replace('C2V', 'C2' + signal[0]) + '_hbbhbb'
+                    name = signal + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl').replace('C2V', 'C2' + signal[0]) + '_hbbhbb'
                     name = name.replace('p0_','_')
                     signal_hist = signal_mc[i]
                     signal_hist.SetNameTitle(name,name+"_"+year)
@@ -1473,17 +1476,20 @@ if __name__ == '__main__':
         # producer.plot_syst(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps'], 
         # {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_down_NNLO')], filename = 'hists'),'up':systematic([(0,3), (4,'+{}_up_NNLO')], filename = 'hists')},'_ZHH_NNLO_reweight', binning)
         
-        # # kVV enhanced region
+        # SR
+        # kVV enhanced region
         producer.save_shape('shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning)
-        producer.save_shape('shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
-        # # kl  enhanced region
+        # kl  enhanced region
         producer.save_shape('shapefile_VhadHH_SR_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning)
+
+        # SB
+        producer.save_shape('shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
         producer.save_shape('shapefile_VhadHH_SB_{year}_kl', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, unblind = True)
 
-        for i in range(10):
+        for i in range(15):
             mix_n = str(i)
-            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_nf8_HH.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
-            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_nf8_HH.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
+            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
+            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
 
         ## make signal templates
         # producer.add_dir(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_[kl|kVV]'])

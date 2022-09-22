@@ -34,7 +34,7 @@ parser.add_option('--rebin', dest = 'rebin', default = '0.0,0.10,0.20,0.30,0.40,
 parser.add_option('--basePath',  dest="basePath",    default='/uscms/home/%s/nobackup/%s/src/closureFits'%(USER, CMSSW), help="Path to output")
 parser.add_option('--ver',       dest="version",    default='nominal', help="tag of fit template")
 parser.add_option('--mixName',   dest="mixName",     default='3bDvTMix4bDvT', help="Name of mix data")
-parser.add_option('--nMixes',    dest="nMixes",     default=10,  help="Number of mix samples")
+parser.add_option('--nMixes',    dest="nMixes",     default=15,  help="Number of mix samples")
 parser.add_option('--region',    dest="region",     default='HHSR',  help="Region to fit")
 parser.add_option('--classifier',  dest="classifier",     default='SvB_MA',  help="Name of classifier")
 parser.add_option('--doTTAverage', action="store_true", dest="doTTAverage", default=False, help="")
@@ -70,7 +70,7 @@ mixName = o.mixName
 nMixes  = o.nMixes
 region =  o.region
 classifier = o.classifier
-signalName = o.signalPaths.split('/')[-1].replace('.root', '')
+signalName = o.signalPaths.split('/')[-2].replace('.root', '')
 tag = '_'.join([o.version, 'legendre' if o.legendre else 'fourier',
                 # mixname, classifier, region,
                 '{:d}bins'.format(len(rebin)) if isinstance(rebin, list) else 'rebin{:d}'.format(rebin), 
@@ -117,7 +117,7 @@ for i, s in enumerate(BEs):
 #hists_closure_MixedToUnmixed_3bMix4b_rWbW2_b0p60p3_SRNoHH.root
 #closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_MixedToUnmixed_'+mixName+'_b0p60p3_'+region+'.root'
 #closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_closure_'+mixName+'_b0p60p3_'+region+'.root'
-closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_' + mixName + '_' + region + '_weights_nf8_HH.root'
+closureFileName = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_' + mixName + '_' + region + '_weights_newSBDef.root'
 
 print(closureFileName)
 f=ROOT.TFile(closureFileName, 'UPDATE')
@@ -1053,6 +1053,7 @@ class closure:
             self.makeFitFunction(basis)
             self.fit(basis)
             self.fitSpuriousSignal(basis)
+            self.writeClosureResults(basis)
             self.plotFitResults(basis)
             max_basis = max(basis, self.multijet.basis)
             for j in range(1,max_basis):
@@ -1084,7 +1085,6 @@ class closure:
         if self.basis is None:
             self.basis = self.bases[-1]
 
-        self.writeClosureResults(basis)
 
     def makeFitFunction(self, basis):
 

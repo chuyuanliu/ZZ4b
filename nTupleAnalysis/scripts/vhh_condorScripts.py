@@ -324,7 +324,7 @@ def initialize():
                 for nTag in nTags:
                     lpcmkdir('VHH/'+tt+year+nTag)
                     eosmkdir('VHH/'+tt+year+nTag)
-                    for rootFile in [] + (['picoAOD'+nTag+'_wJCM'] if o.picoAOD else []) + (classifierFiles):
+                    for rootFile in [] + (['picoAOD'+nTag+'_wJCM_newSBDef'] if o.picoAOD else []) + (classifierFiles):
                         file = '/'+rootFile+'.root'
                         newFile = file
                         if 'picoAOD' in file:
@@ -337,7 +337,7 @@ def initialize():
             for nTag in datas:
                 lpcmkdir('VHH/data'+year+nTag)
                 eosmkdir('VHH/data'+year+nTag)
-                for rootFile in [] + (['picoAOD'+nTag+'_wJCM'] if o.picoAOD else []) + (classifierFiles):
+                for rootFile in [] + (['picoAOD'+nTag+'_wJCM_newSBDef'] if o.picoAOD else []) + (classifierFiles):
                     file = '/'+rootFile+'.root'
                     newFile = file
                     if 'picoAOD' in file:

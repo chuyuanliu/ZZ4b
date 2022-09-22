@@ -395,7 +395,7 @@ parser.add_argument(      '--storeEventFile', dest="storeEventFile", default=Non
 parser.add_argument('--weightName', default="mcPseudoTagWeight", help='Which weights to use for JCM.')
 parser.add_argument('--writeWeightFile', action="store_true", help='Write the weights to a weight file.')
 parser.add_argument('--weightFilePostFix', default="", help='Write the weights to a weight file.')
-parser.add_argument('--FvTName', default="FvT_Nominal", help='Which FvT weights to use for SvB Training.')
+parser.add_argument('--FvTName', default="FvT_Nominal_newSBDef", help='Which FvT weights to use for SvB Training.')
 parser.add_argument('--trainOffset', default='0', help='training offset. Use comma separated list to train with multiple offsets in parallel.')
 parser.add_argument('--updatePostFix', default="", help='Change name of the classifier weights stored.')
 parser.add_argument('--seed', default='0', help='numpy and pytorch random seed')

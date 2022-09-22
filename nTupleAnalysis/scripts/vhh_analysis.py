@@ -62,7 +62,7 @@ parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagE
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
 parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
-parser.add_option(   '--friends', dest = 'friends',default='FvT_Nominal,SvB_MA_VHH_8nc', help = 'friend root files')
+parser.add_option(   '--friends', dest = 'friends',default='FvT_Nominal_newSBDef,SvB_MA_VHH_8nc', help = 'friend root files')
 # for VHH study
 parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'set signal coupling')
 parser.add_option(   '--higherOrder',    action="store_true", default=False, help="reweight signal MC to NNLO for ZHH or NLO for WHH")
@@ -169,6 +169,11 @@ periods = {"2016": "BCDEFGH",
 JECSystList = ["_jerUp", "_jerDown",
                "_jesTotalUp", "_jesTotalDown"]
 
+FvTName = ""
+for friend in o.friends.split(','):
+    if friend[0:4] == 'FvT_':
+        FvTName = friend
+        break
 # VHH Files
 if o.coupling == 'None':
     couplings = []
@@ -414,7 +419,7 @@ def doDataTT():
             cmd += " --bTag "+bTagDict[year]
             cmd += " --nevents "+o.nevents
             cmd += " --jcmNameLoad Nominal" if o.useJetCombinatoricModel else ""
-            cmd += " --FvTName FvT_Nominal"
+            cmd += " --FvTName " + FvTName
             cmd += (" --friends " + o.friends) if o.friends else ""
             cmd += " --debug" if o.debug else ""
             cmd += " --extraOutput bosonKinematics" if o.extraOutput else ""
@@ -695,7 +700,7 @@ def makeCombineHist():
     basis = {'lbdt': -1, 'sbdt': -1}
     histName = 'multijet_background'
     for channel in channelName.keys():
-        for region in ['SR', 'CR', 'SB'] + ['Mix'+str(mix) for mix in range(10)]:
+        for region in  ['SR', 'SB'] + ['Mix'+str(mix) for mix in range(15)]:
             for year in years:
                 closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
                 for systName, variation in closureSysts.iteritems():
