@@ -104,7 +104,7 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
       allPUNotBJetsPassPuId = dir.make<TH2F>("allPUNotBJetsPassPuId", (name+"/allPUNotBJetsPassPuId; p_{T}; #eta; Entries").c_str(), 6, 20, 50, 10, -2.5, 2.5);
     }
   }
-  
+
   //
   // Event  Level
   //
@@ -175,7 +175,11 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
   SvB_MA_VHH_ps  = dir.make<TH1F>("SvB_MA_VHH_ps",  (name+"/SvB_MA_VHH_ps;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_VHH_ps_BDT_kVV  = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kVV",  (name+"/SvB_MA_VHH_ps_BDT_kVV;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
   SvB_MA_VHH_ps_BDT_kl = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kl",  (name+"/SvB_MA_VHH_ps_BDT_kl;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
-  
+
+  sSvB_MA_VHH_ps.reset(SvB_MA_VHH_ps);
+  sSvB_MA_VHH_ps_BDT_kVV.reset(SvB_MA_VHH_ps_BDT_kVV);
+  sSvB_MA_VHH_ps_BDT_kl.reset(SvB_MA_VHH_ps_BDT_kl);
+
   SvB_MA_VHH_ps_ONNX  = dir.make<TH1F>("SvB_MA_VHH_ps_ONNX",  (name+"/SvB_MA_VHH_ps_ONNX;  SvB_MA Regressed P(VHH); Entries").c_str(), 100, 0, 1);
   SvB_MA_VHH_ps_BDT_kVV_ONNX  = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kVV_ONNX",  (name+"/SvB_MA_VHH_ps_BDT_kVV_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT<0; Entries").c_str(), 100, 0, 1);
   SvB_MA_VHH_ps_BDT_kl_ONNX = dir.make<TH1F>("SvB_MA_VHH_ps_BDT_kl_ONNX",  (name+"/SvB_MA_VHH_ps_BDT_kl_ONNX;  SvB_MA Regressed P(VHH) #kappa_{#lambda} BDT#geq 0; Entries").c_str(), 100, 0, 1);
@@ -192,15 +196,21 @@ viewHists::viewHists(std::string name, fwlite::TFileService& fs, bool isMC, bool
       SvB_MA_VHH_ps_BDT_kl_puIdSysts = new systHists(SvB_MA_VHH_ps_BDT_kl, event->treeJets->m_puIdVariations, "puId");
     }
 
-    SvB_MA_VHH_ps_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps, event->zhhNNLOVariations);
-    SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps_BDT_kVV, event->zhhNNLOVariations);
-    SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps_BDT_kl, event->zhhNNLOVariations);
+    SvB_MA_VHH_ps_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps, event->zhhNNLOVariations, "NNLO");
+    SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps_BDT_kVV, event->zhhNNLOVariations, "NNLO");
+    SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts = new systHists(SvB_MA_VHH_ps_BDT_kl, event->zhhNNLOVariations, "NNLO");
 
     SvB_MA_VHH_ps_ONNX_bTagSysts = new systHists(SvB_MA_VHH_ps_ONNX, event->treeJets->m_btagVariations);
     SvB_MA_VHH_ps_BDT_kVV_ONNX_bTagSysts = new systHists(SvB_MA_VHH_ps_BDT_kVV_ONNX, event->treeJets->m_btagVariations);
     SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts = new systHists(SvB_MA_VHH_ps_BDT_kl_ONNX, event->treeJets->m_btagVariations);
-  }
 
+    // trigger turn-on systematic
+
+    triggerSyst     = ratioSystHistsProducer::create(sSvB_MA_VHH_ps, "trigger", "sim", "mc_emu");
+    triggerSyst_kVV = ratioSystHistsProducer::create(sSvB_MA_VHH_ps_BDT_kVV, "trigger", "sim", "mc_emu");
+    triggerSyst_kl  = ratioSystHistsProducer::create(sSvB_MA_VHH_ps_BDT_kl, "trigger", "sim", "mc_emu");
+  }
+  
   FvT_q_score = dir.make<TH1F>("FvT_q_score", (name+"/FvT_q_score; FvT q_score (main pairing); Entries").c_str(), 100, 0, 1);
   FvT_q_score_dR_min = dir.make<TH1F>("FvT_q_score_dR_min", (name+"/FvT_q_score; FvT q_score (min #DeltaR(j,j) pairing); Entries").c_str(), 100, 0, 1);
   // FvT_q_score_SvB_q_score_max = dir.make<TH1F>("FvT_q_score_SvB_q_score_max", (name+"/FvT_q_score; FvT q_score (max SvB q_score pairing); Entries").c_str(), 100, 0, 1);
@@ -441,6 +451,9 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   puIdSF->Fill(event->puIdSF, event->weight);
   SvB_MA_VHH_ps->Fill(event->SvB_MA_VHH_ps, event->weight);
   SvB_MA_VHH_ps_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+  if(triggerSyst){
+    triggerSyst->fill(event->SvB_MA_VHH_ps, event->weightNoTrigger * event->trigWeight_Flag, event->weightNoTrigger * event->trigWeight_MC);
+  }
   if(SvB_MA_VHH_ps_bTagSysts){
     SvB_MA_VHH_ps_bTagSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
   }
@@ -448,7 +461,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
     SvB_MA_VHH_ps_puIdSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
   }
   if(SvB_MA_VHH_ps_zhhNNLOSysts){
-    SvB_MA_VHH_ps_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+    SvB_MA_VHH_ps_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central"]);
   }
   if(SvB_MA_VHH_ps_ONNX_bTagSysts){
     SvB_MA_VHH_ps_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
@@ -456,6 +469,9 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   if(event->BDT_kl<0 && event->BDT_kl>=-1){
     SvB_MA_VHH_ps_BDT_kVV->Fill(event->SvB_MA_VHH_ps, event->weight);
     SvB_MA_VHH_ps_BDT_kVV_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+    if(triggerSyst_kVV){
+      triggerSyst_kVV->fill(event->SvB_MA_VHH_ps, event->weightNoTrigger * event->trigWeight_Flag, event->weightNoTrigger * event->trigWeight_MC);
+    }
     if(SvB_MA_VHH_ps_BDT_kVV_bTagSysts){
       SvB_MA_VHH_ps_BDT_kVV_bTagSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
@@ -463,7 +479,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
       SvB_MA_VHH_ps_BDT_kVV_puIdSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
     }
     if(SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts){
-      SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+      SvB_MA_VHH_ps_BDT_kVV_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central"]);
     }
     if(SvB_MA_VHH_ps_BDT_kVV_ONNX_bTagSysts){
       SvB_MA_VHH_ps_BDT_kVV_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
@@ -472,6 +488,9 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
   if(event->BDT_kl>=0){
     SvB_MA_VHH_ps_BDT_kl->Fill(event->SvB_MA_VHH_ps, event->weight);
     SvB_MA_VHH_ps_BDT_kl_ONNX->Fill(event->SvB_MA_ps_ONNX, event->weight);
+    if(triggerSyst_kl){
+      triggerSyst_kl->fill(event->SvB_MA_VHH_ps, event->weightNoTrigger * event->trigWeight_Flag, event->weightNoTrigger * event->trigWeight_MC);
+    }
     if(SvB_MA_VHH_ps_BDT_kl_bTagSysts){
       SvB_MA_VHH_ps_BDT_kl_bTagSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_btagSFs, event->bTagSF);
     }
@@ -479,7 +498,7 @@ void viewHists::Fill(eventData* event, std::shared_ptr<eventView> &view){//, int
       SvB_MA_VHH_ps_BDT_kl_puIdSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->treeJets->m_puIdSFs, event->puIdSF);
     }
     if(SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts){
-      SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central_NNLO"]);
+      SvB_MA_VHH_ps_BDT_kl_zhhNNLOSysts->Fill(event->SvB_MA_VHH_ps, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central"]);
     }
     if(SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts){
       SvB_MA_VHH_ps_BDT_kl_ONNX_bTagSysts->Fill(event->SvB_MA_ps_ONNX, event->weight, event->treeJets->m_btagSFs, event->bTagSF);

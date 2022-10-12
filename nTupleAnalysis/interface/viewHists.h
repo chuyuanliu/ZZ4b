@@ -17,7 +17,7 @@
 #include "nTupleAnalysis/baseClasses/interface/trigHists.h"
 #include "nTupleAnalysis/baseClasses/interface/systHists.h"
 #include "ZZ4b/nTupleAnalysis/interface/weightStudyHists.h"
-
+#include "ZZ4b/nTupleAnalysis/interface/ratioSystHistsProducer.h"
 
 namespace nTupleAnalysis {
 
@@ -75,6 +75,9 @@ namespace nTupleAnalysis {
     TH1F* SvB_MA_VHH_ps;
     TH1F* SvB_MA_VHH_ps_BDT_kVV;
     TH1F* SvB_MA_VHH_ps_BDT_kl;
+    sTH1F sSvB_MA_VHH_ps;
+    sTH1F sSvB_MA_VHH_ps_BDT_kVV;
+    sTH1F sSvB_MA_VHH_ps_BDT_kl;
     systHists* SvB_MA_VHH_ps_bTagSysts =NULL;
     systHists* SvB_MA_VHH_ps_BDT_kVV_bTagSysts = NULL;
     systHists* SvB_MA_VHH_ps_BDT_kl_bTagSysts = NULL;
@@ -229,6 +232,10 @@ namespace nTupleAnalysis {
     weightStudyHists* weightStudy_v0v9  = NULL;
     weightStudyHists* weightStudy_os012 = NULL;
     weightStudyHists* weightStudy_e20   = NULL;
+
+    sRSyst triggerSyst = nullptr;
+    sRSyst triggerSyst_kVV = nullptr;
+    sRSyst triggerSyst_kl = nullptr;
 
     viewHists(std::string, fwlite::TFileService&, bool isMC = false, bool _debug = false, eventData* event = NULL, std::string histDetailLevel="");
     void Fill(eventData*, std::shared_ptr<eventView>&);//, int nViews=-1, int nViews_10=-1, int nViews_11=-1, int nViews_12=-1);

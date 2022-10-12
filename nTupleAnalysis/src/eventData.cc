@@ -23,6 +23,10 @@ bool comp_FvT_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventVi
 bool comp_SvB_q_score(std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->SvB_q_score < second->SvB_q_score); }
 bool comp_dR_close(   std::shared_ptr<eventView> &first, std::shared_ptr<eventView> &second){ return (first->close->dR   < second->close->dR  ); }
 
+void eventData::updateWeight(float subweight){
+  weight *= subweight;
+  weightNoTrigger *= subweight;
+}
 eventData::eventData(TChain* t, bool mc, std::string y, bool d, const std::map<std::string, bool> &options, bool _fastSkim, bool _doTrigEmulation, bool _calcTrigWeights, bool _useMCTurnOns, bool _useUnitTurnOns, bool _isDataMCMix, bool _doReweight, std::string bjetSF, std::string btagVariations, std::string JECSyst, bool _looseSkim, bool _usePreCalcBTagSFs, std::string FvTName, std::string reweight4bName, std::string reweightDvTName, bool doWeightStudy, bool _runKlBdt, bool _doZHHNNLOScale, std::string era, std::string puIdVariations){
   std::cout << "eventData::eventData()" << std::endl;
   tree  = t;
@@ -509,6 +513,7 @@ void eventData::resetEvent(){
   weight = 1;
   weightNoTrigger = 1;
   trigWeight = 1;
+  trigWeight_Flag = 0;
   bTagSF = 1;
   puIdSF = 1;
   treeJets->resetSFs();
@@ -534,7 +539,7 @@ void eventData::resetEvent(){
   }
 
   if(doZHHNNLOScale){
-    zhhNNLOSFs["central_NNLO"] = 1; zhhNNLOSFs["up_NNLO"] = 1; zhhNNLOSFs["down_NNLO"] = 1;
+    zhhNNLOSFs["central"] = 1; zhhNNLOSFs["up"] = 1; zhhNNLOSFs["down"] = 1;
   }
   if(calcPuIdSF){
     allPuIdJets.clear();
@@ -607,17 +612,16 @@ void eventData::update(long int e){
     
     ttbarWeight = sqrt( ttbarSF(minTopPt) * ttbarSF(minAntiTopPt) );
 
-    weight *= ttbarWeight;
-    weightNoTrigger *= ttbarWeight;  
+    updateWeight(ttbarWeight);
 
   }
   if(truth && doZHHNNLOScale){
     if(truth->Zqqs.size() == 1){
       float zPt = truth->Zqqs[0]->pt;
-      zhhNNLOSFs["central_NNLO"] = 0.780538 + 0.0023697   * zPt - 3.6377e-06  * zPt * zPt;
-      zhhNNLOSFs["up_NNLO"]      = 1.13151  - 0.000566154 * zPt + 7.02718e-07 * zPt * zPt;
-      zhhNNLOSFs["down_NNLO"]    = 0.452161 + 0.00503546  * zPt - 7.52023e-06 * zPt * zPt;
-      weight *= zhhNNLOSFs["central_NNLO"];
+      zhhNNLOSFs["central"] = 0.780538 + 0.0023697   * zPt - 3.6377e-06  * zPt * zPt;
+      zhhNNLOSFs["up"]      = 1.13151  - 0.000566154 * zPt + 7.02718e-07 * zPt * zPt;
+      zhhNNLOSFs["down"]    = 0.452161 + 0.00503546  * zPt - 7.52023e-06 * zPt * zPt;
+      updateWeight(zhhNNLOSFs["central"]);
     }
     else if (truth->Zqqs.size() > 1){
       std::cout << "Find more than one GEN Z->qq in ZHH MC\n";
@@ -649,6 +653,12 @@ void eventData::update(long int e){
   // Trigger 
   //    (TO DO. Only do emulation in the SR)
   //
+  for(auto &trigger: HLT_triggers){
+    if(trigger.second){
+       trigWeight_Flag = 1;
+       break;
+    }
+  }
   if(isMC && (calcTrigWeights || doTrigEmulation)){
 
     if(calcTrigWeights){
@@ -687,13 +697,7 @@ void eventData::update(long int e){
     passHLT = trigWeight>0 || passZeroTrigWeight;
 
   }else{
-    for(auto &trigger: HLT_triggers){
-      ///bool pass_seed = boost::accumulate(HLT_L1_seeds[trigger.first] | boost::adaptors::map_values, false, [](bool pass, bool *seed){return pass||*seed;});//std::logical_or<bool>());
-      //passL1  = passL1  || pass_seed;
-      //passHLT = passHLT || (trigger.second && pass_seed);
-      passHLT = passHLT || (trigger.second);
-    }
-
+    passHLT = (trigWeight_Flag == 1);
   }
 
 
@@ -702,7 +706,7 @@ void eventData::update(long int e){
   //
   for(float oWeight: otherWeights){
     if(debug) std::cout << "other weight is "<<  oWeight <<std::endl;
-    weight *= oWeight;
+    updateWeight(oWeight);
   }
   
 
@@ -762,8 +766,7 @@ void eventData::buildEvent(){
     }
 
     if(debug) std::cout << "eventData buildEvent bTagSF = " << bTagSF << std::endl;
-    weight *= bTagSF * puIdSF;
-    weightNoTrigger *= bTagSF * puIdSF;
+    updateWeight(bTagSF * puIdSF);
     for(auto &jet: allJets) nTrueBJets += jet->hadronFlavour == 5 ? 1 : 0;
   }
   
@@ -891,16 +894,14 @@ void eventData::buildEvent(){
     reweight = FvT;
     //if     (event->reweight > 10) event->reweight = 10;
     //else if(event->reweight <  0) event->reweight =  0;
-    weight *= reweight;
-    weightNoTrigger *= reweight;
+    updateWeight(reweight);
   }
 
   //
   //  Appply 4b reweight
   //
   if(fourTag){
-    weight *= reweight4b;
-    weightNoTrigger *= reweight4b;    
+    updateWeight(reweight4b);   
   }
 
   //
@@ -908,9 +909,8 @@ void eventData::buildEvent(){
   //
   if(doDvTReweight){
     float reweightDvT =  DvT > 0 ? DvT : 0;
-    //cout << "weight was " << weight; 
-    weight *= reweightDvT;
-    weightNoTrigger *= reweightDvT;  
+    //cout << "weight was " << weight;
+    updateWeight(weight);
     //cout << " weight now " << weight <<endl;
   }
 
@@ -1213,9 +1213,7 @@ void eventData::computePseudoTagWeight(){
 
   // update the event weight
   if(debug) std::cout << "eventData::computePseudoTagWeight pseudoTagWeight " << pseudoTagWeight << std::endl;
-  weight *= pseudoTagWeight;
-
-  weightNoTrigger *= pseudoTagWeight;
+  updateWeight(pseudoTagWeight);
   
   // Now pick nPseudoTags randomly by choosing a random number in the set (nPseudoTagProb[0], nPseudoTagProbSum)
   nPseudoTags = nAntiTag; // Inint at max, set lower below based on cum. probs
@@ -1247,9 +1245,7 @@ void eventData::applyInputPseudoTagWeight(){
 
   // update the event weight
   if(debug) std::cout << "eventData::applyInputPseudoTagWeight pseudoTagWeight " << pseudoTagWeight << std::endl;
-  weight *= pseudoTagWeight;
-
-  weightNoTrigger *= pseudoTagWeight;
+  updateWeight(pseudoTagWeight);
 
   // TO do store and load nPseudoTags 
   nPseudoTags = nAntiTag;

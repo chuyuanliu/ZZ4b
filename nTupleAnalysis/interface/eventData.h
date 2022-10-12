@@ -51,8 +51,9 @@ namespace nTupleAnalysis {
     ULong64_t event     =  0;
     Int_t     nPVs = 0;
     Int_t     nPVsGood = 0;
-    Float_t   trigWeight_MC = 0;
+    Float_t   trigWeight_MC   = 0;
     Float_t   trigWeight_Data = 0;
+    Int_t     trigWeight_Flag  = 0;
     Float_t   reweight = 1.0;
 
     //Bool_t    SBTest       =  false;
@@ -106,6 +107,7 @@ namespace nTupleAnalysis {
     Float_t   genWeight =  1;
     Float_t   weight    =  1;
     Float_t   weightNoTrigger    =  1;
+    void      updateWeight(float subweight);
     Float_t   trigWeight =  1;
     Float_t   mcWeight  =  1;
     Float_t   mcPseudoTagWeight = 1;
@@ -232,8 +234,8 @@ namespace nTupleAnalysis {
     Float_t SvB_MA_ps_ONNX  = -99;
 
     bool doZHHNNLOScale = false;
-    std::vector<std::string> zhhNNLOVariations{"central_NNLO", "up_NNLO", "down_NNLO"};
-    std::map<std::string, float> zhhNNLOSFs{{"central_NNLO", 1}, {"up_NNLO", 1}, {"down_NNLO", 1}};
+    std::vector<std::string> zhhNNLOVariations{"central", "up", "down"};
+    std::map<std::string, float> zhhNNLOSFs{{"central", 1}, {"up", 1}, {"down", 1}};
     //
 
     uint nSelJets;

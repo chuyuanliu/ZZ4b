@@ -6,6 +6,7 @@
 #include <signal.h>
 
 #include "ZZ4b/nTupleAnalysis/interface/analysis.h"
+#include "ZZ4b/nTupleAnalysis/interface/ratioSystHistsProducer.h"
 #include "nTupleAnalysis/baseClasses/interface/helpers.h"
 
 using std::cout;  using std::endl;
@@ -1142,6 +1143,8 @@ void analysis::storeReweight(std::string fileName){
 
 
 analysis::~analysis(){
+  ratioSystHistsProducer::makeSysts();
+  
   if(emulate4bFromMixed) 
     cout << "Emulation Pass fraction: " << float(nPassEvents) / nTotalEvents <<  " nPass: " << nPassEvents << " nTotal: " << nTotalEvents << " vs " << emulationSF 
 	 << "Duplicate fraction " << float(nDupEvents) / nPassEvents << endl;

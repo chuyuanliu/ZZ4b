@@ -1,3 +1,4 @@
+from cProfile import label
 from copy import copy
 from math import sqrt
 import numpy as np
@@ -22,11 +23,11 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 USER = getpass.getuser()
 in_path = '/uscms/home/'+USER+'/nobackup/VHH/'
 out_path = in_path + 'plots/'
+# years = ['2016_preVFP', '2016_postVFP', '2016', '2017', '2018', 'RunII']
 # years = ['RunII', '2016', '2017', '2018']
-# signals = ['VHH', 'ZHH', 'WHH']
+# years = ['RunII']
 years = ['2016', '2017', '2018']
 signals = ['ZHH', 'WHH', 'VHH']
-# years = ['RunII']
 hists_filename = {
     'data'    : ['hists_j_r'],
     'ttbar'   : ['hists_j_r'],
@@ -35,13 +36,15 @@ hists_filename = {
     # 'ttbar'   : ['hists_j_r', 'hists_j_r_noMDR', 'hists_j_r_noMDR_v2'],
     # 'signal'  : ['hists', 'hists_noMDR', 'hists_noMDR_v2'],
 }
-no_background = False
+no_background = True
 no_multijet = False
 no_signal = False
 mc_only = False
-mc_signals = False
 event_count = True
 signal_scale = 1
+global mc_signals
+mc_signals = False
+global use_density
 use_density = False
 
 if not os.path.isdir(out_path):
@@ -368,13 +371,13 @@ class histogram_1d_collection:
         exec(action)
 
 class histogram_1d_syst:
-    def __init__(self, path, title, tag = '', x_label = '', y_label = '', rules = []):
+    def __init__(self, path, title, tag = '', x_label = '', y_label = '', rules = None, labels = None):
         self.path = path
         self.title = title
         self.tag = tag
-        self.rules = rules
-
-        self.systs = {} # central, up, down
+        self.rules = rules if rules else []
+        self.labels = labels if labels else {'up':'Up', 'down':'Down', 'central':'Central'}
+        self.systs = {}
 
         self.x_label = x_label
         self.y_label = y_label
@@ -416,6 +419,9 @@ class histogram_1d_syst:
             self.y_max[tag] = max(hist.GetMaximum(), self.y_max[tag])
             self.y_min[tag] = min(hist.GetMinimum(), self.y_min[tag])
 
+    def apply(self, action):
+        exec(action)
+        
     def plot(self):
         for rule in self.rules:
             rule.apply(self)
@@ -425,6 +431,7 @@ class histogram_1d_syst:
             canvas_gen.TopRight.Text = self.set_font(self.topright_label)
             canvas_gen.XLabel.Text = self.set_font(self.x_label)
             canvas_gen.YLabel.Text = self.set_font(self.y_label)
+            canvas_gen.AllowLegend = True
             canvas_gen.AllowRatio  = True
             canvas = canvas_gen.GetCanvas(self.title + tag)
             canvas_gen.MainPad.cd()
@@ -436,6 +443,15 @@ class histogram_1d_syst:
             self.systs[tag]['central'].SetLineColor(ROOT.kBlack)
             self.systs[tag]['central'].Draw('SAME HIST')
             canvas_gen.MainPad.RedrawAxis()
+            
+            canvas_gen.Legend.cd()
+            self.legend = ROOT.TLegend(0.0, max(0.0, 0.95 - 0.12), 1.0, 0.95)
+            self.legend.SetTextSize(0.06)
+            self.legend.SetTextFont(42)
+            self.legend.SetBorderSize(0)
+            for label in ['central', 'up', 'down']:
+                self.legend.AddEntry(self.systs[tag][label], self.labels[label], 'pe')
+            self.legend.Draw()
 
             canvas_gen.Ratio.cd()
             central = self.systs[tag]['central'].Clone()
@@ -467,10 +483,11 @@ class histogram_1d_syst:
             label.SetTextSize(0.10)
             label.SetTextAngle(90)
             label.SetTextAlign(21)
-            label.DrawLatex(canvas_gen.Var.GetX(-0.08), 1.0, self.set_font('Up(Down)/Central'))
+            label.DrawLatex(canvas_gen.Var.GetX(-0.08), 1.0, self.set_font('{up}({down})/{central}'.format(**self.labels)))
             central_error.Draw('SAME E2')
             for shift in ['up', 'down']:
                 ratio[shift].Draw('SAME X0 P E1')
+            canvas_gen.Ratio.RedrawAxis()
             canvas.Print(self.path + tag + self.tag + '.pdf')
 
        
@@ -978,7 +995,7 @@ class plots:
         for tag in hists:
             pass
         
-    def plot_syst(self, pattern, systs, tag = '', rebin = 1):
+    def plot_syst(self, pattern, systs, tag = '', rebin = 1, labels = None):
         hists = []
         def add_syst_hist(path, norm):
             hists.append(path)
@@ -998,7 +1015,7 @@ class plots:
                     hist_path = copy(self.all_hists[hist])
                     hist_path[-1] = hist_path[-1]+tag
                     path = self.path[year][signal].mkdir(hist_path)
-                    ploter = histogram_1d_syst(path, title=hist,rules=rules)           
+                    ploter = histogram_1d_syst(path, title=hist, rules=rules, labels=labels)           
                     if mc_signals: 
                         for i,coupling in enumerate(self.couplings.basis):
                             signals = {}
@@ -1408,8 +1425,12 @@ if __name__ == '__main__':
         # producer.plot_2d()
         # producer.add_dir(['passMV/fourTag/mainView/HHSR/SvB_MA_VHH_ps_BDT_[kl|kVV]'], normalize = True)
         # producer.add_dir(['pass*/fourTag/mainview/CR/SvB_MA_VHH_ps_BDT_[kl|kVV]'])
+        # producer.add_dir(['passMV/fourTag/mainView/HHSR/SvB_MA_VHH_ps*_trigger_ratio'])      
+        # use_density = True
+        # mc_signals = True
         # producer.plot_1d(binning)
-
+        # use_density = False
+        # mc_signals = False
         # producer.optimize('passNjOth/fourTag/mainView/HHSR/canJet3BTag')
         # producer.optimize('passMV/fourTag/mainView/HHSR/canJet3BTag')
 
@@ -1440,13 +1461,17 @@ if __name__ == '__main__':
             systematic([(0,3), (4, '+{}_up_cferr1')],    'CMS_btag_cferr1_2016_2017_2018Up'),
             systematic([(0,3), (4, '+{}_down_cferr2')],    'CMS_btag_cferr2_2016_2017_2018Down'),
             systematic([(0,3), (4, '+{}_up_cferr2')],    'CMS_btag_cferr2_2016_2017_2018Up'),
+            # PU Jet ID
             systematic([(0,3), (4, '+{}_down_puId')],    'CMS_eff_j_PUJET_id_{year}Down'),
             systematic([(0,3), (4, '+{}_up_puId')],    'CMS_eff_j_PUJET_id_{year}Up'),
-            #  JEC
+            # JEC
             systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
             systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
             systematic([(0,3), (4, '+{}_ONNX_up_jes')],    'CMS_scale_j_{year}Up',   'hists_jesTotalUp'),
             systematic([(0,3), (4, '+{}_ONNX_down_jes')],    'CMS_scale_j_{year}Down',   'hists_jesTotalDown'),
+            # Trigger
+            systematic([(0,3), (4, '+{}_trigger_up')],    'CMS_vhh4b_TriggerWeight_FHUp'),
+            systematic([(0,3), (4, '+{}_trigger_down')],    'CMS_vhh4b_TriggerWeight_FHDown'),
             # ZHH NNLO
             systematic([(0,3), (4, '+{}_up_NNLO')],    'CMS_scale_ZHH_NNLOUp',   'hists', ['VHH', 'ZHH']),
             systematic([(0,3), (4, '+{}_down_NNLO')],    'CMS_scale_ZHH_NNLODown', 'hists', ['VHH', 'ZHH']),
@@ -1455,10 +1480,6 @@ if __name__ == '__main__':
         ## make combine shape
         classifier_name = 'SvB_MA_VHH' # SvB_MA_labelBDT
         ## plot systs
-        # for tag in ['_jes', '_lf', '_hf', '_hfstats2', '_lfstats2']:
-        #     producer.plot_syst('passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_central', 
-        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'=down{tag}/central'.format(tag = tag))]),'up':systematic([(0,3), (4,'=up{tag}/central'.format(tag = tag))])},
-        #     tag, binning)
         # for tag in ['_jer']:
         #     producer.plot_syst('passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps', 
         #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_ONNX')], filename = 'hists'+ tag + 'Down'),'up':systematic([(0,3), (4,'+{}_ONNX')], filename = 'hists'+ tag + 'Up')},
@@ -1471,11 +1492,19 @@ if __name__ == '__main__':
         #     producer.plot_syst(['pass*/fourTag/mainView/[inclusive|HHSR]/[sel|can|oth]Jet*/*GenDiff'], 
         #     {'central':systematic([(0,-1)]),'down':systematic([(0,-1),], filename = 'hists'+ tag + 'Down'),'up':systematic([(0,-1)], filename = 'hists'+ tag + 'Up')},
         #     tag)
-        # producer.plot_syst(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_nom'], 
-        # {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'=down/nom')], filename = 'hists'),'up':systematic([(0,3), (4,'=up/nom')], filename = 'hists')},'_puId')
-        # producer.plot_syst(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps'], 
-        # {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_down_NNLO')], filename = 'hists'),'up':systematic([(0,3), (4,'+{}_up_NNLO')], filename = 'hists')},'_ZHH_NNLO_reweight', binning)
-        
+        # for tag in ['_jes', '_lf', '_hf', '_hfstats2', '_lfstats2']:
+        #     producer.plot_syst('passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_central', 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'=down{tag}/central'.format(tag = tag))]),'up':systematic([(0,3), (4,'=up{tag}/central'.format(tag = tag))])},
+        #     tag, binning)
+        # for tag in ['puId', 'NNLO']:
+        #     producer.plot_syst(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps'], 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_down_' + tag)], filename = 'hists'),'up':systematic([(0,3), (4,'+{}_up_' + tag)], filename = 'hists')},'_' + tag, binning)
+        # for tag in ['', '_BDT_kl','_BDT_kVV']:
+        #     producer.plot_syst(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps'+ tag], 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_trigger_down')], filename = 'hists'),'up':systematic([(0,3), (4,'+{}_trigger_up')], filename = 'hists')},'_trigger', binning)
+        # for tag in ['', '_BDT_kl','_BDT_kVV']:
+        #     producer.plot_syst(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps'+ tag], 
+        #     {'central':systematic([(0,-1)]),'down':systematic([(0,3), (4,'+{}_trigger_sim')], filename = 'hists'),'up':systematic([(0,3), (4,'+{}_trigger_mc_emu')], filename = 'hists')},'_trigger_sim_emu', binning, {'central':'Data Emulation', 'down':'Simulation', 'up':'MC Emulation'})
         # SR
         # kVV enhanced region
         producer.save_shape('shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning)
@@ -1486,10 +1515,10 @@ if __name__ == '__main__':
         producer.save_shape('shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
         producer.save_shape('shapefile_VhadHH_SB_{year}_kl', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, unblind = True)
 
-        for i in range(15):
+        for i in range(1):
             mix_n = str(i)
-            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
-            producer.save_shape('shapefile_VhadHH_Mix'+mix_n+'_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
+            producer.save_shape('shapefile_VhadHH_Mix_{year}_kl', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
+            producer.save_shape('shapefile_VhadHH_Mix_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
 
         ## make signal templates
         # producer.add_dir(['passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_[kl|kVV]'])

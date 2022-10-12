@@ -1336,7 +1336,7 @@ class closure:
         #plot fit parameters
         x,y,s,c = [],[],[],[]
         parameters = self.fit_parameters[basis] if not doSpuriousSignal else self.fit_parameters_ss[basis]
-        x.append( parameters[dims[0]] * (1 if dims[0]>basis else 100) )
+        x.append( parameters[dims[0]] * (1 if dims[0]==d_ss else 100) )
         if n==1:
             y.append( 0 )
         if n>1:

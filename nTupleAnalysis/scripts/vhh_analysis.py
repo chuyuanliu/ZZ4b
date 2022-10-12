@@ -61,7 +61,8 @@ parser.add_option(   '--inputHLib3Tag', default='$PWD/data18/hemiSphereLib_3TagE
 parser.add_option(   '--inputHLib4Tag', default='$PWD/data18/hemiSphereLib_4TagEvents_*root',           help="Base path for storing output histograms and picoAOD")
 parser.add_option(   '--SvB_ONNX', action="store_true", default=False,           help="Run ONNX version of SvB model. Model path specified in analysis.py script")
 parser.add_option(   '--condor',   action="store_true", default=False,           help="Run on condor")
-parser.add_option(   '--trigger', action="store_true", default=False, help = 'do trigger emulation')
+parser.add_option(   '--skipTrigEmulation', action="store_true", default=False, help = 'skip trigger emulation')
+parser.add_option(   '--calcTrigWeights', action='store_true', default=False, help='Run trigger emulation from object level efficiencies')
 parser.add_option(   '--friends', dest = 'friends',default='FvT_Nominal_newSBDef,SvB_MA_VHH_8nc', help = 'friend root files')
 # for VHH study
 parser.add_option(   '--coupling ', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V:0_0,C2V:2_0,C3:0_0,C3:2_0,C3:20_0', help = 'set signal coupling')
@@ -306,7 +307,8 @@ def doSignal():
                     cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
                     #cmd += " -f " if o.fastSkim else ""
                     cmd += " --isMC"
-                    cmd += " --doTrigEmulation" if o.trigger else ""
+                    cmd += ' --doTrigEmulation' if not o.skipTrigEmulation else ''
+                    cmd += ' --calcTrigWeights' if o.calcTrigWeights else ''
                     cmd += " --doHigherOrderReweight" if o.higherOrder else ""
                     cmd += " --bTag "+bTagDict[year]
                     cmd += " --bTagSF"
@@ -430,7 +432,8 @@ def doDataTT():
                 cmd += " --puIdSF" if o.applyPuIdSF else ""
                 cmd += " --bTagSyst" if o.bTagSyst else ""
                 cmd += " --isMC "
-                cmd += " --doTrigEmulation" if o.trigger else ""
+                cmd += ' --doTrigEmulation' if not o.skipTrigEmulation else ''
+                cmd += ' --calcTrigWeights' if o.calcTrigWeights else ''
             if o.createHemisphereLibrary  and fileList not in ttbarFiles:
                 cmd += " --createHemisphereLibrary "
             if o.noDiJetMassCutInPicoAOD:
@@ -700,12 +703,12 @@ def makeCombineHist():
     basis = {'lbdt': -1, 'sbdt': -1}
     histName = 'multijet_background'
     for channel in channelName.keys():
-        for region in  ['SR', 'SB'] + ['Mix'+str(mix) for mix in range(15)]:
+        for region in  ['SR', 'SB', 'Mix']:
             for year in years:
                 closureSysts = read_parameter_file('closureFits/nominal_fourier_12bins_VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/closureResults_VHH_ps_%s_basis%d.txt'%(channel, basis[channel]))
                 for systName, variation in closureSysts.iteritems():
                     rootFile = '/uscms/home/'+USER+'/nobackup/VHH/shapefile_VhadHH_'+region+'_'+year+'_'+channelName[channel]+'.root'
-                    systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_bbbb_Multijet')
+                    systName = systName.replace('_VHH_ps_lbdt', '').replace('_VHH_ps_sbdt', '').replace('multijet', '_CMS_vhh4b_Multijet_FH')
                     #Multijet closure systematic templates to data file
                     cmd  = 'python ZZ4b/nTupleAnalysis/scripts/vhh_makeCombineHists.py -i ' + rootFile
                     cmd +=' -n '+histName+' -a "'+variation + '" --syst ' + systName

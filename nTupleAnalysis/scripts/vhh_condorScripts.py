@@ -115,7 +115,8 @@ def lpccp(src, dest):
 def lpcrm(src):
     run('rm -rf ' + lpc(src))
 def lpcmkdir(src):
-    run('mkdir ' + lpc(src))
+    if not os.path.isdir(lpc(src)):
+        run('mkdir ' + lpc(src))
 
 def xrdcp(src,dest):
     run('xrdcp -f '+('root://cmseos.fnal.gov/' if 'condor' in src else '') + src + ' '+('root://cmseos.fnal.gov/' if 'condor' in dest else '') + dest)    
