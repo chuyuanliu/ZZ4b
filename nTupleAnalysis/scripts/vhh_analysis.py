@@ -75,7 +75,9 @@ parser.add_option(   '--histsTag', dest = 'histsTag', default='', help = 'extra 
 parser.add_option(   '--runKlBdt', dest = 'runKlBdt', action="store_true", default=False, help = 'run kl BDT')
 parser.add_option(   '--calcPuIdSF', dest = 'calcPuIdSF', action="store_true", default=False, help = 'calculate PU jet ID SF')
 parser.add_option(   '--applyPuIdSF', dest = 'applyPuIdSF', action="store_true", default=False, help = 'apply PU jet ID SF')
-parser.add_option(   '--nTags', dest = 'nTags', default='_4b', help = 'run on n tag events for ttbar')
+parser.add_option(   '--nTags_TT', dest = 'nTags_TT', default='_4b', help = 'run on n tag events for ttbar')
+parser.add_option(   '--nTags_Data', dest = 'nTags_Data', default='_3b,_4b', help = 'run on n tag events for ttbar')
+parser.add_option(   '--unBlind', dest = 'unBlind', action="store_true", default=False, help = 'unBlind data SR')
 
 o, a = parser.parse_args()
 
@@ -188,7 +190,7 @@ def dataFiles(year):
             files += glob('ZZ4b/fileLists/data%s%s_chunk*.txt'%(year,period))
         return files
     elif o.separate3b4b:
-        return ["closureTests/ULTrig/fileLists/data" + year + tag + ".txt " for tag in ['_3b', '_4b']]
+        return ["closureTests/ULTrig/fileLists/data" + year + tag + ".txt " for tag in o.nTags_Data.split(',')]
     else:
         return ["ZZ4b/fileLists/data" + year + period + ".txt" for period in periods[year]]
 
@@ -222,7 +224,7 @@ def ttbarFiles(year):
         ttYears = [year]
         if year == '2016':
             ttYears = ['2016_preVFP', '2016_postVFP']
-        return ['closureTests/ULTrig/fileLists/' + process + ttYear + tag + '.txt' for process in ttbarProcesses for ttYear in ttYears for tag in o.nTags.split(',')]
+        return ['closureTests/ULTrig/fileLists/' + process + ttYear + tag + '.txt' for process in ttbarProcesses for ttYear in ttYears for tag in o.nTags_TT.split(',')]
     else:
         return ['ZZ4b/fileLists/' + process + year + '.txt' for process in ttbarProcesses]
 
@@ -443,6 +445,7 @@ def doDataTT():
                 cmd += " --inputHLib3Tag "+o.inputHLib3Tag
                 cmd += " --inputHLib4Tag "+o.inputHLib4Tag
             cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX else ""
+            cmd += " --unBlind" if o.unBlind else ""
 
             # if o.createPicoAOD and o.createPicoAOD != "none":
             #     if o.createPicoAOD != "picoAOD.root":
