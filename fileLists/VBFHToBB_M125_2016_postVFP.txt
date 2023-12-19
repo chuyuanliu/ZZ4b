@@ -1,0 +1,8 @@
+### dasgoclient -query="file dataset=/VBFHToBB_M-125_TuneCP5_13TeV-powheg-pythia8/RunIISummer20UL16NanoAODv9-106X_mcRun2_asymptotic_v17-v2/NANOAODSIM
+
+root://cmsxrootd-site.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/VBFHToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v2/270000/65E1643C-D54A-4047-8229-55BA988E8725.root
+root://cmsxrootd-site.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/VBFHToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v2/270000/1F90A4B9-2C5A-E748-8C89-38596322B03F.root
+root://cmsxrootd-site.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/VBFHToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v2/270000/D819DE67-33E0-834F-A7C6-0B783BACC5DE.root
+root://cmsxrootd-site.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/VBFHToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v2/270000/62358095-17E1-F245-B6B5-C5BAB66C58C1.root
+root://cmsxrootd-site.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/VBFHToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v2/270000/F7999A08-19E7-A44A-B125-600657ED172E.root
+root://cmsxrootd-site.fnal.gov//store/mc/RunIISummer20UL16NanoAODv9/VBFHToBB_M-125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v2/270000/11A6C51B-FBAA-244E-B2A3-BC79C9B8E57E.root

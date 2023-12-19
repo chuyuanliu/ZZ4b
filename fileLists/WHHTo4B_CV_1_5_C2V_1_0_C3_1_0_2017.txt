@@ -1,12 +1,8 @@
-### dasgoclient -query="file dataset=/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv2-106X_mc2017_realistic_v8-v1/NANOAODSIM"
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/2500000/E1762C5D-1F54-9041-875E-41ECB82960FF.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/2510000/618313BB-345D-2047-A322-79253EC3C2B4.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/100000/56EC52AE-5BC5-5445-8DCA-5B86B0DDD2CA.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/40000/D9D2DF2A-A7BD-114F-89B5-C41652D52D66.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/40000/B5D10D0F-EC4C-3F4F-9FCF-26E3863173AC.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/2430000/AEF2316F-47B0-F143-A70B-478811BBE23B.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/250000/28254BA3-5ACD-EC40-BD92-6AE7118DF8E7.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/250000/C9914C29-0D26-A049-B33B-2D7AC4F33441.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/230000/9BA34142-096E-B849-B0A0-7B6FC7FCEA31.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/230000/44B8A829-35AE-2A4A-8661-DA42136B5400.root
-root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv2/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v8-v1/230000/A49A2471-CB77-1D4A-85D9-5D6DE3499382.root
+### dasgoclient -query="file dataset=/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17NanoAODv9-106X_mc2017_realistic_v9-v2/NANOAODSIM"
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/270000/8F7D0687-44A8-7240-8E9F-93B69FF6AC10.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/270000/E0F80E3C-9E2A-4C43-91D7-C81195255C49.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/270000/009DA48C-AB47-DF48-BBF1-3163790AEB3A.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/270000/C2C11069-E901-1D41-947E-E4F70258B17A.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/260000/B25F7419-F720-0E47-91DE-811318AB5DF3.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/260000/61BBF971-5910-6648-9BAA-409F19537A17.root
+root://cmsxrootd.fnal.gov//store/mc/RunIISummer20UL17NanoAODv9/WHHTo4B_CV_1_5_C2V_1_0_C3_1_0_TuneCP5_13TeV-madgraph-pythia8/NANOAODSIM/106X_mc2017_realistic_v9-v2/2530000/FA305A2B-0EE5-FF4F-8701-52113928921C.root
