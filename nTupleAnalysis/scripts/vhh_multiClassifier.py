@@ -147,9 +147,9 @@ def getFrame(fileName, classifier='', PS=None, selection='', weight='weight', Fv
             df = pd.DataFrame(data[column])
             if df.shape[1]>1: # jagged arrays need to be flattened into normal dataframe columns. notCanJets_* are variable length, ie jagged, arrays
                 if df.shape[1]>nOthJets: # truncate to max number of additional jets used in classifier
-                    df=df[range(nOthJets)]
+                    df=df[np.arange(nOthJets)]
                 if df.shape[1]<nOthJets: # extend to max number of additional jets used in classifier
-                    df[range(df.shape[1],nOthJets)] = -1
+                    df[np.arange(df.shape[1],nOthJets)] = -1
                 df.columns = [column.replace('_','%d_'%i) for i in range(df.shape[1])] # label each jet from 0 to n-1 where n is the max number of jets
                 df[df.isna()] = -1
             else:
@@ -1215,7 +1215,8 @@ class loaderResults:
                 self.roc2 = self.roc_td
 
             if classifier in ['SvB', 'SvB_MA']:
-                isSR = self.R==3
+                isSR = self.R==1
+
                 self.roc1 = roc_data(np.array(self.ysg, dtype=float), 
                                      self.psg,
                                      self.w,
@@ -1245,8 +1246,6 @@ class loaderResults:
                                        'Background',
                                        title='Signal Region')
 
-
-                y_true_SR = self.y_true[isSR]
                 self.roc_SR = roc_data(np.array(self.ysg[isSR], dtype=float), 
                                        self.psg[isSR],
                                        self.w[isSR],

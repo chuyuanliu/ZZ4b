@@ -18,6 +18,7 @@
 #include "nTupleAnalysis/baseClasses/interface/dijet.h"
 #include "nTupleAnalysis/baseClasses/interface/trijet.h"
 #include "nTupleAnalysis/baseClasses/interface/trigData.h"
+#include "nTupleAnalysis/baseClasses/interface/pileUpWeightTool.h"
 #include "ZZ4b/nTupleAnalysis/interface/eventView.h"
 #include "TriggerEmulator/nTupleAnalysis/interface/TrigEmulatorTool.h"
 #include "ZZ4b/nTupleAnalysis/interface/bdtInference.h"
@@ -31,7 +32,7 @@
 #include <boost/math/special_functions/binomial.hpp> 
 
 namespace nTupleAnalysis {
-
+  
   class eventData {
 
   public:
@@ -55,6 +56,14 @@ namespace nTupleAnalysis {
     Float_t   trigWeight_Data = 0;
     Int_t     trigWeight_Flag  = 0;
     Float_t   reweight = 1.0;
+
+    pileUpWeightTool* puWeight = nullptr;
+    Float_t   nTruInt = 0;
+    Float_t   Prefire_Nom  = 1.0;
+    Float_t   Prefire_Up   = 1.0;
+    Float_t   Prefire_Down = 1.0;
+    std::vector<std::string> prefireVariation{"central", "up", "down"};
+    std::map<std::string, float> prefireWeights{{"central", 1}, {"up", 1}, {"down", 1}};
 
     //Bool_t    SBTest       =  false;
     //Bool_t    CRTest       =  false;
@@ -202,6 +211,7 @@ namespace nTupleAnalysis {
     std::vector<jetPtr> truVJets; //truth matched jets from V decay
     std::vector<dijetPtr> allDijets; // all dijets formed by othJets
     std::vector<dijetPtr> canVDijets; // v candidate dijet
+    TLorentzVector gen_pHH;
 
     template<class T1, class T2> bool matchJet(const T1& jet, const std::vector<T2>& jets);
     bool matchDijet(const dijetPtr& dijet, const truthData* truth);

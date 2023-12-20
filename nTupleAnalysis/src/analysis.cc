@@ -13,12 +13,19 @@ using std::cout;  using std::endl;
 
 using namespace nTupleAnalysis;
 
+#define FILL_SELECTION(SELECTION)\
+  if(SELECTION!=NULL && event->SELECTION){\
+    SELECTION->Fill(event, event->views);\
+  }
+
 analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::TFileService& fs, bool _isMC, bool _blind, std::string _year, std::string histDetailLevel, const std::map<std::string, bool> &options,
 		   bool _doReweight, bool _debug, bool _fastSkim, bool doTrigEmulation, bool _calcTrigWeights, bool useMCTurnOns, bool useUnitTurnOns, bool _isDataMCMix, bool usePreCalcBTagSFs,
 		   std::string bjetSF, std::string btagVariations,
 		   std::string JECSyst, std::string friendFile,
-		   bool _looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
-       bool runKlBdt, bool doZHHNNLOScale, std::string extraOutput, std::string era, std::string puIdVariations){
+		   bool looseSkim, std::string FvTName, std::string reweight4bName, std::string reweightDvTName,
+       bool runKlBdt, bool doZHHNNLOScale, std::string extraOutput, std::string era, std::string puIdVariations):
+       looseSkim(looseSkim)
+       {
 
   if(_debug) std::cout<<"In analysis constructor"<<std::endl;
   debug      = _debug;
@@ -28,7 +35,6 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   blind      = _blind;
   year       = _year;
   events     = _events;
-  looseSkim  = _looseSkim;
   calcTrigWeights = _calcTrigWeights;
 
   events->SetBranchStatus("*", 0);
@@ -45,6 +51,10 @@ analysis::analysis(TChain* _events, TChain* _runs, TChain* _lumiBlocks, fwlite::
   events->SetBranchStatus("Jet_area", 1);
   events->SetBranchStatus("Jet_neEmEF", 1);
   events->SetBranchStatus("Jet_chEmEF", 1);
+  events->SetBranchStatus("Pileup_*", 1);
+  events->SetBranchStatus("L1PreFiringWeight_*", 1);
+  events->SetBranchStatus("HLT_*", 1);
+  events->SetBranchStatus("Flag_*", 1);
 
   if(JECSyst!=""){
     std::cout << "events->AddFriend(\"Friends\", "<<friendFile<<")" << " for JEC Systematic " << JECSyst << std::endl;
@@ -984,15 +994,14 @@ int analysis::processEvent(){
     passNjOth->Fill(event, event->views);
   }
 
-    // Vector boson candidate dijet mass cut
+  // Vector boson candidate dijet mass cut
   if( !event->passMV ){
     if(debug) cout << "Fail vector boson mass cut" << endl;
     return 0;
   }
   cutflow->Fill(event,"MV");
-  if (passMV!=NULL && event->passHLT){
-    passMV->Fill(event, event->views);
-  }
+  
+  FILL_SELECTION(passMV)
 
   //
   // ttbar CRs

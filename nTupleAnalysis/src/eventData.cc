@@ -9,8 +9,7 @@ using std::vector; using std::string;
 using TriggerEmulator::hTTurnOn;   using TriggerEmulator::jetTurnOn; using TriggerEmulator::bTagTurnOn;
 
 // Sorting functions
-bool sortPt(       std::shared_ptr<jet>       &lhs, std::shared_ptr<jet>       &rhs){ return (lhs->pt        > rhs->pt   );     } // put largest  pt    first in list
-bool sortDijetPt(  std::shared_ptr<dijet>     &lhs, std::shared_ptr<dijet>     &rhs){ return (lhs->pt        > rhs->pt   );     } // put largest  pt    first in list
+template <typename T> bool sortPt(const std::shared_ptr<T> &lhs, const std::shared_ptr<T> &rhs){return (lhs->pt > rhs->pt);} // put largest  pt    first in list
 bool sortdR(       std::shared_ptr<dijet>     &lhs, std::shared_ptr<dijet>     &rhs){ return (lhs->dR        < rhs->dR   );     } // 
 bool sortDBB(      std::shared_ptr<eventView> &lhs, std::shared_ptr<eventView> &rhs){ return (lhs->dBB       < rhs->dBB  );     } // put smallest dBB   first in list
 bool sortRandom(   std::shared_ptr<eventView> &lhs, std::shared_ptr<eventView> &rhs){ return (lhs->random    > rhs->random);    } // random sorting, largest value first in list
@@ -174,11 +173,14 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, const std::map<s
     }else{
       cout << "No GenPart (missing branch 'nGenPart'). Will ignore ..." << endl;
     }
-
+    inputBranch(tree, "Pileup_nTrueInt", nTruInt);
+    inputBranch(tree, "L1PreFiringWeight_Nom", Prefire_Nom);
+    inputBranch(tree, "L1PreFiringWeight_Up", Prefire_Up);
+    inputBranch(tree, "L1PreFiringWeight_Dn", Prefire_Down);
     inputBranch(tree, "bTagSF", inputBTagSF);
   }
 
-
+  puWeight = new pileUpWeightTool(isMC, era);
 
 
   //triggers https://twiki.cern.ch/twiki/bin/viewauth/CMS/HLTPathsRunIIList
@@ -500,6 +502,7 @@ void eventData::resetEvent(){
   passHLT = false;
   //passDEtaBB = false;
   p4j    .SetPtEtaPhiM(0,0,0,0);
+  gen_pHH.SetPtEtaPhiE(0,0,0,0);
   canJet1_pt = -99;
   canJet3_pt = -99;
   aveAbsEta = -99; aveAbsEtaOth = -0.1; stNotCan = 0;
@@ -517,6 +520,11 @@ void eventData::resetEvent(){
   bTagSF = 1;
   puIdSF = 1;
   treeJets->resetSFs();
+  puWeight->resetSFs();
+  nTruInt = 0;
+  Prefire_Nom  = 1;
+  Prefire_Up   = 1;
+  Prefire_Down = 1;
   nTrueBJets = 0;
   t.reset(); t0.reset(); t1.reset(); //t2.reset();
   xWt0 = 1e6; xWt1 = 1e6; xWt = 1e6; //xWt2=1e6;
@@ -541,6 +549,7 @@ void eventData::resetEvent(){
   if(doZHHNNLOScale){
     zhhNNLOSFs["central"] = 1; zhhNNLOSFs["up"] = 1; zhhNNLOSFs["down"] = 1;
   }
+  prefireWeights["central"] = 1; prefireWeights["up"] = 1; prefireWeights["down"] = 1;
   if(calcPuIdSF){
     allPuIdJets.clear();
     allBJets.clear();
@@ -626,6 +635,19 @@ void eventData::update(long int e){
     else if (truth->Zqqs.size() > 1){
       std::cout << "Find more than one GEN Z->qq in ZHH MC\n";
     }
+  }
+  if(truth){
+    if(truth->Hbbs.size() == 2){
+      gen_pHH = truth->Hbbs[0]->p + truth->Hbbs[1]->p;
+    }
+  }
+  if(isMC){
+    prefireWeights["central"] = Prefire_Nom; 
+    prefireWeights["up"] = Prefire_Up; 
+    prefireWeights["down"] = Prefire_Down;
+    updateWeight(prefireWeights["central"]);
+    puWeight->updateWeight(nTruInt);
+    updateWeight(puWeight->m_SFs["nominal"]);
   }
 
   //Objects from ntuple
@@ -1089,7 +1111,7 @@ void eventData::chooseCanJets(){
        canVDijets.push_back(dijet);
     }
   }
-  std::sort(canVDijets.begin(), canVDijets.end(), sortDijetPt);
+  std::sort(canVDijets.begin(), canVDijets.end(), sortPt<dijet>);
   if(truth)
   {
     for(auto &Vqq:truth->Vqqs){
@@ -1103,11 +1125,11 @@ void eventData::chooseCanJets(){
       }
     } 
   }
-  std::sort(canHTruVJets.begin(), canHTruVJets.end(), sortPt);
-  std::sort(truVJets.begin(), truVJets.end(), sortPt);
+  std::sort(canHTruVJets.begin(), canHTruVJets.end(), sortPt<jet>);
+  std::sort(truVJets.begin(), truVJets.end(), sortPt<jet>);
 
   // order by decreasing pt
-  std::sort(selJets.begin(), selJets.end(), sortPt); 
+  std::sort(selJets.begin(), selJets.end(), sortPt<jet>); 
 
 
   //Build collections of other jets: othJets is all selected jets not in canJets
@@ -1136,8 +1158,8 @@ void eventData::chooseCanJets(){
   for(auto &jet: canJets) {
     jet->bRegression();
   }
-  std::sort(canJets.begin(), canJets.end(), sortPt); // order by decreasing pt
-  std::sort(othJets.begin(), othJets.end(), sortPt); // order by decreasing pt
+  std::sort(canJets.begin(), canJets.end(), sortPt<jet>); // order by decreasing pt
+  std::sort(othJets.begin(), othJets.end(), sortPt<jet>); // order by decreasing pt
   p4j = canJets[0]->p + canJets[1]->p + canJets[2]->p + canJets[3]->p;
 
   if(canVDijets.size()>0){
@@ -1406,29 +1428,6 @@ void eventData::buildViews(){
   return;
 }
 
-
-// bool failSBSR(std::shared_ptr<eventView> &view){ return !view->passDijetMass; }
-// bool failMDRs(std::shared_ptr<eventView> &view){ return !view->passMDRs; }
-
-// void eventData::applyMDRs(){
-//   appliedMDRs = true;
-//   views_passMDRs.erase(std::remove_if(views_passMDRs.begin(), views_passMDRs.end(), failSBSR), views_passMDRs.end()); // only consider views within SB outer boundary
-//   views_passMDRs.erase(std::remove_if(views_passMDRs.begin(), views_passMDRs.end(), failMDRs), views_passMDRs.end());
-//   passMDRs = views_passMDRs.size() > 0;
-
-//   if(passMDRs){
-//     view_selected = views_passMDRs[0];
-//     HHSR = view_selected->HHSR;
-//     ZHSR = view_selected->ZHSR;
-//     ZZSR = view_selected->ZZSR;
-//     SB = view_selected->SB; 
-//     SR = view_selected->SR;
-//     leadStM = view_selected->leadSt->m; sublStM = view_selected->sublSt->m;
-//     selectedViewTruthMatch = view_selected->truthMatch;
-//   }
-//   return;
-// }
-
 void eventData::buildTops(){
   //All quadjet events will have well defined xWt0, a top candidate where all three jets are allowed to be candidate jets.
   for(auto &b: topQuarkBJets){
@@ -1646,7 +1645,7 @@ void eventData::setPSJetsAsTagJets()
   //  }
   //}
   
-  std::sort(selJets.begin(), selJets.end(), sortPt); 
+  std::sort(selJets.begin(), selJets.end(), sortPt<jet>); 
   return;
 }
 
@@ -1700,7 +1699,7 @@ void eventData::setLooseAndPSJetsAsTagJets(bool debug)
   //  }
   //}
   
-  std::sort(selJets.begin(), selJets.end(), sortPt); 
+  std::sort(selJets.begin(), selJets.end(), sortPt<jet>); 
   return;
 }
 

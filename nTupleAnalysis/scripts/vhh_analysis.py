@@ -78,6 +78,8 @@ parser.add_option(   '--applyPuIdSF', dest = 'applyPuIdSF', action="store_true",
 parser.add_option(   '--nTags_TT', dest = 'nTags_TT', default='_4b', help = 'run on n tag events for ttbar')
 parser.add_option(   '--nTags_Data', dest = 'nTags_Data', default='_3b,_4b', help = 'run on n tag events for ttbar')
 parser.add_option(   '--unBlind', dest = 'unBlind', action="store_true", default=False, help = 'unBlind data SR')
+parser.add_option(   '--vbfh', dest = 'vbfh', action="store_true", default=False, help = 'run on vbf H->bb')
+parser.add_option(   '--ggZHH', dest = 'ggZHH', action="store_true", default=False, help = 'run on gg->ZHH')
 
 o, a = parser.parse_args()
 
@@ -228,6 +230,23 @@ def ttbarFiles(year):
     else:
         return ['ZZ4b/fileLists/' + process + year + '.txt' for process in ttbarProcesses]
 
+def vbfhFiles(year):
+    signals = ['VBFHToBB_M125_']
+    if year == '2016':
+        files = []
+        for signalYear in ['2016_preVFP', '2016_postVFP']:
+            files += ["ZZ4b/fileLists/" + signal + signalYear + ".txt" for signal in signals]
+        return files
+    else:
+        return ["ZZ4b/fileLists/" + signal + year + ".txt" for signal in signals]
+
+def ggZHHFiles(year):
+    signals = ['ggZHHTo4B_CV_1_0_C2V_1_0_C3_1_0_']
+    if year != '2018':
+        return []
+    else:
+        return ["ZZ4b/fileLists/" + signal + year + ".txt" for signal in signals]
+
 def accxEffFiles(signals, year):
     return [outputBase + signal + year + "/hists.root" for signal in signals]
 DAG = None
@@ -271,6 +290,74 @@ def makeTARBALL():
     cmd = "xrdcp -f "+base+CMSSW+".tgz "+TARBALL
     execute(cmd, o.execute)
     
+def doOther():
+    basePath = EOSOUTDIR if o.condor else outputBase
+    cp = 'xrdcp -f ' if o.condor else 'cp '
+
+    mkdir(basePath, o.execute)
+
+    cmds=[]
+    JECSysts = [""]
+    if o.doJECSyst: 
+        JECSysts = JECSystList
+    
+    signalFiles = []
+    if o.vbfh:
+        signalFiles += [vbfhFiles]
+    if o.ggZHH:
+        signalFiles += [ggZHHFiles]
+
+    for JECSyst in JECSysts:
+        histFile = "hists"+JECSyst+o.histsTag+".root"
+        if o.createPicoAOD == "picoAOD.root" or o.createPicoAOD == "none": histFile = "histsFromNanoAOD"+JECSyst+".root"
+        
+        for year in years:
+            for signalFile in signalFiles:
+                for fileList in signalFile(year):
+                    era = year
+                    if '2016' in fileList:
+                        if '2016_preVFP' in fileList:
+                            era = '2016_preVFP'
+                        elif '2016_postVFP' in fileList: 
+                            era = '2016_postVFP'
+                    lumi = lumiDict[era]
+                    cmd  = "nTupleAnalysis "+script
+                    cmd += " -i "+fileList
+                    cmd += " -o "+basePath
+                    cmd += " -y "+year
+                    cmd += " --era "+era
+                    cmd += " -l "+lumi
+                    cmd += " --histDetailLevel "+o.detailLevel
+                    cmd += " --histFile "+histFile
+                    cmd += " -p "+o.createPicoAOD if o.createPicoAOD else ""
+                    cmd += " --runKlBdt " if o.runKlBdt or o.createPicoAOD else ""
+                    #cmd += " -f " if o.fastSkim else ""
+                    cmd += " --isMC"
+                    cmd += ' --doTrigEmulation' if not o.skipTrigEmulation else ''
+                    cmd += ' --calcTrigWeights' if o.calcTrigWeights else ''
+                    cmd += " --doHigherOrderReweight" if o.higherOrder else ""
+                    cmd += " --bTag "+bTagDict[year]
+                    cmd += " --bTagSF"
+                    cmd += " --puIdSF" if o.applyPuIdSF else ""
+                    cmd += " --bTagSyst" if o.bTagSyst else ""
+                    cmd += " --puIdSyst" if o.puIdSyst else ""
+                    cmd += " --nevents "+o.nevents
+                    cmd += " --looseSkim" if (o.createPicoAOD or o.looseSkim) else "" # For signal samples we always want the picoAOD to be loose skim
+                    cmd += " --SvB_ONNX "+SvB_ONNX if o.SvB_ONNX or o.doJECSyst else ""
+                    cmd += " --JECSyst "+JECSyst if JECSyst else ""
+                    cmd += " --friends " + o.friends if o.friends else ""
+                    cmd += " --debug" if o.debug else ""
+                    cmd += " --extraOutput bosonKinematics" if o.extraOutput else ""
+                    # if o.createPicoAOD and o.createPicoAOD != "none":
+                    #     if o.createPicoAOD != "picoAOD.root":
+                    #         sample = fileList.split("/")[-1].replace(".txt","")
+                    #         cmd += ' ; '+cp+basePath+sample+"/"+o.createPicoAOD+" "+basePath+sample+"/picoAOD.root"
+
+                    cmds.append(cmd)
+
+    if o.condor:
+        DAG.addGeneration()
+    execute(cmds, o.execute, condor_dag=DAG)
 
 def doSignal():
     basePath = EOSOUTDIR if o.condor else outputBase
@@ -730,11 +817,14 @@ if o.h52root:
 if o.makeJECSyst:
     makeJECSyst()
 
-if (o.doSignal or o.doData or o.doTT) and o.condor:
+if (o.doSignal or o.doData or o.doTT or o.vbfh) and o.condor:
     startEventLoopGeneration = copy( DAG.iG )
     
 if o.doSignal:
     doSignal()
+
+if o.vbfh or o.ggZHH:
+    doOther()
 
 if o.doData or o.doTT:
     if o.condor:

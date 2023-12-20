@@ -24,9 +24,10 @@ CMSSW = getCMSSW()
 COLORS=['xkcd:purple', 'xkcd:green', 'xkcd:blue', 'xkcd:teal', 'xkcd:orange', 'xkcd:cherry', 'xkcd:bright red',
         'xkcd:pine', 'xkcd:magenta', 'xkcd:cerulean', 'xkcd:eggplant', 'xkcd:coral', 'xkcd:blue purple',
         'xkcd:tea', 'xkcd:burple', 'xkcd:deep aqua', 'xkcd:orange pink', 'xkcd:terracota']
-
+SLIGNAL_SCALE = 100
+IMAGE_FORMAT  = '.pdf'
 parser = optparse.OptionParser()
-parser.add_option('-s', '--signalPaths', dest = 'signalPaths', default = '/uscms/home/%s/nobackup/VHH/signals/VHHTo4B_CV_1_0_C2V_1_0_C3_1_0_RunII.root'%(USER), help = 'Path for signal templates used in spurious signal fit')
+parser.add_option('-s', '--signalPaths', dest = 'signalPaths', default = '/uscms/home/%s/nobackup/VHH/VHHTo4B_CV_1_0_C2V_1_0_C3_20_0_RunII/hists.root'%(USER), help = 'Path for signal templates used in spurious signal fit')
 parser.add_option('--hist', dest = 'hist', default = 'passMV/fourTag/mainView/{region}/{classifier}_VHH_ps_BDT_{channel}', help = 'Name of histogram in signal template')
 parser.add_option('--years', dest = 'years', default = '2016,2017,2018', help = 'Comma separated list of years')
 parser.add_option('--channels', dest = 'channels', default = 'VHH_ps_sbdt,VHH_ps_lbdt', help = 'Comma separated list of channels')
@@ -70,7 +71,7 @@ mixName = o.mixName
 nMixes  = o.nMixes
 region =  o.region
 classifier = o.classifier
-signalName = o.signalPaths.split('/')[-2].replace('.root', '')
+signalName = 'VHH_kl_20'
 tag = '_'.join([o.version, 'legendre' if o.legendre else 'fourier',
                 # mixname, classifier, region,
                 '{:d}bins'.format(len(rebin)) if isinstance(rebin, list) else 'rebin{:d}'.format(rebin), 
@@ -598,17 +599,17 @@ class multijetEnsemble:
         ax.set_xlim(xlim[0],xlim[1])
         ax.set_xticks(np.arange(0,1.1,0.1))
         ax.set_title('%s Multiplicitive Basis (%s)'%(name[0].upper()+name[1:], self.channel_label))
-
         ax.plot(xlim, [0,0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         for i, y in enumerate(self.basis_element[:basis+1]):
             ax.plot(x, y, label='b$_{%i}$'%i, linewidth=1)
-
+        SCALE = 10**int(np.log10(np.ptp(self.basis_element[:basis+1])/np.ptp(self.basis_signal[basis])))
+        ax.plot(x, self.basis_signal[basis] * SCALE, label=('Spurious Signal' if SCALE == 1 else R'Spurious Signal $(\times %d)$'%(SCALE)), linewidth=1)
         ax.set_xlabel('P(Signal)')
         ax.set_ylabel('Multijet Scale')
 
         ax.legend(fontsize='small', loc='best')
 
-        figname = '%s/%s/%s_basis%i.pdf'%(basePath, self.channel, name, basis)
+        figname = '%s/%s/%s_basis%i%s'%(basePath, self.channel, name, basis, IMAGE_FORMAT)
         print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
@@ -623,13 +624,15 @@ class multijetEnsemble:
         ax.plot(xlim, [0,0], color='k', alpha=0.5, linestyle='--', linewidth=0.5)
         for i, y in enumerate(self.basis_element[:basis+1]):
             ax.plot(x, y*self.h, label='b$_{%i}$'%i, linewidth=1)
+        SCALE = 10**int(np.log10(np.ptp(self.basis_element[:basis+1]*self.h)/np.ptp(self.basis_signal[basis]*self.h)))
+        ax.plot(x, self.basis_signal[basis] * self.h * SCALE, label=('Spurious Signal' if SCALE == 1 else R'Spurious Signal $(\times %d)$'%(SCALE)), linewidth=1)
 
         ax.set_xlabel('P(Signal)')
         ax.set_ylabel('Events')
 
         ax.legend(fontsize='small', loc='best')
 
-        figname = '%s/%s/%s_additive_basis%i.pdf'%(basePath, self.channel, name, basis)
+        figname = '%s/%s/%s_additive_basis%i%s'%(basePath, self.channel, name, basis, IMAGE_FORMAT)
         print('fig.savefig( '+figname+' )')
         plt.tight_layout()
         fig.savefig( figname )
@@ -669,7 +672,7 @@ class multijetEnsemble:
         ax.set_ylabel('Adjacent Bin Pearson Correlation (r) and p-value')
         plt.legend(fontsize='small', loc='best')
 
-        name = '%s/%s/0_variance_pearsonr_multijet_variance.pdf'%(basePath, self.channel)
+        name = '%s/%s/0_variance_pearsonr_multijet_variance%s'%(basePath, self.channel, IMAGE_FORMAT)
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -833,7 +836,7 @@ class multijetEnsemble:
                              title='c$_'+str(dims[3])+'$ (\%)', 
                              scatterpoints = 1)
         
-        name = '%s/%s/0_variance_parameters_basis%d_projection_%s.pdf'%(basePath, self.channel, basis, projection)
+        name = '%s/%s/0_variance_parameters_basis%d_projection_%s%s'%(basePath, self.channel, basis, projection, IMAGE_FORMAT)
         print('fig.savefig( '+name+' )')
         fig.savefig( name )
         plt.close(fig)
@@ -889,7 +892,7 @@ class multijetEnsemble:
     
         plt.legend(fontsize='small', loc='upper left', ncol=2, title='Overall r=%0.2f (%2.0f%s)'%(r,p*100,'\%'))
         
-        name = '%s/%s/0_variance_pull_correlation_basis%d.pdf'%(basePath, self.channel, basis)
+        name = '%s/%s/0_variance_pull_correlation_basis%d%s'%(basePath, self.channel, basis, IMAGE_FORMAT)
         print('fig.savefig( '+name+' )')
         fig.savefig( name )
         plt.close(fig)
@@ -964,7 +967,7 @@ class multijetEnsemble:
 
         parameters['outputDir'] = '%s/%s/'%(basePath, self.channel)
 
-        print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
+        print('make ',parameters['outputDir']+parameters['outputName']+IMAGE_FORMAT)
         PlotTools.plot(samples, parameters, debug=False)
 
 
@@ -1500,9 +1503,9 @@ class closure:
 
         projection = '_'.join([str(d) for d in projection])
         if not doSpuriousSignal:
-            name = '%s/%s/1_bias_parameters_basis%d_projection_%s.pdf'%(basePath, self.channel, basis,projection)            
+            name = '%s/%s/1_bias_parameters_basis%d_projection_%s%s'%(basePath, self.channel, basis,projection, IMAGE_FORMAT)            
         else:
-            name = '%s/%s/2_spurious_signal_parameters_basis%d_projection_%s.pdf'%(basePath, self.channel, basis,projection)            
+            name = '%s/%s/2_spurious_signal_parameters_basis%d_projection_%s%s'%(basePath, self.channel, basis,projection, IMAGE_FORMAT)            
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -1541,7 +1544,7 @@ class closure:
         ax.set_ylabel('Fit p-value')
         ax.legend(loc='upper left', fontsize='small')
 
-        name = '%s/%s/1_bias_pvalues.pdf'%(basePath, self.channel)
+        name = '%s/%s/1_bias_pvalues%s'%(basePath, self.channel, IMAGE_FORMAT)
         print('fig.savefig( '+name+' )')
         plt.tight_layout()
         fig.savefig( name )
@@ -1593,9 +1596,9 @@ class closure:
             'ratio' : 'denom A',
             'color' : 'ROOT.kAzure-9'}
         samples[closureFileName]['%s/signal'%self.channel] = {
-            'label' : '{signal}(#times100)'.format(signal = signalName),
+            'label' : '{signal}(#times{scale})'.format(signal = signalName, scale = SLIGNAL_SCALE),
             'legend': 4,
-            'weight': 100,
+            'weight': SLIGNAL_SCALE,
             'color' : 'ROOT.kViolet'}
 
         xTitle = 'SvB P_{Signal} #cbar '+self.channel_label
@@ -1623,7 +1626,7 @@ class closure:
 
         parameters['outputDir'] = '%s/%s/'%(basePath, self.channel)
 
-        print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
+        print('make ',parameters['outputDir']+parameters['outputName']+IMAGE_FORMAT)
         PlotTools.plot(samples, parameters, debug=False)
 
 
@@ -1667,9 +1670,9 @@ class closure:
                 'ratio': 'denom A', 
                 'color' : 'ROOT.kViolet'}
             samples[closureFileName]['%s/signal_closure'%self.channel] = {
-                'label' : '{signal}(#times100)'.format(signal = signalName),
+                'label' : '{signal}(#times{scale})'.format(signal = signalName, scale = SLIGNAL_SCALE),
                 'legend': 7,
-                'weight': 100,
+                'weight': SLIGNAL_SCALE,
                 'color' : 'ROOT.kViolet+7'}
 
         xTitle = 'SvB P_{Signal} Bin #cbar '+self.channel_label
@@ -1726,7 +1729,7 @@ class closure:
 
         parameters['outputDir'] = '%s/%s/'%(basePath, self.channel)
 
-        print('make ',parameters['outputDir']+parameters['outputName']+'.pdf')
+        print('make ',parameters['outputDir']+parameters['outputName']+IMAGE_FORMAT)
         PlotTools.plot(samples, parameters, debug=False)
 
     def print_exit_message(self):

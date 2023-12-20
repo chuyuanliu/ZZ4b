@@ -16,6 +16,7 @@ parser = optparse.OptionParser()
 parser.add_option('-d', '--data', action="store_true", dest = 'data', default =  False, help = 'Operate on data root files')
 parser.add_option('-s', '--signal', action="store_true", dest = 'signal', default =  False, help = 'Operate on signal root files')
 parser.add_option('-t', '--ttbar', action="store_true", dest = 'ttbar', default =  False, help = 'Operate on ttbar root files')
+parser.add_option('-v', '--vbfH', action="store_true", dest = 'vbfH', default =  False, help = 'Operate on vbf H->bb root files')
 parser.add_option('--mv', action="store_true", dest = 'move', default =  False, help = 'Move files')
 parser.add_option('--rm', action="store_true", dest = 'remove', default =  False, help = 'Remove files')
 parser.add_option('--lpc', action="store_true", dest = 'lpc', default =  False, help = 'Operate on lpc')
@@ -36,6 +37,7 @@ parser.add_option('--coupling', dest = 'coupling', default = ',CV:0_5,CV:1_5,C2V
 parser.add_option('--classifiers', dest = 'classifiers', default = '', help = 'Classifier outputs')
 parser.add_option('--nTags', dest = 'nTags', default = '_4b', help = 'nTag events for ttbar')
 parser.add_option('--group', dest = 'group', default = '', help = 'Group text files by content')
+parser.add_option('--skim', action="store_true", dest = 'skim', default = False, help = 'Copy skim picoAODs')
 
 o, a = parser.parse_args()
 classifierFiles = list(filter(lambda x: x != '', o.classifiers.split(',')))
@@ -74,9 +76,11 @@ if o.data:
     #          '2018': ['A','B','C','D'],
     #          '17+18': []}
 
-tts = []
+mcs = []
 if o.ttbar:
-    tts = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
+    mcs += ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
+if o.vbfH:
+    mcs += ['VBFHToBB_M125_']
 
 years = o.years.split(',')
 if '2016' in years:
@@ -130,27 +134,30 @@ def hadd(srcs,dest):
         run(cmd)
 
 def load_skims():
-    oldAOD = picoAOD()
-    newAOD = picoAOD(tags=[''])
-    for year in years:
-        for cps in signals:
-            for boson in cps[0:2]:
-                eoscp('VHHSkims/'+boson+year+oldAOD,'VHH/'+boson+year+newAOD)
-        # for tt in tts:
-        #     eoscp('skims/'+tt+year+oldAOD,'VHH/'+tt+year+newAOD)
-        # for data in datas:
-        #     eoscp('skims/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
+    if o.skim:
+        oldAOD = picoAOD()
+        newAOD = picoAOD(tags=[''])
+        for year in years:
+            if year != '2016':
+                for cps in signals:
+                    for boson in cps[0:2]:
+                        eoscp('skims/'+boson+year+oldAOD[0],'VHH/'+boson+year+newAOD[0])
+                for tt in mcs:
+                    eoscp('skims/'+tt+year+oldAOD[0],'VHH/'+tt+year+newAOD[0])
+            if year != '2016_preVFP' and year != '2016_postVFP':
+                for data in datas:
+                    eoscp('skims/data'+year+data+oldAOD,'VHH/data'+year+data+newAOD)
 
 def move():
     mv_years = copy(years)
-    mv_tts   = copy(tts)
+    mv_mcs   = copy(mcs)
     cps_max  = 2
     if o.eos: 
         mv = eosmv
     elif o.lpc:
         mv = lpcmv
         mv_years += ['RunII']
-        mv_tts   += ['TT']
+        mv_mcs   += ['TT']
         cps_max  = 3
     else:
         return   
@@ -169,7 +176,7 @@ def move():
                 for cps in signals:
                     for boson in cps[0:cps_max]:
                         mv('VHH/'+boson+year+oldAOD(isSignal = True)[0],'VHH/'+boson+year+newAOD(isSignal = True)[0])
-                for tt in mv_tts:
+                for tt in mv_mcs:
                     for nTag in nTags:
                         mv('VHH/'+tt+year+nTag+oldAOD()[0],'VHH/'+tt+year+nTag+newAOD()[0])
             if year not in ['2016_preVFP', '2016_postVFP']:
@@ -178,14 +185,15 @@ def move():
 
 def remove():
     rm_years = copy(years)
-    rm_tts   = copy(tts)
+    rm_mcs   = copy(mcs)
     cps_max  = 2
     if o.eos: 
         rm = eosrm
     elif o.lpc:
         rm = lpcrm
-        rm_years += ['RunII']
-        rm_tts   += ['TT']
+        if (set(['2016', '2017', '2018']) <= set(rm_years)) and ('RunII' not in rm_years):
+            rm_years += ['RunII']
+        rm_mcs   += ['TT']
         cps_max  = 3
     else:
         return
@@ -200,14 +208,14 @@ def remove():
     base = 'VHH/'
     for cp_file in rm_files:
         for year in rm_years:
-            if year not in ['2016']:
+            if year not in []:
                 for cps in signals:
                     for boson in cps[0:cps_max]:
                         for filename in cp_file(True):
                             file = base + boson + year + filename
                             print(file)
                             rm(file)
-                for tt in rm_tts:
+                for tt in rm_mcs:
                     for nTag in nTags:
                         for filename in cp_file():
                             file = base + tt + year + nTag + filename
@@ -249,7 +257,7 @@ def cp():
                             file = base + boson+year+filename
                             print(file)
                             xrdcp(full_path(file, from_area), full_path(file, to_area))
-                for tt in tts:
+                for tt in mcs:
                     for nTag in nTags:
                         for filename in cp_file():
                             file = base + tt + year + nTag + filename
@@ -269,7 +277,7 @@ def hadd_lpc():
                 if o.ttbar:
                     for nTag in nTags:
                         lpcmkdir('VHH/TT'+year +nTag)
-                        hadd(['VHH/'+tt+year +nTag+filename for tt in tts], 'VHH/TT'+year +nTag+filename)
+                        hadd(['VHH/'+tt+year +nTag+filename for tt in mcs], 'VHH/TT'+year +nTag+filename)
             for filename in histFile(True):
                 for cps in signals:
                     lpcmkdir('VHH/'+cps[2]+year)
@@ -281,6 +289,10 @@ def hadd_lpc():
                 for nTag in nTags:
                     lpcmkdir('VHH/TT2016'+nTag)
                     hadd(['VHH/TT'+year +nTag+filename for year in haddYears], 'VHH/TT2016'+nTag+filename)
+            for mc in mcs:
+                if not mc.startswith('TTTo'):
+                    lpcmkdir('VHH/'+mc+'2016')
+                    hadd(['VHH/'+mc+year+filename for year in haddYears], 'VHH/'+mc+'2016'+filename)
         for filename in histFile(True):
             for cps in signals:
                 for boson in cps[0:3]:
@@ -296,13 +308,16 @@ def hadd_lpc():
                 for nTag in nTags:
                     lpcmkdir('VHH/TTRunII'+nTag)
                     hadd(['VHH/TT'+year +nTag+filename for year in haddYears], 'VHH/TTRunII'+nTag+filename)
+            for mc in mcs:
+                if not mc.startswith('TTTo'):
+                    lpcmkdir('VHH/'+mc+'RunII')
+                    hadd(['VHH/'+mc+year+filename for year in haddYears], 'VHH/'+mc+'RunII'+filename)
         for filename in histFile(True):
             for cps in signals:
                 for boson in cps[0:3]:
                     lpcmkdir('VHH/'+boson+'RunII')
                     hadd(['VHH/'+boson+year+filename for year in haddYears], 'VHH/'+boson+'RunII'+filename)
 def initialize():
-    # load_skims()
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests')
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests/UL')
     lpcmkdir('CMSSW_11_1_0_pre5/src/closureTests/UL/fileLists')
@@ -321,7 +336,7 @@ def initialize():
                 for nTag in nTags:
                     lpcmkdir('VHH/TT'+year+nTag)
                     eosmkdir('VHH/TT'+year+nTag)
-            for tt in tts:
+            for tt in mcs:
                 for nTag in nTags:
                     lpcmkdir('VHH/'+tt+year+nTag)
                     eosmkdir('VHH/'+tt+year+nTag)
@@ -347,7 +362,7 @@ def initialize():
                         filelist.write('root://cmseos.fnal.gov/'+full_path('VHH/data'+year+nTag + newFile, eos, USER))
                         filelist.close()
                     xrdcp(full_path('ZH4b/ULTrig/data'+year+nTag+file, eos, 'jda102'),full_path('VHH/data'+year+nTag+newFile, eos, USER))
-    
+    load_skims()
 
 def group_files(path):
     files = glob(path)
@@ -382,26 +397,26 @@ if o.group:
     group_files(o.group)
 
 # cmds
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e --runKlBdt
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --bTagSyst --puIdSyst --applyPuIdSF -e --friends SvB_MA_VHH_8nc --runKlBdt
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --applyPuIdSF --condor -e --runKlBdt
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --bTagSyst --puIdSyst --applyPuIdSF -e --friends SvB_MA_VHH_8nc --runKlBdt
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --cp --eos --hists 
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --hadd --lpc --hists 
 # for JEC
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --trigger --doJECSyst -e --friends SvB_MA_VHH_8nc --runKlBdt
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --condor --higherOrder --doJECSyst -e --friends SvB_MA_VHH_8nc --runKlBdt
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -y 2016,2017,2018 --cp --eos --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -y 2016,2017,2018 --hadd --lpc --tag _jesTotalUp,_jesTotalDown,_jerUp,_jerDown --hists
 
-# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/dev3cuda/ for onnx
-# http://lcginfo.cern.ch/release_packages/x86_64-centos7-gcc8-opt/100cuda/
+# https://lcginfo.cern.ch/release_packages/104a_cuda/x86_64-centos8-gcc11-opt/
 # unset PYTHONPATH
-# source /cvmfs/sft.cern.ch/lcg/views/LCG_100cuda/x86_64-centos7-gcc8-opt/setup.sh 
-# source /cvmfs/sft.cern.ch/lcg/views/dev3cuda/latest/x86_64-centos7-gcc8-opt/setup.sh 
+# source /cvmfs/sft.cern.ch/lcg/views/LCG_102cuda/x86_64-centos7-gcc8-opt/setup.sh 
 
 # training
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*_3b/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --train --nFeatures 8 --trainOffset 0,1,2 --normCoupling
 
 # save prediction
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --updatePostFix _VHH --weightFilePostFix _8nc -u -m "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
+
+# python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_3b/picoAOD.root" --updatePostFix _VHH --weightFilePostFix _8nc -u -m "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
 
 # to ONNX
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "" -d "" -t "" -m "/uscms/home/chuyuanl/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl" --onnx
@@ -410,7 +425,7 @@ if o.group:
 ## cmds w/o syst, compare classifier
 # $TAG=_8,_8n,_8nc,_14,_14nc
 # python ZZ4b/nTupleAnalysis/scripts/vhh_multiClassifier.py -c SvB_MA -s "/uscms/home/chuyuanl/nobackup/VHH/*HHTo4B_CV_*_*_C2V_*_*_C3_*_*_201*/picoAOD.root" -d "/uscms/home/chuyuanl/nobackup/VHH/data201*/picoAOD.root" -t "/uscms/home/chuyuanl/nobackup/VHH/TTTo*201*_4b/picoAOD.root" --updatePostFix _VHH --weightFilePostFix $TAG -u -m "ZZ4b/nTupleAnalysis/pytorchModels/SvB_MA_VHH/SvB_MA_HCR+attention_8_np1052_seed0_lr0.01_epochs20_offset*_epoch20.pkl"
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --trigger --applyPuIdSF --condor -e --friends FvT_Nominal,SvB_MA_VHH$TAG --histsTag $TAG
-# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --higherOrder --trigger --applyPuIdSF --condor -e --friends SvB_MA_VHH$TAG --histsTag $TAG
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -d -t -j -r --separate3b4b -y 2016,2017,2018 --applyPuIdSF --condor -e --friends FvT_Nominal,SvB_MA_VHH$TAG --histsTag $TAG
+# python ZZ4b/nTupleAnalysis/scripts/vhh_analysis.py -s -y 2016,2017,2018 --higherOrder --applyPuIdSF --condor -e --friends SvB_MA_VHH$TAG --histsTag $TAG
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --cp --eos --hists --tags $TAG
 # python ZZ4b/nTupleAnalysis/scripts/vhh_condorScripts.py -s -d -t -j -r -y 2016,2017,2018 --hadd --lpc --hists --tags $TAG

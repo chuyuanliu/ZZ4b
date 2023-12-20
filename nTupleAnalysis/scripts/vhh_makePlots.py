@@ -1,6 +1,5 @@
 from copy import copy
 from math import sqrt
-import profile
 import numpy as np
 import ROOT
 import re
@@ -22,35 +21,39 @@ ROOT.gStyle.SetHatchesLineWidth(1)
 
 USER = getpass.getuser()
 HIST_PATH = '/uscms/home/'+USER+'/nobackup/VHH/'
-# PLOT_FORMAT = '.pdf'
-PLOT_FORMAT = '.png'
+PLOT_FORMAT = '.pdf'
+# PLOT_FORMAT = '.png'
+USE_DENSITY = False
+SKIP_EMPTY = False
 
 # years = ['2016_preVFP', '2016_postVFP', '2016', '2017', '2018', 'RunII']
 # years = ['RunII', '2016', '2017', '2018']
-# years = ['2016', '2017', '2018']
-years = ['RunII']
-# signals = ['ZHH', 'WHH', 'VHH']
-signals = ['VHH']
+years = ['2016', '2017', '2018']
+# years = ['RunII']
+signals = ['ZHH', 'WHH', 'VHH']
+# signals = ['VHH']
 hists_filename = {
     'data'    : ['hists_j_r'],
     'ttbar'   : ['hists_j_r'],
+    # 'mcs'     : {},
     'signal'  : ['hists', 'hists_jerUp', 'hists_jerDown', 'hists_jesTotalUp', 'hists_jesTotalDown'],
-    # 'data'    : ['hists_j_r', 'hists_j_r_noMDR', 'hists_j_r_noMDR_v2'],
-    # 'ttbar'   : ['hists_j_r', 'hists_j_r_noMDR', 'hists_j_r_noMDR_v2'],
-    # 'signal'  : ['hists', 'hists_noMDR', 'hists_noMDR_v2'],
+    # 'data'    : ['hists_j'],
+    # 'ttbar'   : ['hists_j'],
+    # 'mcs'    : {'VBF H->bb': 'VBFHToBB_M125_{year}/hists'},
+    # 'signal'  : ['hists'],
 }
 
 # General
 
 def integral(hist):
     n_bins = hist.GetNbinsX()
-    total = hist.Integral(0, n_bins + 1)
+    total = hist.Integral(1, n_bins)
     return total
 
 def integral_error(hist):
     n_bins = hist.GetNbinsX()
     error = ROOT.Double()
-    total = hist.IntegralAndError(0, n_bins + 1, error)
+    total = hist.IntegralAndError(1, n_bins, error)
     return total, float(error)
 
 def round_up(value, base):
@@ -63,6 +66,31 @@ def get_ratio_range(max):
     else:
         return round_up(diff, 0.05)
 
+def reset_error(hist):
+    for i in range(1, hist.GetNbinsX() + 1):
+        hist.SetBinError(i, 0)
+
+def rebin_hist(hist, rebin_x, rebin_y = None):
+    if hist.GetSumw2N() == 0: hist.Sumw2()
+    if rebin_y is None:
+        rebin_y = rebin_x
+    if isinstance(rebin_x, list):
+        nbins = len(rebin_x) - 1
+        bins = array.array('d', rebin_x)
+        new_hist = hist.Rebin(nbins, hist.GetTitle()+'_rebinned', bins)
+        if USE_DENSITY:
+            bin_width = hist.GetBinWidth(1)
+            bin_norm = new_hist.Clone()
+            for i in range(1, nbins + 1):
+                new_bin_width = bin_norm.GetBinWidth(i)
+                bin_norm.SetBinContent(i, new_bin_width/bin_width)
+                bin_norm.SetBinError(i, 0)
+            new_hist.Divide(bin_norm)
+        return new_hist
+    elif isinstance(rebin_x, int):
+        if isinstance(hist, ROOT.TH2):
+            return hist.Rebin2D(rebin_x, rebin_y, hist.GetTitle()+'_rebinned')
+        return hist.Rebin(rebin_x, hist.GetTitle()+'_rebinned')
 
 class wildcard_match:
     def __init__(self, match_all_dirs = True, ignore_case = False, debug =False, cmd_length = 20):
@@ -115,7 +143,7 @@ class path_extensions:
         return path.split('/')
 
 # Physics    
-
+# TODO VBF dataset=/VBF_HH_CV_*_C2V_*_C3_*_*-TuneC*_PSweights_13TeV-madgraph-pythia8/*/NANOAODSIM
 class coupling_weight_generator:
     def __init__(self, basis = [], debug =False, cmd_length = 20):
         self.debug = debug
@@ -173,6 +201,8 @@ class plot_rule: #TEMP
 # Plot
 
 class histogram_1d_collection:
+    '''data, multijet, ttbar, mcs, vhh, vbf'''
+    # TODO vbf
     def __init__(self, path, title = '', tag = '', normalize = False, x_label = '', y_label = '', y_range = None, smooth = False, rules = [], event_count = False, no_legend = False):
         self.path = path
         self.title = title
@@ -185,6 +215,8 @@ class histogram_1d_collection:
         self.data = None
         self.ttbar = None
         self.multijet = None
+        self.other_bkg_mcs = []
+        self.background_errors = []
         self.background = ROOT.THStack()
 
         self.legends = []
@@ -214,9 +246,10 @@ class histogram_1d_collection:
 
         total, error = integral_error(hist)
 
-        if total == 0.0:
+        if total == 0.0 and SKIP_EMPTY:
             return
-        if self.normalize and 't#bar{t}' not in tag and 'Multijet' not in tag:
+        is_bkg = 't#bar{t}' in tag or 'Multijet' in tag or tag.endswith(' MC')
+        if self.normalize and not is_bkg:
             scale = 1.0 / total
         
         hist.Scale(scale)
@@ -225,7 +258,7 @@ class histogram_1d_collection:
         y_axis = hist.GetYaxis()
         self.x_max = max(x_axis.GetXmax(), self.x_max)
         self.x_min = min(x_axis.GetXmin(), self.x_min)
-        if not (self.normalize and ('t#bar{t}' in tag or 'Multijet' in tag)):
+        if not is_bkg:
             self.y_max = max(hist.GetMaximum(), self.y_max)
             self.y_min = min(hist.GetMinimum(), self.y_min)
         if self.x_label == '': self.x_label = x_axis.GetTitle()
@@ -241,9 +274,24 @@ class histogram_1d_collection:
         elif 'Multijet' in tag:
             self.multijet = hist
             option = 'f'
+        elif tag.endswith(' MC'):
+            self.other_bkg_mcs.append(hist)
+            option = 'f'
         else:
             self.signals[tag] = hist
-
+        if is_bkg and total > 0:
+            style = len(self.background_errors) % 2
+            error_hist = hist.Clone()
+            error_hist.SetFillStyle(3125 if style else 3152)
+            error_hist.SetFillColor(ROOT.kGray + 2)
+            error_hist.SetMarkerSize(0)
+            if len(self.background_errors) == 0:
+                self.background_errors.append(error_hist)
+            else:
+                last = self.background_errors[-1].Clone()
+                reset_error(last)
+                error_hist.Add(last)
+                self.background_errors.append(error_hist)
         label, lines = self.set_count(tag + ('' if scale == 1 or self.normalize else ' (#times' + str(scale) + ')'), total, error)
         self.lines += lines
         self.legends.append((hist, label, option))
@@ -252,7 +300,7 @@ class histogram_1d_collection:
         return '#font[' + str(num) + ']{' + text + '}'
     
     def set_count(self, label, count = 0, error = 0):
-        if self.event_count and count != 0 and error != 0 and not self.smooth:
+        if self.event_count and (not SKIP_EMPTY or (count != 0 and error != 0)) and not self.smooth:
             return '#splitline{' + label + '}{' + '{:.2f}'.format(count) + ' #pm ' + '{:.2f}'.format(error) + '}', 2
         else:
             return label, 1
@@ -262,11 +310,11 @@ class histogram_1d_collection:
         if self.normalize:
             total = 0.0
             if self.ttbar is not None:
-                n_bins = self.ttbar.GetNbinsX()
                 total += integral(self.ttbar)
             if self.multijet is not None:
-                n_bins = self.multijet.GetNbinsX()
                 total += integral(self.multijet)
+            for bkg in self.other_bkg_mcs:
+                total += integral(bkg)
             if total != 0.0:
                 background_scale = 1.0 / total
         if self.ttbar is not None:
@@ -277,10 +325,15 @@ class histogram_1d_collection:
             self.multijet.SetFillColor(ROOT.kYellow)
             self.multijet.Scale(background_scale)
             self.background.Add(self.multijet)
+        colors = [ROOT.kMagenta-9, ROOT.kOrange-2, ROOT.kGreen+1, ROOT.kAzure+7, ROOT.kViolet-7, ROOT.kRed-4, ]
+        for i, bkg in enumerate(self.other_bkg_mcs):
+            bkg.SetFillColor(colors[i])
+            bkg.Scale(background_scale)
+            self.background.Add(bkg)
         if self.data is not None:
             self.data.SetMarkerColor(ROOT.kBlack)
             self.data.SetMarkerSize(1)
-            self.data.SetMarkerStyle(8)   
+            self.data.SetMarkerStyle(8)  
 
         allow_ratio = (self.multijet is not None) and (self.ttbar is not None) and (self.data is not None) # TEMP     
 
@@ -310,6 +363,9 @@ class histogram_1d_collection:
         canvas = canvas_gen.GetCanvas(self.title)
         canvas_gen.MainPad.cd()
         self.background.Draw('SAME HIST ' + options)
+        for i in range(len(self.background_errors)):
+            self.background_errors[i].Scale(background_scale)
+            self.background_errors[i].Draw('SAME E2')
         if self.data is not None:
             self.data.Draw('SAME P E ' + options)
         temp = {} # TEMP
@@ -331,6 +387,8 @@ class histogram_1d_collection:
             ratio = self.data.Clone()
             bkgd = self.ttbar.Clone()
             bkgd.Add(self.multijet)
+            for bkg in self.other_bkg_mcs:
+                bkgd.Add(bkg)
             bkgd_error = bkgd.Clone()
             n_bins = bkgd.GetNbinsX()
             for i in range(1, n_bins + 1):
@@ -624,6 +682,7 @@ class plots:
             os.mkdir(self.output)
         self.years = years
         self.signals = signals
+        self.other_mcs = list(hists_filename['mcs'].keys())
 
         self.path = {}
         self.all_hists = {}
@@ -636,26 +695,30 @@ class plots:
         self.ttbar_files_4b = {}
         self.ttbar_files_3b = {}
         self.multijet_files = {}
+        self.other_mc_files = {}
 
         self.data_filename = hists_filename['data']
         self.ttbar_filename = hists_filename['ttbar']
+        self.other_mc_filename = hists_filename['mcs']
         self.signal_filename = hists_filename['signal']
 
         self.plot_rules = []
-        if basis is None: basis = [{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0},{'c3':20.0}]
-        self.couplings = coupling_weight_generator(basis = basis, debug = self.debug, cmd_length = self.cmd_length)
+        if basis is None: vhh_basis = [{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0},{'c3':20.0}]
+        self.vhh_couplings = coupling_weight_generator(basis = vhh_basis, debug = self.debug, cmd_length = self.cmd_length)
+        vbf_basis = [{},{'cv':0.5},{'cv':1.5},{'c2v':0.0},{'c2v':2.0},{'c3':0.0},{'c3':2.0}]
+        self.vbf_couplings = coupling_weight_generator(basis = vbf_basis, debug = self.debug, cmd_length = self.cmd_length)
+
         self.match = wildcard_match(match_all_dirs, ignore_case, debug = self.debug, cmd_length = self.cmd_length)
         self.base_path = path_extensions(self.output, clean = True, debug = self.debug, cmd_length = self.cmd_length)
 
         # options
         self.no_background = False
         self.no_multijet = False
-        self.no_signal = False
+        self.no_signal = (len(self.signal_filename) == 0)
         self.no_Data = True
         self.mc_only = False
         self.mc_signals = False
         self.event_count = True
-        self.use_density = False
         self.signal_scale = 1
         
         for year in self.years:
@@ -670,6 +733,7 @@ class plots:
             self.data_files_3b[year] = {}
             self.ttbar_files_4b[year] = {}
             self.ttbar_files_3b[year] = {}
+            self.other_mc_files[year] = {}
 
         for year in self.years:
             for filename in self.data_filename:
@@ -678,24 +742,22 @@ class plots:
             for filename in self.ttbar_filename:
                 self.ttbar_files_4b[year][filename] = ROOT.TFile(self.input + 'TT' + year + '_4b/' + filename + '.root', 'READ')
                 self.ttbar_files_3b[year][filename] = ROOT.TFile(self.input + 'TT' + year + '_3b/' + filename + '.root', 'READ')
+            for mc_tag, filename in self.other_mc_filename.items():
+                self.other_mc_files[year][mc_tag] = ROOT.TFile(self.input + filename.format(year = year) + '.root', 'READ')
             for filename in self.signal_filename:
                 for signal in self.signals:
-                    for coupling in self.couplings.get_all_filenames():
+                    for coupling in self.vhh_couplings.get_all_filenames():
                         root_path = self.input + signal + 'To4B' + coupling + year + '/' + filename + '.root'
                         if os.path.isfile(root_path):
                             self.signal_files[year][signal][filename].append(ROOT.TFile(root_path, 'READ'))
                         else:
                             print('Error'.ljust(self.cmd_length) + 'file not found ' + root_path)
                             self.signal_files[year][signal][filename].append(None)
-        self.root_dir = self.signal_files[self.years[0]][self.signals[0]][self.signal_filename[0]][0].GetDirectory('')
         if self.no_signal:
-            self.root_dir = self.ttbar_files_3b[self.years[0]].GetDirectory('')
+            self.root_dir = self.data_files_4b[self.years[0]][self.ttbar_filename[0]].GetDirectory('')
+        else:
+            self.root_dir = self.signal_files[self.years[0]][self.signals[0]][self.signal_filename[0]][0].GetDirectory('')
         self.modify_plot_hists_list_recursive('', self.initialize_hist)
-
-        # TODO add intelligent color
-        # TODO add html viewer
-        # TODO rewrite add/remove logic (async)
-        # TODO RAM management
 
     def __enter__(self):
         return self
@@ -747,28 +809,6 @@ class plots:
             sum.Add(hists[i],weights[i])       
         return sum
 
-    def rebin(self, hist, rebin_x, rebin_y = None):
-        if hist.GetSumw2N() == 0: hist.Sumw2()
-        if rebin_y is None:
-            rebin_y = rebin_x
-        if isinstance(rebin_x, list):
-            nbins = len(rebin_x) - 1
-            bins = array.array('d', rebin_x)
-            new_hist = hist.Rebin(nbins, hist.GetTitle()+'_rebinned', bins)
-            if self.use_density:
-                bin_width = hist.GetBinWidth(1)
-                bin_norm = new_hist.Clone()
-                for i in range(1, nbins + 1):
-                    new_bin_width = bin_norm.GetBinWidth(i)
-                    bin_norm.SetBinContent(i, new_bin_width/bin_width)
-                    bin_norm.SetBinError(i, 0)
-                new_hist.Divide(bin_norm)
-            return new_hist
-        elif isinstance(rebin_x, int):
-            if isinstance(hist, ROOT.TH2):
-                return hist.Rebin2D(rebin_x, rebin_y, hist.GetTitle()+'_rebinned')
-            return hist.Rebin(rebin_x, hist.GetTitle()+'_rebinned')
-
     def load_signal_mc_hists(self, year, signal, hist, rebin_x = 1, rebin_y = None, filename = None):
         hists = []
         if filename is None:
@@ -777,9 +817,15 @@ class plots:
             if file is None:
                 return None
             else:
-                signal = self.rebin(file.Get(hist), rebin_x, rebin_y)
+                signal = rebin_hist(file.Get(hist), rebin_x, rebin_y)
                 hists.append(signal)
         return hists
+
+    def load_other_mc_hists(self, mc, year, hist, rebin_x = 1, rebin_y = None):
+        if self.other_mc_files[year][mc] is None:
+            return None
+        mc = rebin_hist(self.other_mc_files[year][mc].Get(hist), rebin_x, rebin_y)
+        return mc
 
     def load_ttbar_mc_hists(self, year, hist, rebin_x = 1, rebin_y = None, filename = None):
         if 'fourTag' in hist:
@@ -792,7 +838,7 @@ class plots:
             filename = self.ttbar_filename[0]
         if self.ttbar_files_4b[year][filename] is None:
             return None
-        ttbar = self.rebin(self.ttbar_files_4b[year][filename].Get(hist), rebin_x, rebin_y)
+        ttbar = rebin_hist(self.ttbar_files_4b[year][filename].Get(hist), rebin_x, rebin_y)
         return ttbar
     
     def load_ttbar_3b_hists(self, year, hist, rebin_x = 1, rebin_y = None, filename = None):
@@ -800,7 +846,7 @@ class plots:
             filename = self.ttbar_filename[0]
         if self.ttbar_files_3b[year][filename] is None:
             return None
-        ttbar = self.rebin(self.ttbar_files_3b[year][filename].Get(hist), rebin_x, rebin_y)
+        ttbar = rebin_hist(self.ttbar_files_3b[year][filename].Get(hist), rebin_x, rebin_y)
         return ttbar
 
     def load_data_hists(self, year, hist, rebin_x = 1, rebin_y = None, filename = None):
@@ -814,7 +860,7 @@ class plots:
             filename = self.data_filename[0]
         if self.data_files_4b[year][filename] is None:
             return None
-        data = self.rebin(self.data_files_4b[year][filename].Get(hist), rebin_x, rebin_y)
+        data = rebin_hist(self.data_files_4b[year][filename].Get(hist), rebin_x, rebin_y)
         return data
 
     def load_data_3b_hists(self, year, hist, rebin_x = 1, rebin_y = None, filename = None):
@@ -822,7 +868,7 @@ class plots:
             filename = self.data_filename[0]
         if self.data_files_3b[year][filename] is None:
             return None
-        data = self.rebin(self.data_files_3b[year][filename].Get(hist), rebin_x, rebin_y)
+        data = rebin_hist(self.data_files_3b[year][filename].Get(hist), rebin_x, rebin_y)
         return data
 
     def load_multijet_hists(self, year, hist, rebin_x = 1, rebin_y = None, filename = None):
@@ -833,16 +879,16 @@ class plots:
         path = copy(self.all_hists[hist])
         path[1] = 'threeTag'
         path = self.join_hist_path(path)
-        if self.data_filename == 'hists_j':
+        if filename == 'hists_j':
             hist_multijet = self.data_files_3b[year][filename].Get(path).Clone()
-            if hist_multijet.GetSumw2N() == 0: hist.Sumw2()
-            hist_ttbar = self.ttbar_files_4b[year][filename].Get(path).Clone()
-            if hist_ttbar.GetSumw2N() == 0: hist.Sumw2()
+            if hist_multijet.GetSumw2N() == 0: hist_multijet.Sumw2()
+            hist_ttbar = self.ttbar_files_3b[year][filename].Get(path).Clone()
+            if hist_ttbar.GetSumw2N() == 0: hist_ttbar.Sumw2()
             hist_multijet.Add(hist_ttbar, -1)
-            hist_multijet = self.rebin(hist_multijet, rebin_x, rebin_y)
+            hist_multijet = rebin_hist(hist_multijet, rebin_x, rebin_y)
             return hist_multijet
         else:
-            multijet = self.rebin(self.data_files_3b[year][filename].Get(path), rebin_x, rebin_y)
+            multijet = rebin_hist(self.data_files_3b[year][filename].Get(path), rebin_x, rebin_y)
             return multijet
 
     ## hists list
@@ -884,7 +930,7 @@ class plots:
 
     def debug_mode(self, debug):
         self.debug = debug
-        self.couplings.debug = debug
+        self.vhh_couplings.debug = debug
         for year in self.years:
             for signal in self.signals:
                 self.path[year][signal].debug = debug
@@ -920,6 +966,8 @@ class plots:
         self.plot_rules.append(rule)
 
     def plot_1d(self, rebin = 1, options = ''):
+        '''data, multijet, ttbar, mcs, vhh, vbf'''
+        # TODO vbf
         for year in self.years:
             for signal in self.signals:
                 for hist in self.plot_hists:
@@ -937,22 +985,24 @@ class plots:
                         ploter.add_hist(self.load_ttbar_mc_hists(year, hist, rebin), 't#bar{t}')
                         if not self.mc_only and not self.no_multijet:
                             ploter.add_hist(self.load_multijet_hists(year, hist, rebin), 'Multijet Model')
+                    for mc in self.other_mcs:
+                        ploter.add_hist(self.load_other_mc_hists(mc, year, hist, rebin), mc + ' MC')
                     if not self.no_signal:
                         signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
                     else:
-                        signal_mc = None
+                        signal_mc = None                        
                     if signal_mc is not None:
                         if self.mc_signals: 
-                            for i,coupling in enumerate(self.couplings.basis):
-                                ploter.add_hist(signal_mc[i], self.couplings.get_caption(**coupling), self.signal_scale)
+                            for i,coupling in enumerate(self.vhh_couplings.basis):
+                                ploter.add_hist(signal_mc[i], self.vhh_couplings.get_caption(**coupling), self.signal_scale)
                         else:
                             for coupling in self.plot_couplings:
-                                weights = self.couplings.generate_weight(**coupling)
-                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), self.signal_scale)
+                                weights = self.vhh_couplings.generate_weight(**coupling)
+                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.vhh_couplings.get_caption(**coupling), self.signal_scale)
                     ploter.plot(options)
         self.clear_hists()
 
-    def plot_1d_gif(self, rebin = 1, options = '', tag = ''): #TEMP
+    def plot_1d_animation(self, rebin = 1, options = '', tag = ''): #TEMP
         for year in self.years:
             for signal in self.signals:
                 for hist in self.plot_hists:
@@ -965,9 +1015,9 @@ class plots:
                     signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
                     log = ''
                     for i,coupling in enumerate(self.plot_couplings):
-                        ploter = histogram_1d_collection(path+'/'+tag+str(i), title=self.couplings.get_caption(**coupling), normalize = self.plot_hists[hist],y_label='Events',rules=rules, event_count=self.event_count, no_legend = True)
-                        weights = self.couplings.generate_weight(**coupling)
-                        ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), self.signal_scale)
+                        ploter = histogram_1d_collection(path+'/'+tag+str(i), title=self.vhh_couplings.get_caption(**coupling), normalize = self.plot_hists[hist],y_label='Events',rules=rules, event_count=self.event_count, no_legend = True)
+                        weights = self.vhh_couplings.generate_weight(**coupling)
+                        ploter.add_hist(self.sum_hists(signal_mc, weights), self.vhh_couplings.get_caption(**coupling), self.signal_scale)
                         ploter.plot(options)
                         log += 'file {}.png\nduration 00:00:00.150\n'.format(tag+str(i))
                     with open(path + tag + '.txt', 'w') as f:
@@ -1005,17 +1055,17 @@ class plots:
                     hist_dir[-1] = hist_dir[-1] + extra_tag
                     path = self.path[year][signal].mkdir(hist_dir)
                     if self.mc_signals: 
-                        for i,coupling in enumerate(self.couplings.basis):
-                            couplingName = self.couplings.get_filename(**coupling)[1:-1]
+                        for i,coupling in enumerate(self.vhh_couplings.basis):
+                            couplingName = self.vhh_couplings.get_filename(**coupling)[1:-1]
                             ploter = histogram_1d_collection(path + couplingName, title=hist, normalize = normalize, y_label='Events', rules=rules, event_count=self.event_count)
                             for file in histFiles_sig.keys():
                                 ploter.add_hist(signal_mc[file][i], histFiles_sig[file])
                             ploter.plot()
                     else:
                         for coupling in self.plot_couplings:
-                            couplingName = self.couplings.get_filename(**coupling)[1:-1]
+                            couplingName = self.vhh_couplings.get_filename(**coupling)[1:-1]
                             ploter = histogram_1d_collection(path + couplingName, title=hist, normalize = normalize, y_label='Events', rules=rules, event_count=self.event_count)
-                            weights = self.couplings.generate_weight(**coupling)
+                            weights = self.vhh_couplings.generate_weight(**coupling)
                             for file in histFiles_sig.keys():
                                 ploter.add_hist(self.sum_hists(signal_mc[file], weights), histFiles_sig[file])
                             ploter.plot()
@@ -1027,11 +1077,6 @@ class plots:
                     for file in histFiles_bkg.keys():
                         ploter.add_hist(multijet[file], histFiles_bkg[file])
                     ploter.plot()
-
-    def compare_standalone(self, hists, rebin = 1, normalize = False, output = ''):
-        rootFiles = []
-        for tag in hists:
-            pass
         
     def plot_syst(self, pattern, systs, tag = '', rebin = 1, labels = None):
         hists = []
@@ -1055,18 +1100,18 @@ class plots:
                     path = self.path[year][signal].mkdir(hist_path)
                     ploter = histogram_1d_syst(path, title=hist, rules=rules, labels=labels)           
                     if self.mc_signals: 
-                        for i,coupling in enumerate(self.couplings.basis):
+                        for i,coupling in enumerate(self.vhh_couplings.basis):
                             signals = {}
                             for syst in systs:
                                 signals[syst] = signal_mc[syst][i]
-                            ploter.add_hist(signals, self.couplings.get_filename(**coupling)[1:-1])
+                            ploter.add_hist(signals, self.vhh_couplings.get_filename(**coupling)[1:-1])
                     else:
                         for coupling in self.plot_couplings:
                             signals = {}
-                            weights = self.couplings.generate_weight(**coupling)
+                            weights = self.vhh_couplings.generate_weight(**coupling)
                             for syst in systs:
                                 signals[syst] = self.sum_hists(signal_mc[syst], weights)
-                            ploter.add_hist(signals, self.couplings.get_filename(**coupling)[1:-1])
+                            ploter.add_hist(signals, self.vhh_couplings.get_filename(**coupling)[1:-1])
                     ploter.plot()
 
     def plot_2d(self, options = 'COLZ'): #TEMP
@@ -1090,12 +1135,12 @@ class plots:
                         signal_mc = None
                     if signal_mc is not None:
                         if self.mc_signals: 
-                            for i,coupling in enumerate(self.couplings.basis):
-                                ploter.add_hist(signal_mc[i], self.couplings.get_filename(**coupling)[1:-1])
+                            for i,coupling in enumerate(self.vhh_couplings.basis):
+                                ploter.add_hist(signal_mc[i], self.vhh_couplings.get_filename(**coupling)[1:-1])
                         else:
                             for coupling in self.plot_couplings:
-                                weights = self.couplings.generate_weight(**coupling)
-                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_filename(**coupling)[1:-1])
+                                weights = self.vhh_couplings.generate_weight(**coupling)
+                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.vhh_couplings.get_filename(**coupling)[1:-1])
                     if 'm4j' in hist and 'leadSt_dR' in hist:
                         ploter.add_curve('650.0/x+0.5', range=[None, 650])
                         ploter.add_curve('360.0/x-0.5')
@@ -1106,6 +1151,8 @@ class plots:
                         ploter.add_curve('1.5', range=[812.5, None])
                     if 'leadSt_m' in hist and 'sublSt_m' in hist:
                         ploter.add_curve('(((x-125*1.02)/(0.1*x))**2+((y-125*0.98)/(0.1*y))**2)',[1.9**2])
+                        ploter.add_curve('((x-125*1.02)**2+(y-125*0.98)**2)',[30**2], color=ROOT.kGreen)
+                        ploter.add_curve('((x-125*1.02)**2+(y-125*0.98)**2)',[25**2], color=ROOT.kBlue)
                     ploter.plot(options)
         self.clear_hists()
 
@@ -1194,33 +1241,32 @@ class plots:
                         ploter.add_hist(SF_num, sf_category[i] + '_' + sf_category[j])
                         ploter.plot('TEXT COLZ')
     
-    def save(self, path = 'shapes'):
-        save_path = path_extensions(self.input + path, clean = True, debug = self.debug, cmd_length = self.cmd_length)
-        for year in self.years:
-            if not self.no_signal:
+    def save(self, filename = 'shapes', rebin = 1):
+        save_path = path_extensions(self.input + 'save', clean = True, debug = self.debug, cmd_length = self.cmd_length)
+        filename = '{path}{filename}.root'.format(path = save_path.root, filename = filename)
+        file = ROOT.TFile(filename,'recreate')
+        if self.debug: print('Create'.ljust(self.cmd_length) + filename) 
+        for hist in self.plot_hists:
+            file.cd()
+            hist_name = hist.split('/')[-1]
+            file.mkdir(hist_name)
+            file.cd(hist_name)
+            for year in self.years:
                 for signal in self.signals:
-                    signal_files = {}
-                    for coupling in (self.couplings.basis if self.mc_signals else self.plot_couplings):
-                        if self.debug: print('Create'.ljust(self.cmd_length) + filename) 
-                        filename = '{path}{signal}{coupling}{year}.root'.format(path = save_path, signal = signal, coupling = self.couplings.get_filename(**coupling), year = year)
-                        signal_files[self.couplings.get_caption(**coupling)] = ROOT.TFile(filename, 'RECREATE')
-                    for hist in self.plot_hists:
-                        if self.debug: print('Save'.ljust(self.cmd_length) + hist) 
-                        signal_mc = self.load_signal_mc_hists(year, signal, hist)
-                        if self.mc_signals: 
-                            for i,coupling in enumerate(self.couplings.basis):
-                                #TODO
-                                ploter.add_hist(signal_mc[i], self.couplings.get_caption(**coupling), self.signal_scale)
-                        else:
-                            for coupling in self.plot_couplings:
-                                weights = self.couplings.generate_weight(**coupling)
-                                ploter.add_hist(self.sum_hists(signal_mc, weights), self.couplings.get_caption(**coupling), self.signal_scale)
-            if not self.no_background and not self.mc_only:
-                ploter.add_hist(self.load_data_hists(year, hist), 'Data ' + self.lumi[year] + ' ' + year)
-                if not self.no_multijet:
-                    ploter.add_hist(self.load_multijet_hists(year, hist), 'Multijet Model')
-            if not self.no_background:
-                ploter.add_hist(self.load_ttbar_mc_hists(year, hist), 't#bar{t}')
+                    if self.debug: print('Save'.ljust(self.cmd_length) + hist) 
+                    signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
+                    if self.mc_signals: 
+                        for i,coupling in enumerate(self.vhh_couplings.basis):
+                            histname = '{signal}{coupling}{year}'.format(signal = signal, coupling = self.vhh_couplings.get_filename(**coupling), year = year)
+                            signal_mc[i].SetNameTitle(histname, histname)
+                            signal_mc[i].Write()
+                    else:
+                        for coupling in self.plot_couplings:
+                            weights = self.vhh_couplings.generate_weight(**coupling)
+                            coupling_signal = self.sum_hists(signal_mc, weights)
+                            histname = '{signal}{coupling}{year}'.format(signal = signal, coupling = self.vhh_couplings.get_filename(**coupling), year = year)
+                            coupling_signal.SetNameTitle(histname, histname)
+                            coupling_signal.Write()
 
 
     def save_shape(self, filename, hist, MC_systs = [], rebin = 1, unblind = False, mix_as_obs = ''):
@@ -1243,7 +1289,7 @@ class plots:
             elif mix_as_obs:
                 mix_file, mix_data = mix_as_obs.split(':')
                 mix_file = ROOT.TFile(mix_file, 'READ')
-                mix_data = self.rebin(mix_file.Get(mix_data.format(year = year) + '/data_obs'), rebin)
+                mix_data = rebin_hist(mix_file.Get(mix_data.format(year = year) + '/data_obs'), rebin)
                 mix_data.SetNameTitle('data_obs', 'mix_data_obs_'+year)
                 output_file.cd()
                 mix_data.Write()
@@ -1257,8 +1303,8 @@ class plots:
                         syst_hist_file, syst_hist = syst.get_hist(self.all_hists[hist])
                         signal_systs[syst.get_name()] = self.load_signal_mc_hists(year, signal, self.join_hist_path(syst_hist), rebin, filename = syst_hist_file)
                 signal_mc = self.load_signal_mc_hists(year, signal, hist, rebin)
-                for i,coupling in enumerate(self.couplings.basis):
-                    name = signal + self.couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl').replace('C2V', 'C2' + signal[0]) + '_hbbhbb'
+                for i,coupling in enumerate(self.vhh_couplings.basis):
+                    name = signal + self.vhh_couplings.get_filename(point= 'p', **coupling)[:-1].replace('C3', 'kl').replace('C2V', 'C2' + signal[0]) + '_hbbhbb'
                     name = name.replace('p0_','_')
                     signal_hist = signal_mc[i]
                     signal_hist.SetNameTitle(name,name+"_"+year)
@@ -1283,8 +1329,8 @@ class plots:
                     multijet_3b_SR_hist = self.load_multijet_hists(year,self.join_hist_path(path))
                     signal_4b_SR = {}
                     for coupling in self.plot_couplings:
-                        weights = self.couplings.generate_weight(**coupling)
-                        signal_4b_SR[self.couplings.get_caption(**coupling)] = self.sum_hists(signal_mc, weights)
+                        weights = self.vhh_couplings.generate_weight(**coupling)
+                        signal_4b_SR[self.vhh_couplings.get_caption(**coupling)] = self.sum_hists(signal_mc, weights)
 
                     # plot variables
                     x_axis = data_4b_CR.GetXaxis()
@@ -1399,12 +1445,12 @@ class plots:
                 output_path = self.path[year][signal].mkdir(['AccxEff'])
                 signal_mc = self.load_signal_mc_hists(year, signal, 'cutflow/fourTag/truthM4b')
                 for coupling in self.plot_couplings:
-                    title = self.couplings.get_filename(**coupling)[1:-1]
+                    title = self.vhh_couplings.get_filename(**coupling)[1:-1]
                     hist_path = output_path+title
                     ploter_acc_eff_rela = histogram_1d_collection(hist_path, title='Acc#times Eff ' + title, tag='AccxEff_relative',x_label='Truth m_{4b}', y_label='Relative Acceptance #times Efficiency', y_range=[0,1], smooth= True)
                     ploter_acc_eff = histogram_1d_collection(hist_path, title='Acc#times Eff ' + title, tag='AccxEff',x_label='Truth m_{4b}', y_label='Acceptance #times Efficiency', smooth=True)
                     ploter_acc_eff_count = histogram_1d_collection(hist_path, title='Acc#times Eff ' + title, tag='Count',x_label='Truth m_{4b}', y_label='Events', event_count = self.event_count)
-                    weights= self.couplings.generate_weight(**coupling)
+                    weights= self.vhh_couplings.generate_weight(**coupling)
                     h2d = self.sum_hists(signal_mc, weights)
                     relative, absolute, count = self.GetAccxEff(h2d, cuts)
                     for i in range(1,len(absolute)):
@@ -1418,7 +1464,7 @@ class plots:
                     ploter_acc_eff_count.plot()
                     if self.debug: print('AccEff'.ljust(self.cmd_length) + title) 
 
-def plotAN():
+def task_AN_plots():
     with plots(plot_dir = 'AN_plots') as producer:
         producer.debug_mode(True)
         binning = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.80, 0.90, 0.95, 1.00]
@@ -1433,11 +1479,12 @@ def plotAN():
 
         cuts=[('jetMultiplicity','N_{j}#geq 4'), ('bTags','N_{b}#geq 4'), ('NjOth','N_{j}#geq 6'), ('MV','m_{V}'),('MV_HHSR','SR'),('MV_HHSR_HLT','HLT')]
         producer.AccxEff(cuts)
-        producer.add_hists(['passMV/fourTag/mainView/HHSR/SvB_MA_VHH_ps_BDT_[kVV|kl]'], normalize=True)
-        producer.plot_1d(binning)
-        producer.add_hists(['passMV/fourTag/mainView/HHSR/kl_BDT','passMV/fourTag/mainView/HHSR/[canJets|canVDijets|v4j]/[eta|m_s|m|m_l|phi|pt_m|dR]'], normalize=True)
-        producer.plot_1d()
+        # producer.add_hists(['passMV/fourTag/mainView/HHSR/SvB_MA_VHH_ps_BDT_[kVV|kl]'], normalize=True)
+        # producer.plot_1d(binning)
+        # producer.add_hists(['passMV/fourTag/mainView/HHSR/kl_BDT','passMV/fourTag/mainView/HHSR/[canJets|canVDijets|v4j]/[eta|m_s|m|m_l|phi|pt_m|dR]'], normalize=True)
+        # producer.plot_1d()
         producer.add_hists(['passMV/fourTag/mainView/HHSR/m4j_vs_[lead|subl]St_dR'])
+        producer.add_hists(['passMV/fourTag/mainView/HHSR/leadSt_m*sublSt_m*'])
         producer.plot_2d()
 
         producer.no_Data = False
@@ -1447,10 +1494,35 @@ def plotAN():
         producer.add_hists(['passMV/fourTag/mainView/SB/kl_BDT','passMV/fourTag/mainView/SB/nSelJets','passMV/fourTag/mainView/SB/[canJets|canVDijets|v4j]/[eta|m_s|m|m_l|phi|pt_m|dR]'])
         producer.plot_1d()
 
-def makeDatacards():
-    with plots() as producer:
-        classifier_name = 'SvB_MA_VHH'
+def task_ARC_plots():
+    with plots(plot_dir = 'ARC_plots') as producer:
+        producer.debug_mode(True)
         binning = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.80, 0.90, 0.95, 1.00]
+        # POI
+        producer.no_background = True
+        producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
+
+        producer.add_plot_rule(plot_rule([(0,'passMV')],["self.set_topright('Pass m_{V_{jj}}')"]))
+        producer.add_plot_rule(plot_rule([(3,'HHSR')],["self.set_topmid('Signal Region')"]))
+        producer.add_plot_rule(plot_rule([(3,'SB')],["self.set_topmid('Sideband')"]))
+
+        producer.add_hists(['passMV/fourTag/mainView/HHSR/SvB_MA_VHH_ps_BDT_[kVV|kl]'])
+        producer.plot_1d(binning)
+        producer.add_hists(['passMV/fourTag/mainView/HHSR/kl_BDT','passMV/fourTag/mainView/HHSR/[canJets|canVDijets|v4j]/[eta|m_s|m|m_l|phi|pt_m|dR]'])
+        producer.plot_1d()
+
+        producer.no_background = False
+        producer.no_Data = False
+        producer.no_signal = True
+        producer.add_hists(['passMV/fourTag/mainView/SB/SvB_MA_VHH_ps_BDT_[kVV|kl]'])
+        producer.plot_1d(binning)
+        producer.add_hists(['passMV/fourTag/mainView/SB/kl_BDT','passMV/fourTag/mainView/SB/nSelJets','passMV/fourTag/mainView/SB/[canJets|canVDijets|v4j]/[eta|m_s|m|m_l|phi|pt_m|dR]'])
+        producer.plot_1d()
+
+def task_make_datacards(classifier_name, binning):
+    with plots() as producer:
+        # classifier_name = 'SvB_MA_VHH_ps'
+        # binning = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.80, 0.90, 0.95, 1.00]
         MC_systs = [
             # btag
             systematic([(0,3), (4, '+{}_down_lf')],  'CMS_btag_LF_2016_2017_2018Down'),
@@ -1473,10 +1545,14 @@ def makeDatacards():
             systematic([(0,3), (4, '+{}_down_puId')],    'CMS_eff_j_PUJET_id_{year}Down'),
             systematic([(0,3), (4, '+{}_up_puId')],    'CMS_eff_j_PUJET_id_{year}Up'),
             # JEC
-            systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
-            systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
-            systematic([(0,3), (4, '+{}_ONNX_up_jes')],    'CMS_scale_j_{year}Up',   'hists_jesTotalUp'),
-            systematic([(0,3), (4, '+{}_ONNX_down_jes')],    'CMS_scale_j_{year}Down',   'hists_jesTotalDown'),
+            # systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
+            # systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
+            # systematic([(0,3), (4, '+{}_ONNX_up_jes')],    'CMS_scale_j_{year}Up',  'hists_jesTotalUp'),
+            # systematic([(0,3), (4, '+{}_ONNX_down_jes')], 'CMS_scale_j_{year}Down', 'hists_jesTotalDown'),
+            systematic([(0,3), (4, '+{}')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
+            systematic([(0,3), (4, '+{}')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
+            systematic([(0,3), (4, '+{}_up_jes')],    'CMS_scale_j_{year}Up',  'hists_jesTotalUp'),
+            systematic([(0,3), (4, '+{}_down_jes')], 'CMS_scale_j_{year}Down', 'hists_jesTotalDown'),
             # Trigger
             systematic([(0,3), (4, '+{}_trigger_up')],    'CMS_vhh4b_TriggerWeight_FHUp'),
             systematic([(0,3), (4, '+{}_trigger_down')],    'CMS_vhh4b_TriggerWeight_FHDown'),
@@ -1484,23 +1560,24 @@ def makeDatacards():
             systematic([(0,3), (4, '+{}_up_NNLO')],    'CMS_scale_ZHH_NNLOUp',   'hists', ['VHH', 'ZHH']),
             systematic([(0,3), (4, '+{}_down_NNLO')],    'CMS_scale_ZHH_NNLODown', 'hists', ['VHH', 'ZHH']),
         ]
+        # MC_systs = []
         # SR
-        producer.save_shape('shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, unblind = True)
-        producer.save_shape('shapefile_VhadHH_SR_{year}_kl',  'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl',  MC_systs, binning, unblind = True)
-        # SB
-        producer.save_shape('shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kVV',   MC_systs, binning, unblind = True)
-        producer.save_shape('shapefile_VhadHH_SB_{year}_kl',  'passMV/fourTag/mainView/SB/'+classifier_name+'_ps_BDT_kl',    MC_systs, binning, unblind = True)
-        # Mix
-        for i in range(1):
-            mix_n = str(i)
-            producer.save_shape('shapefile_VhadHH_Mix_{year}_kl',  'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl',  MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
-            producer.save_shape('shapefile_VhadHH_Mix_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
+        producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SR_{year}', 'passMV/fourTag/mainView/HHSR/'+classifier_name, MC_systs, binning, unblind = True)
+        producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_BDT_kVV', MC_systs, binning, unblind = True)
+        producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SR_{year}_kl',  'passMV/fourTag/mainView/HHSR/'+classifier_name+'_BDT_kl',  MC_systs, binning, unblind = True)
 
-if __name__ == '__main__':
-    # # make all AN plots
-    # plotAN()
-    # # makeDatacards()
-    # makeDatacards()
+        # # SB
+        # producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}', 'passMV/fourTag/mainView/SB/'+classifier_name, MC_systs, binning, unblind = True)
+        # producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_BDT_kVV', MC_systs, binning, unblind = True)
+        # producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}_kl',  'passMV/fourTag/mainView/SB/'+classifier_name+'_BDT_kl', MC_systs, binning, unblind = True)
+
+        # # Mix
+        # for i in range(1):
+        #     mix_n = str(i)
+        #     producer.save_shape('shapefile_VhadHH_Mix_{year}_kl',  'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kl',  MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_lbdt{year}')
+        #     producer.save_shape('shapefile_VhadHH_Mix_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_ps_BDT_kVV', MC_systs, binning, mix_as_obs = 'ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root:3bDvTMix4bDvT_v'+mix_n+'/VHH_ps_sbdt{year}')
+
+def task_make_gif():
     with plots() as producer:
         producer.debug_mode(True)
         producer.add_plot_rule(plot_rule([(0,'passMV'),(3,'HHSR')],["self.set_topright('HHSR Pass m_{V_{jj}}')"]))
@@ -1508,8 +1585,323 @@ if __name__ == '__main__':
 
         producer.add_couplings(cv=1.0,c2v=1.0, c3=list(np.arange(-3,5,0.1)))
         producer.add_hists(['passMV/fourTag/mainView/HHSR/v4j/[eta|m_l|pt_m]'])
-        producer.plot_1d_gif(tag='c3_scan')
+        producer.plot_1d_animation(tag='c3_scan')
 
         producer.add_couplings(cv=1.0,c2v=list(np.arange(-5,5,0.1)), c3=1.0)
         producer.add_hists(['passMV/fourTag/mainView/HHSR/v4j/[eta|m_l|pt_m]'])
-        producer.plot_1d_gif(tag='c2v_scan')
+        producer.plot_1d_animation(tag='c2v_scan')
+
+def task_make_eff_unified():
+    with plots() as producer:
+        producer.mc_signals = True
+        producer.debug_mode(True)
+        producer.add_hists(['passMV/fourTag/mainView/HHSR/gen_*HH*'])
+        producer.save('FH_eff_numerator', 5)
+
+class hist_info:
+    def __init__(self, root, hist , data = None, scale = None):
+        self.hist  = hist
+        self.root  = root
+        self.data  = data
+        self.scale = scale
+    def get(self, rebin):
+        if self.data is None:
+            _root_file = ROOT.TFile(self.root, 'READ')
+            _hist      = _root_file.Get(self.hist)
+            _hist.SetDirectory(0)
+            self.data = _hist
+            _root_file.Close()
+            if self.scale:
+                self.data.Scale(self.scale)
+        return rebin_hist(self.data, rebin)
+
+
+class histogram_1d_customize:
+    def __init__(self, path, title = '', tag = '', normalize = False, x_label = '', y_label = '', rules = [], event_count = False):
+        self.path = path
+        self.title = title
+        self.tag = tag
+        self.normalize = normalize
+        self.rules = rules
+        self.event_count = event_count
+
+        self.curves = {}
+        self.stacks = {}
+        self.stack_sum = {}
+        self.error  = {}
+        self.ratios = []
+
+        self.legends = []
+        self.lines = 0
+
+        self.x_max = float('-inf')
+        self.x_min = float('inf')
+        self.x_label = x_label
+        self.y_max = float('-inf')
+        self.y_min = 0
+        self.y_label = y_label
+        self.topmid_label = ''
+        self.topright_label = ''
+
+    def set_topright(self, label):
+        self.topright_label = label
+
+    def set_topmid(self, label):
+        self.topmid_label = label
+
+    def add_stack(self, hists, stack_tag, scale = 1.0):
+        stack = ROOT.THStack()
+        colors = [ROOT.kAzure-9, ROOT.kYellow, ROOT.kRed-4, ROOT.kGreen+1, ROOT.kViolet-7, ROOT.kMagenta-9]
+        sum = None
+        for i, tag in enumerate(hists.keys()):
+            hist = hists[tag]
+            total, error = integral_error(hist)
+            if total == 0.0:
+                continue
+            if sum is None:
+                sum = hist.Clone()
+            else:
+                sum.Add(hist)
+            hist.SetFillColor(colors[i])
+            stack.Add(hist)
+            option = 'f'
+            label, lines = self.set_count(tag + ('' if scale == 1 or self.normalize else ' (#times' + str(scale) + ')'), total, error)
+            self.lines += lines
+            self.legends.append((hist, label, option))
+            x_axis = hist.GetXaxis()
+            self.x_max = max(x_axis.GetXmax(), self.x_max)
+            self.x_min = min(x_axis.GetXmin(), self.x_min)
+            if self.x_label == '': self.x_label = x_axis.GetTitle()
+        self.y_max = max(stack.GetMaximum(), self.y_max)
+        self.y_min = min(stack.GetMinimum(), self.y_min)
+        self.stacks[stack_tag] = stack
+        self.stack_sum[stack_tag] = sum
+        hist_error = sum.Clone()
+        hist_error.SetFillStyle(3125)
+        hist_error.SetFillColor(ROOT.kGray + 2)
+        hist_error.SetMarkerSize(0)
+        self.error[stack_tag]= hist_error
+    
+    def add_hist(self, hist, tag, scale = 1.0):
+        total, error = integral_error(hist)
+        if total == 0.0:
+            return
+        colors = [ROOT.kBlack, ROOT.kRed-4, ROOT.kGreen+1, ROOT.kViolet-7, ROOT.kMagenta-9]
+        hist.Scale(scale)
+        hist.SetLineColor(colors[len(self.curves)])
+        hist.SetMarkerColor(colors[len(self.curves)])
+        hist.SetMarkerSize(1)
+        hist.SetMarkerStyle(8)   
+        x_axis = hist.GetXaxis()
+        y_axis = hist.GetYaxis()
+        self.x_max = max(x_axis.GetXmax(), self.x_max)
+        self.x_min = min(x_axis.GetXmin(), self.x_min)
+        self.y_max = max(hist.GetMaximum(), self.y_max)
+        self.y_min = min(hist.GetMinimum(), self.y_min)
+        if self.x_label == '': self.x_label = x_axis.GetTitle()
+        if self.y_label == '': self.y_label = y_axis.GetTitle()
+
+        option = 'l pe'
+        self.curves[tag] = hist
+
+        hist_error = hist.Clone()
+        hist_error.SetFillStyle(3125)
+        hist_error.SetFillColor(ROOT.kGray + 2)
+        hist_error.SetMarkerSize(0)
+        self.error[tag]= hist_error
+
+        label, lines = self.set_count(tag + ('' if scale == 1 or self.normalize else ' (#times' + str(scale) + ')'), total, error)
+        self.lines += lines
+        self.legends.append((hist, label, option))
+
+    def set_font(self, text, num = 42):
+        return '#font[' + str(num) + ']{' + text + '}'
+    
+    def set_count(self, label, count = 0, error = 0):
+        if self.event_count and count != 0 and error != 0:
+            return '#splitline{' + label + '}{' + '{:.2f}'.format(count) + ' #pm ' + '{:.2f}'.format(error) + '}', 2
+        else:
+            return label, 1
+
+    def plot(self, options = ''):
+        allow_ratio = ('Data' in self.curves)
+
+        legend_height = (0.04 if allow_ratio else 0.05) * self.lines
+        self.legend = ROOT.TLegend(0.0, max(0.0, 0.95 - legend_height), 1.0, 0.95)
+        self.legend.SetTextSize(0.06)
+        self.legend.SetTextFont(42)
+        self.legend.SetBorderSize(0)
+        for legend in self.legends:
+            self.legend.AddEntry(legend[0], legend[1], legend[2])
+
+        for rule in self.rules:
+            rule.apply(self)
+        canvas_gen = canvas_helper.ROOTCanvas(self.x_min, self.x_max, self.y_min, self.y_max * 1.05)
+        canvas_gen.TopMid.Text = self.set_font(self.topmid_label)
+        canvas_gen.TopRight.Text = self.set_font(self.topright_label)
+        canvas_gen.XLabel.Text = self.set_font(self.x_label)
+        canvas_gen.YLabel.Text = self.set_font(self.y_label)
+        canvas_gen.AllowLegend = True
+        canvas_gen.AllowRatio  = allow_ratio
+        canvas = canvas_gen.GetCanvas(self.title)
+        canvas_gen.MainPad.cd()
+        for stack in self.stacks.keys():
+            self.stacks[stack].Draw('SAME HIST ' + options)
+            self.error[stack].Draw('SAME E2')
+
+        for tag in self.curves.keys():
+            self.curves[tag].Draw('SAME P E' + options)
+
+        canvas_gen.Legend.cd()
+        self.legend.Draw()
+        if allow_ratio:
+            colors = [ROOT.kBlack, ROOT.kRed-4, ROOT.kGreen+1, ROOT.kViolet-7, ROOT.kMagenta-9]
+            ratio_range = 0.5
+            total = 0
+            canvas_gen.Ratio.cd()
+            frame = canvas_gen.Ratio.DrawFrame(self.x_min, 1.0 - ratio_range, self.x_max, 1.0 + ratio_range)
+            y_axis = frame.GetYaxis()
+            y_axis.SetLabelSize(0.14)
+            y_axis.SetNdivisions(2, 5, 0, False)
+            x_axis = frame.GetXaxis()
+            x_axis.SetLabelSize(0)
+            canvas_gen.Ratio.SetGridy()
+            label=ROOT.TLatex()
+            label.SetTextSize(0.16)
+            label.SetTextAngle(90)
+            label.SetTextAlign(21)
+
+            ratio_legend_height = (0.04 if allow_ratio else 0.05) * (len(self.stack_sum) + len(self.curves) - 1)
+            self.ratio_legend = ROOT.TLegend(0.0, 0.05, 1.0, 0.05 + ratio_legend_height)
+            self.ratio_legend.SetTextSize(0.06)
+            self.ratio_legend.SetTextFont(42)
+            self.ratio_legend.SetBorderSize(0)
+            for tag in self.stack_sum.keys() + self.curves.keys():
+                if tag == 'Data':
+                    continue
+                if tag in self.stack_sum:
+                    hist = self.stack_sum[tag]
+                else:
+                    hist = self.curves[tag]
+                if hist is None:
+                    continue
+                ratio = self.curves['Data'].Clone()
+                ratio.Divide(hist)
+                ratio.SetLineColor(colors[total])
+                ratio.SetMarkerColor(colors[total])
+                ratio.SetMarkerSize(1)
+                ratio.SetMarkerStyle(8) 
+                self.ratios.append(ratio)
+                ratio.Draw('SAME X0 P E1')
+                total += 1
+                self.ratio_legend.AddEntry(ratio, 'Data/'+tag, 'X0 P E1')
+            canvas_gen.Ratio.RedrawAxis()
+            canvas_gen.Legend.cd()
+            self.ratio_legend.Draw()
+        canvas_gen.MainPad.RedrawAxis()
+        canvas.Print(self.path + self.tag + PLOT_FORMAT)
+
+    def apply(self, action):
+        exec(action)
+
+def compare_standalone(hists, rebin, path, rules, normalize = False):
+    plotter = histogram_1d_customize(path, title = '', tag = '', normalize = False, x_label = '', y_label = '', rules = rules, event_count = True)
+    for hist in hists.keys():
+        if isinstance(hists[hist], dict):
+            stack = {}
+            for tag in hists[hist].keys():
+                stack[tag] = hists[hist][tag].get(rebin)
+            plotter.add_stack(stack, hist)
+        else:
+            plotter.add_hist(hists[hist].get(rebin), hist)
+    plotter.plot()
+
+def task_compare_mix_data(add_jcm = False):
+    n_mix = 15
+    classifier_name = 'SvB_MA_VHH'
+    binning = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.80, 0.90, 0.95, 1.00]
+    
+    MIX_PATH = '/uscms/home/'+USER+'/nobackup/CMSSW_11_1_0_pre5/src/ZZ4b/nTupleAnalysis/combine/hists_VHH_closure_3bDvTMix4bDvT_HHSR_weights_newSBDef.root'
+    COMPARE_HIST = 'passMV/{nTag}Tag/mainView/HHSR/'+classifier_name+'_ps{cat}'
+    CAT_MIX = {'_BDT_kl':'_lbdt', '_BDT_kVV':'_sbdt', '':''}
+
+    output_dir = 'compares/'
+
+    if not os.path.isdir(HIST_PATH + output_dir):
+        os.mkdir(HIST_PATH + output_dir)
+
+    MIX_AVG = {}
+
+    for cat in CAT_MIX.keys():
+        MIX_AVG[cat]={}
+        for year in ['2016', '2017', '2018', 'RunII']:
+            MIX_AVG[cat][year] = None
+            for mix in ['3bDvTMix4bDvT_v'+str(i)+'/VHH_ps{cat}{year}/data_obs' for i in range(n_mix)]:
+                mix_hist_info = hist_info(MIX_PATH, mix.format(cat = CAT_MIX[cat], year = year))
+                if MIX_AVG[cat][year] is None:
+                    MIX_AVG[cat][year] = mix_hist_info.get(1)
+                else:
+                    MIX_AVG[cat][year].Add(mix_hist_info.get(1))
+            MIX_AVG[cat][year].Scale(1.0/n_mix)
+
+    MULTIJETS_JCM = {}
+    if add_jcm:
+        for cat in CAT_MIX.keys():
+            MULTIJETS_JCM[cat]={}
+            for year in ['2016', '2017', '2018', 'RunII']:
+                multijet_file = hist_info(HIST_PATH + 'data'+ year + '_3b/hists_j.root', COMPARE_HIST.format(nTag = 'three', cat = cat))
+                ttbar_file = hist_info(HIST_PATH + 'TT'+ year + '_3b/hists_j.root', COMPARE_HIST.format(nTag = 'three', cat = cat))
+                MULTIJETS_JCM[cat][year] = multijet_file.get(1)
+                MULTIJETS_JCM[cat][year].Add(ttbar_file.get(1), -1.0)
+
+    for mix in [['3bDvTMix4bDvT_v'+str(i)+'/VHH_ps{cat}{year}/data_obs', 'mix'+str(i), None] for i in range(n_mix)] + [['', 'mix_avg', MIX_AVG]]:
+        output_path = HIST_PATH + output_dir+mix[1]+'/'
+        if not os.path.isdir(output_path):
+            os.mkdir(output_path)
+        for jcm in [False] + ([True] if add_jcm else []):
+            for cat in CAT_MIX.keys():
+                for year in ['2016', '2017', '2018', 'RunII']:
+                    compare_standalone(
+                    hists = {'Data':hist_info(HIST_PATH + 'data'+ year + '_4b/hists_j'+('' if jcm else '_r')+'.root', COMPARE_HIST.format(nTag = 'four', cat = cat)), 
+                    'Mix Data':hist_info(MIX_PATH, mix[0].format(cat = CAT_MIX[cat], year = year), mix[2][cat][year] if mix[2] is not None else mix[2]), 
+                    'Background':{'Multijet'+('(JCM)' if jcm else ''):hist_info(HIST_PATH + 'data'+ year + '_3b/hists_j'+('' if jcm else '_r')+'.root', COMPARE_HIST.format(nTag = 'three', cat = cat), MULTIJETS_JCM[cat][year] if jcm else None),
+                    'TTbar':hist_info(HIST_PATH + 'TT'+ year + '_4b/hists_j'+('' if jcm else '_r')+'.root', COMPARE_HIST.format(nTag = 'four', cat = cat))}},
+                    rebin = binning,
+                    path  = output_path+('JCM' if jcm else '')+year+cat+'_'+mix[1],
+                    rules = [plot_rule([],["self.set_topright('Pass m_{V_{jj}}')"]), plot_rule([],["self.set_topmid('"+year+" Signal Region')"])],
+                )
+    os.system('tar -C ' + HIST_PATH + ' -cvf  ' + HIST_PATH + 'compares.tar.gz compares/')
+    
+if __name__ == '__main__':
+    task_make_datacards('card_mHH', [0, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850])
+    task_make_datacards('card_V_pT', [0, 40, 80, 120, 160, 200, 240, 280, 320, 360, 400, 440, 480, 520, 560, 600, 640])
+    task_make_datacards('card_mH1_mH2', [-100, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60, 70, 100])
+
+    # task_ARC_plots()
+    # task_make_datacards()
+    # task_make_gif()
+    # task_compare_mix_data()
+    # task_make_eff_unified()
+
+    # with plots(plot_dir = 'AN_plots') as producer:
+    #     producer.debug_mode(True)
+    #     binning = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.80, 0.90, 0.95, 1.00]
+    #     # POI
+    #     producer.add_couplings(cv=1.0,c2v=1.0, c3=20)
+    #     producer.add_couplings(cv=1.0,c2v=20, c3=1.0)
+    #     producer.add_couplings(cv=1.0,c2v=1.0, c3=1.0)
+
+    #     producer.add_plot_rule(plot_rule([(0,'passPreSel')],["self.set_topright('Pass Pre-selection')"]))
+    #     producer.add_plot_rule(plot_rule([(0,'passNjOth')],["self.set_topright('Pass N_{j}#geq 6')"]))
+    #     producer.add_plot_rule(plot_rule([(0,'passMV')],["self.set_topright('Pass m_{V_{jj}}')"]))
+    #     producer.add_plot_rule(plot_rule([(3,'HHSR')],["self.set_topmid('Signal Region')"]))
+    #     producer.add_plot_rule(plot_rule([(3,'SB')],["self.set_topmid('Sideband')"]))
+
+    #     producer.no_Data = False
+    #     producer.no_signal = True
+    #     producer.plot_1d(binning)
+    #     producer.add_hists(['pass*/fourTag/mainView/SB/kl_BDT','pass*/fourTag/mainView/SB/[*Jets|*Dijets|v4j]/[eta|m*|phi|pt*|dR]', 'pass*/fourTag/mainView/SB/n*','pass*/fourTag/mainView/SB/SvB_MA_VHH_ps_BDT_[kVV|kl]'])
+
+    #     producer.add_hists(['passMV/fourTag/mainView/HHSR/kl_BDT','passMV/fourTag/mainView/HHSR/[*Jets|*Dijets|v4j]/[eta|m*|phi|pt*|dR]', 'passMV/fourTag/mainView/HHSR/n*','passMV/fourTag/mainView/HHSR/SvB_MA_VHH_ps_BDT_[kVV|kl]'])
+    #     producer.plot_1d()
+    # ...
