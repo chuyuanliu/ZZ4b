@@ -16,6 +16,8 @@ using namespace nTupleAnalysis;
     HIST##_triggerSyst = ratioSystHistsProducer::create(s##HIST, "trigger", "sim", "mc_emu");        \
     if (event->zhhNNLOVariations.size() > 0)                                                         \
       HIST##_zhhNNLOSysts = new systHists(HIST, event->zhhNNLOVariations, "NNLO");                   \
+    if (event->bkgVariations.size() > 0)                                                             \
+      HIST##_bkgSysts = new systHists(HIST, event->bkgVariations);                                   \
   }
 
 #define initBDT(HIST, LABEL, BIN, START, END)                                    \
@@ -32,7 +34,9 @@ using namespace nTupleAnalysis;
   if (HIST##_triggerSyst)                                                                                                          \
     HIST##_triggerSyst->Fill(VAR, event->weightNoTrigger * event->trigWeight_Flag, event->weightNoTrigger * event->trigWeight_MC); \
   if (HIST##_zhhNNLOSysts)                                                                                                         \
-    HIST##_zhhNNLOSysts->Fill(VAR, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central"]);
+    HIST##_zhhNNLOSysts->Fill(VAR, event->weight, event->zhhNNLOSFs, event->zhhNNLOSFs["central"]);                                \
+  if (HIST##_bkgSysts)                                                                                                             \
+    HIST##_bkgSysts->Fill(VAR, event->weight, event->bkgSFs);
 
 #define EPSILON 1e-6
 

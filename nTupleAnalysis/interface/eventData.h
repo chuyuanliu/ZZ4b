@@ -18,7 +18,6 @@
 #include "nTupleAnalysis/baseClasses/interface/dijet.h"
 #include "nTupleAnalysis/baseClasses/interface/trijet.h"
 #include "nTupleAnalysis/baseClasses/interface/trigData.h"
-#include "nTupleAnalysis/baseClasses/interface/pileUpWeightTool.h"
 #include "ZZ4b/nTupleAnalysis/interface/eventView.h"
 #include "TriggerEmulator/nTupleAnalysis/interface/TrigEmulatorTool.h"
 #include "ZZ4b/nTupleAnalysis/interface/bdtInference.h"
@@ -57,7 +56,6 @@ namespace nTupleAnalysis {
     Int_t     trigWeight_Flag  = 0;
     Float_t   reweight = 1.0;
 
-    pileUpWeightTool* puWeight = nullptr;
     Float_t   nTruInt = 0;
     Float_t   Prefire_Nom  = 1.0;
     Float_t   Prefire_Up   = 1.0;
@@ -246,7 +244,15 @@ namespace nTupleAnalysis {
     bool doZHHNNLOScale = false;
     std::vector<std::string> zhhNNLOVariations{"central", "up", "down"};
     std::map<std::string, float> zhhNNLOSFs{{"central", 1}, {"up", 1}, {"down", 1}};
-    //
+    
+    std::vector<std::string> bkgVariations{
+      "up_bkg_basis0", "up_bkg_basis1", "up_bkg_basis2",
+      "down_bkg_basis0", "down_bkg_basis1", "down_bkg_basis2"
+    };
+    std::map<std::string, float> bkgSFs{
+      {"up_bkg_basis0", 1}, {"up_bkg_basis1", 1}, {"up_bkg_basis2", 1},
+      {"down_bkg_basis0", 1}, {"down_bkg_basis1", 1}, {"down_bkg_basis2", 1}
+    };
 
     uint nSelJets;
     uint nLooseTagJets;

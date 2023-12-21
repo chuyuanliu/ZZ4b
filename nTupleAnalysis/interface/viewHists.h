@@ -25,7 +25,8 @@
   systHists *HIST##_bTagSysts = NULL;  \
   systHists *HIST##_puIdSysts = NULL;  \
   sRSyst HIST##_triggerSyst = nullptr; \
-  systHists *HIST##_zhhNNLOSysts = NULL;
+  systHists *HIST##_zhhNNLOSysts = NULL;\
+  systHists *HIST##_bkgSysts = NULL;
 
 #define plotBDT(HIST)          \
   plotSyst(HIST)               \

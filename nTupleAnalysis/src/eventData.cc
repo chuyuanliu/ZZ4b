@@ -1,5 +1,6 @@
 #include "ZZ4b/nTupleAnalysis/interface/eventData.h"
 #include "ZZ4b/nTupleAnalysis/interface/utils.h"
+#include "ZZ4b/nTupleAnalysis/interface/backgroundSyst.h"
 
 using namespace nTupleAnalysis;
 
@@ -92,23 +93,23 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, const std::map<s
   classifierVariables["weight_dRjjClose"] = &weight_dRjjClose;
   check_classifierVariables[FvTName+"_event"] = &FvT_event;
 
-  classifierVariables["SvB_ps" ] = &SvB_ps;
-  classifierVariables["SvB_pwhh"] = &SvB_pwhh;
-  classifierVariables["SvB_pzhh"] = &SvB_pzhh;
-  classifierVariables["SvB_ptt"] = &SvB_ptt;
-  classifierVariables["SvB_q_1234"] = &SvB_q_score[0]; //&SvB_q_1234;
-  classifierVariables["SvB_q_1324"] = &SvB_q_score[1]; //&SvB_q_1324;
-  classifierVariables["SvB_q_1423"] = &SvB_q_score[2]; //&SvB_q_1423;
-  check_classifierVariables["SvB_event"] = &SvB_event;
+  // classifierVariables["SvB_ps" ] = &SvB_ps;
+  // classifierVariables["SvB_pwhh"] = &SvB_pwhh;
+  // classifierVariables["SvB_pzhh"] = &SvB_pzhh;
+  // classifierVariables["SvB_ptt"] = &SvB_ptt;
+  // classifierVariables["SvB_q_1234"] = &SvB_q_score[0]; //&SvB_q_1234;
+  // classifierVariables["SvB_q_1324"] = &SvB_q_score[1]; //&SvB_q_1324;
+  // classifierVariables["SvB_q_1423"] = &SvB_q_score[2]; //&SvB_q_1423;
+  // check_classifierVariables["SvB_event"] = &SvB_event;
 
-  classifierVariables["SvB_MA_ps" ] = &SvB_MA_ps;
-  classifierVariables["SvB_MA_pwhh"] = &SvB_MA_pwhh;
-  classifierVariables["SvB_MA_pzhh"] = &SvB_MA_pzhh;
-  classifierVariables["SvB_MA_ptt"] = &SvB_MA_ptt;
-  classifierVariables["SvB_MA_q_1234"] = &SvB_MA_q_score[0]; //&SvB_MA_q_1234;
-  classifierVariables["SvB_MA_q_1324"] = &SvB_MA_q_score[1]; //&SvB_MA_q_1324;
-  classifierVariables["SvB_MA_q_1423"] = &SvB_MA_q_score[2]; //&SvB_MA_q_1423;
-  check_classifierVariables["SvB_MA_event"] = &SvB_MA_event;
+  // classifierVariables["SvB_MA_ps" ] = &SvB_MA_ps;
+  // classifierVariables["SvB_MA_pwhh"] = &SvB_MA_pwhh;
+  // classifierVariables["SvB_MA_pzhh"] = &SvB_MA_pzhh;
+  // classifierVariables["SvB_MA_ptt"] = &SvB_MA_ptt;
+  // classifierVariables["SvB_MA_q_1234"] = &SvB_MA_q_score[0]; //&SvB_MA_q_1234;
+  // classifierVariables["SvB_MA_q_1324"] = &SvB_MA_q_score[1]; //&SvB_MA_q_1324;
+  // classifierVariables["SvB_MA_q_1423"] = &SvB_MA_q_score[2]; //&SvB_MA_q_1423;
+  // check_classifierVariables["SvB_MA_event"] = &SvB_MA_event;
 
   classifierVariables["SvB_MA_VHH_ps" ] = &SvB_MA_VHH_ps;
   check_classifierVariables["SvB_MA_VHH_event"] = &SvB_MA_VHH_event;
@@ -179,9 +180,6 @@ eventData::eventData(TChain* t, bool mc, std::string y, bool d, const std::map<s
     inputBranch(tree, "L1PreFiringWeight_Dn", Prefire_Down);
     inputBranch(tree, "bTagSF", inputBTagSF);
   }
-
-  puWeight = new pileUpWeightTool(isMC, era);
-
 
   //triggers https://twiki.cern.ch/twiki/bin/viewauth/CMS/HLTPathsRunIIList
   if(year==2016){
@@ -520,7 +518,6 @@ void eventData::resetEvent(){
   bTagSF = 1;
   puIdSF = 1;
   treeJets->resetSFs();
-  puWeight->resetSFs();
   nTruInt = 0;
   Prefire_Nom  = 1;
   Prefire_Up   = 1;
@@ -547,9 +544,11 @@ void eventData::resetEvent(){
   }
 
   if(doZHHNNLOScale){
-    zhhNNLOSFs["central"] = 1; zhhNNLOSFs["up"] = 1; zhhNNLOSFs["down"] = 1;
+    for (auto& [_, v] : zhhNNLOSFs) v = 1;
   }
-  prefireWeights["central"] = 1; prefireWeights["up"] = 1; prefireWeights["down"] = 1;
+  for (auto& [_, v] : prefireWeights) v = 1;
+  for (auto& [_, v] : bkgSFs) v = 1;
+
   if(calcPuIdSF){
     allPuIdJets.clear();
     allBJets.clear();
@@ -646,8 +645,6 @@ void eventData::update(long int e){
     prefireWeights["up"] = Prefire_Up; 
     prefireWeights["down"] = Prefire_Down;
     updateWeight(prefireWeights["central"]);
-    puWeight->updateWeight(nTruInt);
-    updateWeight(puWeight->m_SFs["nominal"]);
   }
 
   //Objects from ntuple
@@ -910,13 +907,9 @@ void eventData::buildEvent(){
   //
   if((doReweight && threeTag)){
     if(debug) cout << "applyReweight: event->FvT = " << FvT << endl;
-    //event->FvTWeight = spline->Eval(event->FvT);
-    //event->FvTWeight = event->FvT / (1-event->FvT);
-    //event->weight  *= event->FvTWeight;
     reweight = FvT;
-    //if     (event->reweight > 10) event->reweight = 10;
-    //else if(event->reweight <  0) event->reweight =  0;
     updateWeight(reweight);
+    backgroundSyst::getSyst(bkgSFs, BDT_kl, SvB_MA_VHH_ps);
   }
 
   //

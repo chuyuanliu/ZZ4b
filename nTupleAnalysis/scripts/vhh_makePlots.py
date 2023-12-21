@@ -616,17 +616,17 @@ class histogram_2d_collection:
             canvas.RedrawAxis()
             canvas.Print(self.path + tag + self.tag + PLOT_FORMAT)
 
-class datacard:
-    def __init__(self, path, shape_file, datacard_file):
-        pass
+
 class systematic:
+    signals = {'VHH', 'ZHH', 'WHH'}
     def __init__(self, pattern = '', name = '', filename = None, signal = None):
         self.pattern  = pattern
         self.name     = name
         self.filename = filename
         self.signal   = signal
     def check_signal(self, signal):
-        if self.signal is None: return True
+        if self.signal is None and signal in self.signals:
+            return True
         return signal in self.signal
     def get_name(self):
         return self.name
@@ -1276,10 +1276,17 @@ class plots:
             output_file = ROOT.TFile(self.input + filename.format(**format_args) + '.root','recreate')                
             output_file.cd()
             multijet = self.load_multijet_hists(year, hist, rebin)
-            multijet.SetNameTitle('multijet_background','multijet_background_'+year)
+            mj_name = 'multijet_background'
+            multijet.SetNameTitle(mj_name,mj_name+'_'+year)
+            multijet.Write()
+            for syst in MC_systs:
+                if syst.check_signal(mj_name):
+                    syst_hist_file, syst_hist = syst.get_hist(self.all_hists[hist])
+                    mj_syst = self.load_multijet_hists(year, self.join_hist_path(syst_hist), rebin, filename = syst_hist_file)
+                    suffix = mj_name+'_'+syst.get_name().format(**format_args)
+                    mj_syst.SetNameTitle(suffix,suffix)
             ttbar = self.load_ttbar_mc_hists(year, hist, rebin)
             ttbar.SetNameTitle('ttbar_background','ttbar_background'+year)
-            multijet.Write()
             ttbar.Write()
             x_axis = ttbar.GetXaxis()
             if unblind:
@@ -1310,7 +1317,8 @@ class plots:
                     signal_hist.SetNameTitle(name,name+"_"+year)
                     signal_hist.Write()
                     for syst in signal_systs.keys():
-                        signal_systs[syst][i].SetNameTitle(name+'_'+syst.format(**format_args),name+"_"+syst.format(**format_args))
+                        suffix = name+'_'+syst.format(**format_args)
+                        signal_systs[syst][i].SetNameTitle(suffix,suffix)
                         signal_systs[syst][i].Write()
             output_file.Close()
 
@@ -1523,42 +1531,62 @@ def task_make_datacards(classifier_name, binning):
     with plots() as producer:
         # classifier_name = 'SvB_MA_VHH_ps'
         # binning = [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70 ,0.80, 0.90, 0.95, 1.00]
+        ONNX = '' #'_ONNX'
         MC_systs = [
-            # btag
-            systematic([(0,3), (4, '+{}_down_lf')],  'CMS_btag_LF_2016_2017_2018Down'),
+            ## b-tagging SF
+            # CMS_btag_LF_2016_2017_2018
             systematic([(0,3), (4, '+{}_up_lf')],    'CMS_btag_LF_2016_2017_2018Up'),
-            systematic([(0,3), (4, '+{}_down_hf')],  'CMS_btag_HF_2016_2017_2018Down'),
+            systematic([(0,3), (4, '+{}_down_lf')],  'CMS_btag_LF_2016_2017_2018Down'),
+            # CMS_btag_HF_2016_2017_2018
             systematic([(0,3), (4, '+{}_up_hf')],    'CMS_btag_HF_2016_2017_2018Up'),
-            systematic([(0,3), (4, '+{}_down_hfstats2')],    'CMS_btag_hfstats2_{year}Down'),
-            systematic([(0,3), (4, '+{}_up_hfstats2')],    'CMS_btag_hfstats2_{year}Up'),
-            systematic([(0,3), (4, '+{}_down_lfstats2')],    'CMS_btag_lfstats2_{year}Down'),
-            systematic([(0,3), (4, '+{}_up_lfstats2')],    'CMS_btag_lfstats2_{year}Up'),
-            systematic([(0,3), (4, '+{}_down_hfstats1')],    'CMS_btag_hfstats1_{year}Down'),
+            systematic([(0,3), (4, '+{}_down_hf')],  'CMS_btag_HF_2016_2017_2018Down'),
+            # CMS_btag_hfstats1_2018
             systematic([(0,3), (4, '+{}_up_hfstats1')],    'CMS_btag_hfstats1_{year}Up'),
-            systematic([(0,3), (4, '+{}_down_lfstats1')],    'CMS_btag_lfstats1_{year}Down'),
+            systematic([(0,3), (4, '+{}_down_hfstats1')],    'CMS_btag_hfstats1_{year}Down'),
+            # CMS_btag_lfstats1_2018
             systematic([(0,3), (4, '+{}_up_lfstats1')],    'CMS_btag_lfstats1_{year}Up'),
-            systematic([(0,3), (4, '+{}_down_cferr1')],    'CMS_btag_cferr1_2016_2017_2018Down'),
+            systematic([(0,3), (4, '+{}_down_lfstats1')],    'CMS_btag_lfstats1_{year}Down'),
+            # CMS_btag_hfstats2_2018
+            systematic([(0,3), (4, '+{}_up_hfstats2')],    'CMS_btag_hfstats2_{year}Up'),
+            systematic([(0,3), (4, '+{}_down_hfstats2')],    'CMS_btag_hfstats2_{year}Down'),
+            # CMS_btag_lfstats2_2018
+            systematic([(0,3), (4, '+{}_up_lfstats2')],    'CMS_btag_lfstats2_{year}Up'),
+            systematic([(0,3), (4, '+{}_down_lfstats2')],    'CMS_btag_lfstats2_{year}Down'),
+            # CMS_btag_cferr1_2016_2017_2018
             systematic([(0,3), (4, '+{}_up_cferr1')],    'CMS_btag_cferr1_2016_2017_2018Up'),
-            systematic([(0,3), (4, '+{}_down_cferr2')],    'CMS_btag_cferr2_2016_2017_2018Down'),
+            systematic([(0,3), (4, '+{}_down_cferr1')],    'CMS_btag_cferr1_2016_2017_2018Down'),
+            # CMS_btag_cferr2_2016_2017_2018
             systematic([(0,3), (4, '+{}_up_cferr2')],    'CMS_btag_cferr2_2016_2017_2018Up'),
-            # PU Jet ID
-            systematic([(0,3), (4, '+{}_down_puId')],    'CMS_eff_j_PUJET_id_{year}Down'),
+            systematic([(0,3), (4, '+{}_down_cferr2')],    'CMS_btag_cferr2_2016_2017_2018Down'),
+            ## pileup Jet ID SF
+            # CMS_eff_j_PUJET_id_2018
             systematic([(0,3), (4, '+{}_up_puId')],    'CMS_eff_j_PUJET_id_{year}Up'),
-            # JEC
-            # systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
-            # systematic([(0,3), (4, '+{}_ONNX')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
-            # systematic([(0,3), (4, '+{}_ONNX_up_jes')],    'CMS_scale_j_{year}Up',  'hists_jesTotalUp'),
-            # systematic([(0,3), (4, '+{}_ONNX_down_jes')], 'CMS_scale_j_{year}Down', 'hists_jesTotalDown'),
-            systematic([(0,3), (4, '+{}')],    'CMS_res_j_{year}Up',   'hists_jerUp'),
-            systematic([(0,3), (4, '+{}')],    'CMS_res_j_{year}Down', 'hists_jerDown'),
-            systematic([(0,3), (4, '+{}_up_jes')],    'CMS_scale_j_{year}Up',  'hists_jesTotalUp'),
-            systematic([(0,3), (4, '+{}_down_jes')], 'CMS_scale_j_{year}Down', 'hists_jesTotalDown'),
-            # Trigger
-            systematic([(0,3), (4, '+{}_trigger_up')],    'CMS_vhh4b_TriggerWeight_FHUp'),
-            systematic([(0,3), (4, '+{}_trigger_down')],    'CMS_vhh4b_TriggerWeight_FHDown'),
-            # ZHH NNLO
+            systematic([(0,3), (4, '+{}_down_puId')],    'CMS_eff_j_PUJET_id_{year}Down'),
+            ## JEC
+            # CMS_res_j_2018
+            systematic([(0,3), (4, '+{}'+ONNX)],    'CMS_res_j_{year}Up',   'hists_jerUp'),
+            systematic([(0,3), (4, '+{}'+ONNX)],    'CMS_res_j_{year}Down', 'hists_jerDown'),
+            # CMS_scale_j_2018
+            systematic([(0,3), (4, '+{}'+ONNX+'_up_jes')],    'CMS_scale_j_{year}Up',  'hists_jesTotalUp'),
+            systematic([(0,3), (4, '+{}'+ONNX+'_down_jes')], 'CMS_scale_j_{year}Down', 'hists_jesTotalDown'),
+            ## ZHH NNLO
+            # CMS_scale_ZHH_NNLO
             systematic([(0,3), (4, '+{}_up_NNLO')],    'CMS_scale_ZHH_NNLOUp',   'hists', ['VHH', 'ZHH']),
             systematic([(0,3), (4, '+{}_down_NNLO')],    'CMS_scale_ZHH_NNLODown', 'hists', ['VHH', 'ZHH']),
+            ## Background
+            # CMS_vhh4b_Multijet_FH_basis0
+            systematic([(0,3), (4, '+{}_up_bkg_basis0')],    'CMS_vhh4b_Multijet_FH_basis0Up',   'hists', ['multijet_background']),
+            systematic([(0,3), (4, '+{}_down_bkg_basis0')],    'CMS_vhh4b_Multijet_FH_basis0Down',   'hists', ['multijet_background']),
+            # CMS_vhh4b_Multijet_FH_basis1
+            systematic([(0,3), (4, '+{}_up_bkg_basis1')],    'CMS_vhh4b_Multijet_FH_basis1Up',   'hists', ['multijet_background']),
+            systematic([(0,3), (4, '+{}_down_bkg_basis1')],    'CMS_vhh4b_Multijet_FH_basis1Down',   'hists', ['multijet_background']),
+            # CMS_vhh4b_Multijet_FH_basis2
+            systematic([(0,3), (4, '+{}_up_bkg_basis2')],    'CMS_vhh4b_Multijet_FH_basis2Up',   'hists', ['multijet_background']),
+            systematic([(0,3), (4, '+{}_down_bkg_basis2')],    'CMS_vhh4b_Multijet_FH_basis2Down',   'hists', ['multijet_background']),
+            ## Trigger
+            # CMS_vhh4b_TriggerWeight_FH
+            systematic([(0,3), (4, '+{}_trigger_up')],    'CMS_vhh4b_TriggerWeight_FHUp'),
+            systematic([(0,3), (4, '+{}_trigger_down')],    'CMS_vhh4b_TriggerWeight_FHDown'),
         ]
         # MC_systs = []
         # SR
@@ -1566,10 +1594,10 @@ def task_make_datacards(classifier_name, binning):
         producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SR_{year}_kVV', 'passMV/fourTag/mainView/HHSR/'+classifier_name+'_BDT_kVV', MC_systs, binning, unblind = True)
         producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SR_{year}_kl',  'passMV/fourTag/mainView/HHSR/'+classifier_name+'_BDT_kl',  MC_systs, binning, unblind = True)
 
-        # # SB
-        # producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}', 'passMV/fourTag/mainView/SB/'+classifier_name, MC_systs, binning, unblind = True)
-        # producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_BDT_kVV', MC_systs, binning, unblind = True)
-        # producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}_kl',  'passMV/fourTag/mainView/SB/'+classifier_name+'_BDT_kl', MC_systs, binning, unblind = True)
+        # SB
+        producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}', 'passMV/fourTag/mainView/SB/'+classifier_name, MC_systs, binning, unblind = True)
+        producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}_kVV', 'passMV/fourTag/mainView/SB/'+classifier_name+'_BDT_kVV', MC_systs, binning, unblind = True)
+        producer.save_shape(f'{classifier_name}_'+'shapefile_VhadHH_SB_{year}_kl',  'passMV/fourTag/mainView/SB/'+classifier_name+'_BDT_kl', MC_systs, binning, unblind = True)
 
         # # Mix
         # for i in range(1):
